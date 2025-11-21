@@ -1,0 +1,20 @@
+[package]
+name = "cellcast"
+description = "A recast of cell segmentation models built on the Burn deep learning framework."
+version = "0.1.0"
+authors = ["Edward Evans"]
+edition = "2024"
+license = "Unlicense"
+readme = "README.md"
+
+[lib]
+name = "cellcast"
+crate-type = ["rlib"]
+
+[dependencies]
+burn = { version = "0.19.1", features = ["fusion", "std", "tui", "train", "vision", "wgpu"], default-features = false}
+burn-ndarray = "0.19.1"
+imgal = { path = "../../../imgal-sc/imgal/imgal" }
+pyo3 = { version = "0.27.1", features = ["extension-module"] }
+numpy = "0.27.0"
+ndarray = "0.16.1"

@@ -1,0 +1,19 @@
+[workspace]
+members = [
+  "cellcast",
+  "cellcast_python"
+]
+resolver = "3"
+
+[profile.dev]
+debug = true
+lto = "off"
+opt-level = 0
+panic = "unwind"
+
+[profile.release]
+codegen-units = 1
+debug = false
+lto = "thin"
+opt-level = 3
+panic = "unwind"

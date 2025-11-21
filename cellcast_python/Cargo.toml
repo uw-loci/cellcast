@@ -1,0 +1,18 @@
+[package]
+name = "cellcast_python"
+version = "0.1.0"
+authors = ["Edward Evans"]
+edition = "2024"
+license = "Unlicense"
+repository = "https://github.com/uw-loci/cellcast"
+readme = "README.md"
+
+[lib]
+name = "cellcast"
+crate-type = ["cdylib"]
+doc = false
+
+[dependencies]
+cellcast = { path = "../cellcast" }
+pyo3 = { version = "0.27.1", features = ["extension-module"]}
+numpy = "0.27.0"
