@@ -10,9 +10,9 @@ type Backend = Wgpu<f32, i32>;
 
 const N_RAYS: usize = 32;
 
-/// Perform inference with the StarDist 2-dimensonal versatile fluo model.
+/// Perform inference with the StarDist 2-dimensional versatile fluo model.
 #[inline]
-pub fn predict<'a, T, A, D>(data: A) -> (Array2<f32>, Array3<f32>)
+pub fn predict<'a, T, A>(data: A) -> (Array2<f32>, Array3<f32>)
 where
     A: AsArray<'a, T, Ix2>,
     T: 'a + AsNumeric,
