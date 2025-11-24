@@ -7,7 +7,7 @@ on the Burn framework. The goal of this project is to modernize (_i.e._ recast)
 established machine learning models in a modern deep learning framework with a
 `WebGPU` backend, enabling easy to install and GPU enabled cell segmentation networks.
 
-## Install `cellcast` from souce
+## Build `cellcast` from souce
 
 To install ast-net from source first install the Rust toolchain from [rust-lang.org](https://rust-lang.org/tools/install/).
 Next create an environment (we recommend using `uv`) with the `maturin` development tool. This can be easily done with the
@@ -34,17 +34,12 @@ a directory of your choice. Then change the path to the imgal dependency in the 
 You can run the following stardist example:
 
 ```python
-import imagej
-import cellcast as cc
-import numpy as np
+import cellcast.models as ccm
+from tifffile import imread
 
-# initialize imagej
-ij = imagej.init(mode = "interactive")
+# load 2D data for inference
+data = imread("path/to/data.tif")
 
-# load the data and convert it to float32
-data = ij.io().open("/path/to/stardist_test_data.tif")
-narr = ij.py.to_xarray(data).data
-
-# run stardist 2D inference with wgpu backend
-result = cc.stardist.stardist_2d(narr)
-ij.py.show(result)
+# run stardist inference, "results" contains the probabilites and ray distances
+results = ccm.stardist_2d_versatile_fluo.predict(data)
+```
