@@ -6,7 +6,7 @@ Cellcast Python bindings for the Rust core library.
 
 To build the cellcat_python package from source, use the `maturin` build tool
 (this requires the Rust toolchain). If you're using `uv` to manage your Python
-virtual environments (venv) add `maturin` to your environment and run the
+virtual environments (venv) add `numpy` and `maturin` to your environment and run the
 `maturin develop --release` command in the `cellcast_python` directory of the
 [cellcast](https://github.com/uw-loci/cellcast) repository with your venv activated:
 
@@ -21,7 +21,7 @@ Alernatively if you're using `conda` or `mamba` you can do the following:
 ```bash
 $ cd cellcat_python
 $ mamba activate myenv
-(myenv) $ mamba install maturin
+(myenv) $ mamba install numpy maturin
 ...
 (myenv) $ maturin develop --release
 ```

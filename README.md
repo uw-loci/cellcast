@@ -14,11 +14,12 @@ Next create an environment (we recommend using `uv`) with the `maturin` developm
 `uv` tool and this repository's `pyproject.toml`.
 
 ```bash
-$ cd cellcast
-$ uv sync
+$ cd cellcast_python
+$ uv venv
+$ uv pip install numpy maturin
 ```
 
-This will create the environment for you with maturin. Next install Rust library with:
+This will create the environment for you with maturin. Next activate your environment and install Rust library with:
 
 ```bash
 $ maturin develop --release
