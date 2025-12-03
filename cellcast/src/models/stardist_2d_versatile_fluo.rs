@@ -2,13 +2,16 @@ use burn::backend::Wgpu;
 use burn::prelude::*;
 use imgal::image::percentile_normalize;
 use imgal::traits::numeric::AsNumeric;
-use ndarray::{ArrayBase, Array2, Array3, AsArray, Ix2, ViewRepr};
+use imgal::transform::pad;
+use ndarray::{Array2, Array3, ArrayBase, AsArray, Ix2, ViewRepr};
 
 use crate::networks::stardist::versatile_fluo_2d::Model;
+use crate::utils::axes;
 
 type Backend = Wgpu<f32, i32>;
 
 const N_RAYS: usize = 32;
+const DIV: usize = 16;
 
 /// Perform inference with the StarDist 2-dimensional versatile fluo model.
 #[inline]
@@ -17,35 +20,41 @@ where
     A: AsArray<'a, T, Ix2>,
     T: 'a + AsNumeric,
 {
-    // create an array view
+    // create a view of the data
     let view: ArrayBase<ViewRepr<&'a T>, Ix2> = data.into();
-
-    // setup the model for
-    let device = Default::default();
-    let stardist_model = Model::<Backend>::default();
 
     // percentile normalize the input data
     // TODO: expose the percentile min and max arguments?
-    // TODO: maybe add a boolean determine if normalization will happen or not
-    let norm_data = percentile_normalize(&view, 1.0, 99.8, None, None);
-    let norm_data = norm_data.mapv(|v| v as f32);
+    // ensure that each axis of the input image into the network is divisiable by
+    // DIV factor, if not reflect pad the image to the computed dimensions
+    let norm = percentile_normalize(&view, 1.0, 99.8, None, None);
+    let norm = norm.mapv(|v| v as f32);
+    let pad_config: Vec<usize> = view
+        .shape()
+        .iter()
+        .map(|&v| axes::divisible_pad(v, DIV))
+        .collect();
+    let norm_pad = pad::reflect_pad(&norm, &pad_config, Some(false)).unwrap();
+    let pad_shape = norm_pad.shape().to_vec();
 
     // create a 1-D tensor, the stardist network reshapes the 1D intput
     // TODO: move or avoid the need for 1D flattening for speed up
-    let tensor = Tensor::<Backend, 1>::from_floats(
-        norm_data.into_flat().as_slice().unwrap(),
-        &device,
-    );
+    // initialize an instance of the StarDist network
+    let device = Default::default();
+    let stardist_model = Model::<Backend>::default();
+    let tensor =
+        Tensor::<Backend, 1>::from_floats(norm_pad.into_flat().as_slice().unwrap(), &device);
 
     // predict object probabilites and radial distances
-    let (row, col) = view.dim();
-    let (prob, dist) = stardist_model.forward(tensor, (row as i32, col as i32));
+    let (prob, dist) = stardist_model.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
     let prob: Vec<f32> = prob.into_data().into_vec().unwrap();
     let dist: Vec<f32> = dist.into_data().into_vec().unwrap();
-    let row: usize = row / 2;
-    let col: usize = col / 2;
-    let prob_arr = Array2::from_shape_vec((row, col), prob).expect("StarDist 2D object probabilites reshape failed");
-    let dist_arr = Array3::from_shape_vec((row, col, N_RAYS), dist).expect("StarDist 2D radial distances reshape failed");
+    let row: usize = pad_shape[0] / 2;
+    let col: usize = pad_shape[1] / 2;
+    let prob_arr = Array2::from_shape_vec((row, col), prob)
+        .expect("StarDist 2D object probabilites reshape failed.");
+    let dist_arr = Array3::from_shape_vec((row, col, N_RAYS), dist)
+        .expect("StarDist 2D radial distances reshape failed.");
 
     (prob_arr, dist_arr)
 }
