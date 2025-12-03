@@ -1,8 +1,9 @@
 use burn::backend::Wgpu;
 use burn::prelude::*;
 use imgal::image::percentile_normalize;
+use imgal::threshold::manual_mask;
 use imgal::traits::numeric::AsNumeric;
-use imgal::transform::pad;
+use imgal::transform::pad::reflect_pad;
 use ndarray::{Array2, Array3, ArrayBase, AsArray, Ix2, ViewRepr};
 
 use crate::networks::stardist::versatile_fluo_2d::Model;
@@ -14,6 +15,19 @@ const N_RAYS: usize = 32;
 const DIV: usize = 16;
 
 /// Perform inference with the StarDist 2-dimensional versatile fluo model.
+///
+/// # Description
+///
+/// Predict instance segmentations with the StarDist2D versatile fluo model.
+///
+/// # Arguments
+///
+/// * `data`: A 2-dimensional image.
+///
+/// # Returns
+///
+/// * `(Array2<f32>, Array2<f32>)`: A tuple containing the probability
+///   distribution (probs) and ray distances (dists) arrays.
 #[inline]
 pub fn predict<'a, T, A>(data: A) -> (Array2<f32>, Array3<f32>)
 where
@@ -34,7 +48,7 @@ where
         .iter()
         .map(|&v| axes::divisible_pad(v, DIV))
         .collect();
-    let norm_pad = pad::reflect_pad(&norm, &pad_config, Some(false)).unwrap();
+    let norm_pad = reflect_pad(&norm, &pad_config, Some(0)).unwrap();
     let pad_shape = norm_pad.shape().to_vec();
 
     // create a 1-D tensor, the stardist network reshapes the 1D intput
@@ -55,6 +69,15 @@ where
         .expect("StarDist 2D object probabilites reshape failed.");
     let dist_arr = Array3::from_shape_vec((row, col, N_RAYS), dist)
         .expect("StarDist 2D radial distances reshape failed.");
+
+    // post-processing
+    // ensure all values in ray distances are at least 1e-3, prevents negative
+    // or zero distances
+    let dist_arr = dist_arr.mapv(|v| v.max(1e-3));
+    // TODO: implement the optimal NMS prob threshold functions, until then
+    // this value is from StarDist2D for the "blobs.tif" sample data
+    let valid_obj_mask = manual_mask(&dist_arr, 0.479071463157368);
+    // TODO: implement clip board by size "b" (hard coded to 2?)
 
     (prob_arr, dist_arr)
 }
