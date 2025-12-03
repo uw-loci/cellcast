@@ -1,13 +1,12 @@
 // Generated from ONNX using burn-import and then modified as needed.
-use burn::prelude::*;
 use burn::nn::PaddingConfig2d;
 use burn::nn::conv::Conv2d;
 use burn::nn::conv::Conv2dConfig;
 use burn::nn::pool::MaxPool2d;
 use burn::nn::pool::MaxPool2dConfig;
+use burn::prelude::*;
 use burn::record::FullPrecisionSettings;
 use burn::record::Recorder;
-
 
 #[derive(Module, Debug)]
 pub struct Model<B: Backend> {
@@ -38,11 +37,13 @@ pub struct Model<B: Backend> {
     device: burn::module::Ignored<B::Device>,
 }
 
-
 impl<B: Backend> Default for Model<B> {
     fn default() -> Self {
         Self::from_file(
-            concat!(env!("CARGO_MANIFEST_DIR"), "/src/weights/stardist/2d_versatile_fluo.bin"),
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/weights/stardist/2d_versatile_fluo.bin"
+            ),
             &Default::default(),
         )
     }
@@ -277,10 +278,7 @@ impl<B: Backend> Model<B> {
         let tile2_out1 = unsqueeze2_out1.repeat(&[1, 1, 1, 2, 1]);
         let reshape3_out1 = tile2_out1.reshape([1, shape.0 / 8, shape.1 / 8, 128]);
         let transpose2_out1 = reshape3_out1.permute([0, 3, 1, 2]);
-        let concat1_out1 = burn::tensor::Tensor::cat(
-            [transpose2_out1, relu8_out1].into(),
-            1,
-        );
+        let concat1_out1 = burn::tensor::Tensor::cat([transpose2_out1, relu8_out1].into(), 1);
         let conv2d11_out1 = self.conv2d11.forward(concat1_out1);
         let relu11_out1 = burn::tensor::activation::relu(conv2d11_out1);
         let conv2d12_out1 = self.conv2d12.forward(relu11_out1);
@@ -293,10 +291,7 @@ impl<B: Backend> Model<B> {
         let tile4_out1 = unsqueeze4_out1.repeat(&[1, 1, 1, 2, 1]);
         let reshape5_out1 = tile4_out1.reshape([1, shape.0 / 4, shape.1 / 4, 64]);
         let transpose4_out1 = reshape5_out1.permute([0, 3, 1, 2]);
-        let concat2_out1 = burn::tensor::Tensor::cat(
-            [transpose4_out1, relu6_out1].into(),
-            1,
-        );
+        let concat2_out1 = burn::tensor::Tensor::cat([transpose4_out1, relu6_out1].into(), 1);
         let conv2d13_out1 = self.conv2d13.forward(concat2_out1);
         let relu13_out1 = burn::tensor::activation::relu(conv2d13_out1);
         let conv2d14_out1 = self.conv2d14.forward(relu13_out1);
@@ -309,10 +304,7 @@ impl<B: Backend> Model<B> {
         let tile6_out1 = unsqueeze6_out1.repeat(&[1, 1, 1, 2, 1]);
         let reshape7_out1 = tile6_out1.reshape([1, shape.0 / 2, shape.1 / 2, 32]);
         let transpose6_out1 = reshape7_out1.permute([0, 3, 1, 2]);
-        let concat3_out1 = burn::tensor::Tensor::cat(
-            [transpose6_out1, relu4_out1].into(),
-            1,
-        );
+        let concat3_out1 = burn::tensor::Tensor::cat([transpose6_out1, relu4_out1].into(), 1);
         let conv2d15_out1 = self.conv2d15.forward(concat3_out1);
         let relu15_out1 = burn::tensor::activation::relu(conv2d15_out1);
         let conv2d16_out1 = self.conv2d16.forward(relu15_out1);

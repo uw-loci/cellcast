@@ -28,7 +28,7 @@ pub fn models_stardist_2d_versatile_fluo<'py>(
         return Ok((prob_arr.into_pyarray(py), dist_arr.into_pyarray(py)));
     } else {
         return Err(PyErr::new::<PyTypeError, _>(
-            "Unsupported array dtype, supported array dtypes are u8, u16, u64, f32, and f64."
-        ))
+            "Unsupported array dtype, supported array dtypes are u8, u16, u64, f32, and f64.",
+        ));
     }
 }

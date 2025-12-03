@@ -6,7 +6,8 @@ use crate::utils::py_import_module;
 /// Python bindings for the "stardist" submodule.
 pub fn register_models_module(parent_module: &Bound<'_, PyModule>) -> PyResult<()> {
     let models_module = PyModule::new(parent_module.py(), "models")?;
-    let stardist_2d_versatile_fluo_module = PyModule::new(parent_module.py(), "stardist_2d_versatile_fluo")?;
+    let stardist_2d_versatile_fluo_module =
+        PyModule::new(parent_module.py(), "stardist_2d_versatile_fluo")?;
 
     // add module to Python's sys.modules
     py_import_module("models");
