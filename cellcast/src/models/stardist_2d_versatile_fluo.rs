@@ -7,7 +7,7 @@ use imgal::transform::pad::reflect_pad;
 use ndarray::{Array2, Array3, ArrayBase, AsArray, Ix2, ViewRepr};
 
 use crate::networks::stardist::versatile_fluo_2d::Model;
-use crate::utils::axes;
+use crate::utils::{axes, border};
 
 type Backend = Wgpu<f32, i32>;
 
@@ -76,8 +76,9 @@ where
     let dist_arr = dist_arr.mapv(|v| v.max(1e-3));
     // TODO: implement the optimal NMS prob threshold functions, until then
     // this value is from StarDist2D for the "blobs.tif" sample data
-    let valid_obj_mask = manual_mask(&dist_arr, 0.479071463157368);
-    // TODO: implement clip board by size "b" (hard coded to 2?)
-
+    let mut valid_obj_mask = manual_mask(&prob_arr, 0.479071463157368);
+    border::clip_mask_border(&mut valid_obj_mask.view_mut(), 2);
+    // TODO: mask select prob_arr and dist_arr with valid_obj_mask
+    // (prob_arr, dist_arr)
     (prob_arr, dist_arr)
 }
