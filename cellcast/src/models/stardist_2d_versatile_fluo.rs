@@ -5,6 +5,7 @@ use imgal::threshold::manual_mask;
 use imgal::traits::numeric::AsNumeric;
 use imgal::transform::pad::reflect_pad;
 use ndarray::{Array2, Array3, ArrayBase, AsArray, Ix2, ViewRepr};
+use rayon::prelude::*;
 
 use crate::networks::stardist::versatile_fluo_2d::Model;
 use crate::utils::{axes, border};
@@ -76,9 +77,17 @@ where
     let dist_arr = dist_arr.mapv(|v| v.max(1e-3));
     // TODO: implement the optimal NMS prob threshold functions, until then
     // this value is from StarDist2D for the "blobs.tif" sample data
-    let mut valid_obj_mask = manual_mask(&prob_arr, 0.479071463157368);
-    border::clip_mask_border(&mut valid_obj_mask.view_mut(), 2);
+    let mut valid_mask = manual_mask(&prob_arr, 0.479071463157368);
+    border::clip_mask_border(&mut valid_mask.view_mut(), 2);
     // TODO: mask select prob_arr and dist_arr with valid_obj_mask
-    // (prob_arr, dist_arr)
+    // TODO: benchmark the overhead of this for small images.
+    let valid_prob: Vec<f32> = prob_arr
+        .iter()
+        .zip(valid_mask.iter())
+        .filter(|(_, m)| **m)
+        .par_bridge()
+        .map(|(&p, _)| p)
+        .collect();
+
     (prob_arr, dist_arr)
 }
