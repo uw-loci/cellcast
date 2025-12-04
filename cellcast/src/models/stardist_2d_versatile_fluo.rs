@@ -4,7 +4,7 @@ use imgal::image::percentile_normalize;
 use imgal::threshold::manual_mask;
 use imgal::traits::numeric::AsNumeric;
 use imgal::transform::pad::reflect_pad;
-use ndarray::{Array2, Array3, ArrayBase, AsArray, Ix2, ViewRepr};
+use ndarray::{Array1, Array2, Array3, ArrayBase, AsArray, Ix2, Ix3, ViewRepr, s};
 
 use crate::networks::stardist::versatile_fluo_2d::Model;
 use crate::utils::{axes, border};
@@ -69,6 +69,7 @@ where
         .expect("StarDist 2D object probabilites reshape failed.");
     let dist_arr = Array3::from_shape_vec((row, col, N_RAYS), dist)
         .expect("StarDist 2D radial distances reshape failed.");
+    let dist_arr = dist_arr.into_dimensionality::<Ix3>().unwrap();
 
     // post-processing
     // ensure all values in ray distances are at least 1e-3, prevents negative
@@ -76,9 +77,29 @@ where
     let dist_arr = dist_arr.mapv(|v| v.max(1e-3));
     // TODO: implement the optimal NMS prob threshold functions, until then
     // this value is from StarDist2D for the "blobs.tif" sample data
-    let mut valid_obj_mask = manual_mask(&prob_arr, 0.479071463157368);
-    border::clip_mask_border(&mut valid_obj_mask.view_mut(), 2);
-    // TODO: mask select prob_arr and dist_arr with valid_obj_mask
-    // (prob_arr, dist_arr)
+    let valid_mask = manual_mask(&prob_arr, 0.479071463157368);
+    let mut valid_mask = valid_mask.into_dimensionality::<Ix2>().unwrap();
+    border::clip_mask_border(&mut valid_mask.view_mut().into_dyn(), 2);
+    // TODO: consider parallelize this or stay sequential?
+    // collect a Vec<(usize, usize)> as valid inds coords and only visit those
+    // this will save lots of time even with bounds checking. We only need to visit
+    // every pixel in the valid mask array once.
+    let valid_indices: Vec<(usize, usize)> = valid_mask
+        .indexed_iter()
+        .filter(|&((_, _), &v)| v)
+        .map(|((r, c), _)| (r, c))
+        .collect();
+    let valid_prob: Vec<f32> = valid_indices
+        .iter()
+        .map(|&(r, c)| prob_arr[[r, c]])
+        .collect();
+    let valid_prob = Array1::from(valid_prob);
+    let mut valid_dist = Array2::<f32>::zeros((valid_indices.len(), N_RAYS));
+    (0..N_RAYS).for_each(|n| {
+        valid_indices.iter().enumerate().for_each(|(i, &(r, c))| {
+            valid_dist[[i, n]] = dist_arr[[r, c, n]];
+        });
+    });
+
     (prob_arr, dist_arr)
 }

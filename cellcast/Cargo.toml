@@ -18,3 +18,4 @@ imgal = { path = "../../../imgal-sc/imgal/imgal" }
 pyo3 = { version = "0.27.1", features = ["extension-module"] }
 numpy = "0.27.0"
 ndarray = "0.16.1"
+rayon = "1.11.0"
