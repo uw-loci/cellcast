@@ -7,24 +7,27 @@ use cellcast::models::stardist_2d_versatile_fluo;
 /// Perform inference with the Stardist 2-dimensional versatile fluo model.
 #[pyfunction]
 #[pyo3(name = "predict")]
+#[pyo3(signature = (data, pmin=None, pmax=None))]
 pub fn models_stardist_2d_versatile_fluo<'py>(
     py: Python<'py>,
     data: Bound<'py, PyAny>,
+    pmin: Option<f64>,
+    pmax: Option<f64>,
 ) -> PyResult<(Bound<'py, PyArray2<f32>>, Bound<'py, PyArray3<f32>>)> {
     if let Ok(arr) = data.extract::<PyReadonlyArray2<u8>>() {
-        let (prob_arr, dist_arr) = stardist_2d_versatile_fluo::predict(&arr.as_array());
+        let (prob_arr, dist_arr) = stardist_2d_versatile_fluo::predict(&arr.as_array(), pmin, pmax);
         return Ok((prob_arr.into_pyarray(py), dist_arr.into_pyarray(py)));
     } else if let Ok(arr) = data.extract::<PyReadonlyArray2<u16>>() {
-        let (prob_arr, dist_arr) = stardist_2d_versatile_fluo::predict(arr.as_array());
+        let (prob_arr, dist_arr) = stardist_2d_versatile_fluo::predict(arr.as_array(), pmin, pmax);
         return Ok((prob_arr.into_pyarray(py), dist_arr.into_pyarray(py)));
     } else if let Ok(arr) = data.extract::<PyReadonlyArray2<u64>>() {
-        let (prob_arr, dist_arr) = stardist_2d_versatile_fluo::predict(arr.as_array());
+        let (prob_arr, dist_arr) = stardist_2d_versatile_fluo::predict(arr.as_array(), pmin, pmax);
         return Ok((prob_arr.into_pyarray(py), dist_arr.into_pyarray(py)));
     } else if let Ok(arr) = data.extract::<PyReadonlyArray2<f32>>() {
-        let (prob_arr, dist_arr) = stardist_2d_versatile_fluo::predict(arr.as_array());
+        let (prob_arr, dist_arr) = stardist_2d_versatile_fluo::predict(arr.as_array(), pmin, pmax);
         return Ok((prob_arr.into_pyarray(py), dist_arr.into_pyarray(py)));
     } else if let Ok(arr) = data.extract::<PyReadonlyArray2<f64>>() {
-        let (prob_arr, dist_arr) = stardist_2d_versatile_fluo::predict(arr.as_array());
+        let (prob_arr, dist_arr) = stardist_2d_versatile_fluo::predict(arr.as_array(), pmin, pmax);
         return Ok((prob_arr.into_pyarray(py), dist_arr.into_pyarray(py)));
     } else {
         return Err(PyErr::new::<PyTypeError, _>(

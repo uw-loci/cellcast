@@ -22,14 +22,20 @@ const DIV: usize = 16;
 ///
 /// # Arguments
 ///
-/// * `data`: A 2-dimensional image.
+/// * `data`: The input 2-dimensional image.
+/// * `pmin`: The minimum percentage to normalize the input image.
+/// * `pmax`: The maximum percentage to normalize the input image.
 ///
 /// # Returns
 ///
 /// * `(Array2<f32>, Array2<f32>)`: A tuple containing the probability
 ///   distribution (probs) and ray distances (dists) arrays.
 #[inline]
-pub fn predict<'a, T, A>(data: A) -> (Array2<f32>, Array3<f32>)
+pub fn predict<'a, T, A>(
+    data: A,
+    pmin: Option<f64>,
+    pmax: Option<f64>,
+) -> (Array2<f32>, Array3<f32>)
 where
     A: AsArray<'a, T, Ix2>,
     T: 'a + AsNumeric,
@@ -37,11 +43,14 @@ where
     // create a view of the data
     let view: ArrayBase<ViewRepr<&'a T>, Ix2> = data.into();
 
-    // percentile normalize the input data
-    // TODO: expose the percentile min and max arguments?
-    // ensure that each axis of the input image into the network is divisiable by
-    // DIV factor, if not reflect pad the image to the computed dimensions
-    let norm = percentile_normalize(&view, 1.0, 99.8, None, None);
+    // set optional parameters if needed
+    let pmin = pmin.unwrap_or(1.0);
+    let pmax = pmax.unwrap_or(99.8);
+
+    // percentile normalize the input data and ensure that each axis of the
+    // input image into the network is divisiable by DIV factor, if not reflect
+    // pad the image to the computed dimensions
+    let norm = percentile_normalize(&view, pmin, pmax, None, None);
     let norm = norm.mapv(|v| v as f32);
     let pad_config: Vec<usize> = view
         .shape()
