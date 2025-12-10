@@ -4,9 +4,10 @@ use imgal::image::percentile_normalize;
 use imgal::threshold::manual_mask;
 use imgal::traits::numeric::AsNumeric;
 use imgal::transform::pad::reflect_pad;
-use ndarray::{Array2, Array3, ArrayBase, AsArray, Axis, Ix2, ViewRepr};
+use ndarray::{Array1, Array2, Array3, ArrayBase, AsArray, Axis, Ix2, ViewRepr};
 
 use crate::networks::stardist::versatile_fluo_2d::Model;
+use crate::process::nms;
 use crate::utils::{axes, border};
 
 type Backend = Wgpu<f32, i32>;
@@ -42,7 +43,7 @@ where
 {
     // create a view of the data
     let view: ArrayBase<ViewRepr<&'a T>, Ix2> = data.into();
-    let view_shape = view.shape();
+    let (src_row, src_col) = view.dim();
 
     // set optional parameters if needed
     let pmin = pmin.unwrap_or(1.0);
@@ -71,11 +72,11 @@ where
     let (prob, dist) = stardist_model.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
     let prob: Vec<f32> = prob.into_data().into_vec().unwrap();
     let dist: Vec<f32> = dist.into_data().into_vec().unwrap();
-    let row: usize = pad_shape[0] / 2;
-    let col: usize = pad_shape[1] / 2;
-    let prob_arr = Array2::from_shape_vec((row, col), prob)
+    let res_row: usize = pad_shape[0] / 2;
+    let res_col: usize = pad_shape[1] / 2;
+    let prob_arr = Array2::from_shape_vec((res_row, res_col), prob)
         .expect("StarDist 2D object probabilites reshape failed.");
-    let dist_arr = Array3::from_shape_vec((row, col, N_RAYS), dist)
+    let dist_arr = Array3::from_shape_vec((res_row, res_col, N_RAYS), dist)
         .expect("StarDist 2D radial distances reshape failed.");
 
     // === post-processing ===
@@ -97,40 +98,38 @@ where
         .filter(|&((_, _), &v)| v)
         .map(|((r, c), _)| (r, c))
         .collect();
+    let flat_pos = valid_pos.iter().flat_map(|&(r, c)| [r, c]).collect();
+    let mut valid_pos = Array2::from_shape_vec((valid_pos.len(), 2), flat_pos).unwrap();
     // filter probabilities and distances with valid indices
-    let mut valid_prob: Vec<f32> = valid_pos.iter().map(|&(r, c)| prob_arr[[r, c]]).collect();
+    let mut valid_prob =
+        Array1::from_iter(valid_pos.axis_iter(Axis(0)).map(|v| prob_arr[[v[0], v[1]]]));
     let mut valid_dist = Array2::<f32>::zeros((valid_pos.len(), N_RAYS));
     (0..N_RAYS).for_each(|n| {
-        valid_pos.iter().enumerate().for_each(|(i, &(r, c))| {
-            valid_dist[[i, n]] = dist_arr[[r, c, n]];
+        valid_pos.axis_iter(Axis(0)).enumerate().for_each(|(i, v)| {
+            valid_dist[[i, n]] = dist_arr[[v[0], v[1], n]];
         });
     });
-    // scale each valid position by 2 and collect the indices of positions outside
-    // of the original image dimensions (used for point filtering)
-    let mut valid_pos: Vec<(usize, usize)> =
-        valid_pos.iter().map(|&(r, c)| (r * 2, c * 2)).collect();
-    let invalid_inds: Vec<usize> = valid_pos
-        .iter()
-        .filter(|&&(r, c)| r > view_shape[0] || c > view_shape[1])
+    // scale each valid position by 2 and collect the valid indices of positions
+    // inside of the source image dimensions (used for point filtering)
+    valid_pos.mapv_inplace(|v| v * 2);
+    let valid_inds: Vec<usize> = valid_pos
+        .axis_iter(Axis(0))
         .enumerate()
-        .map(|(i, &(_, _))| i)
+        .filter_map(|(i, v)| {
+            if v[0] < src_row || v[1] < src_col {
+                Some(i)
+            } else {
+                None
+            }
+        })
         .collect();
+
     // filter positions, probabilities, and distances if there are invalid indices
-    if !invalid_inds.is_empty() {
-        valid_pos = valid_pos
-            .iter()
-            .enumerate()
-            .filter(|&(i, &(_, _))| !invalid_inds.contains(&i))
-            .map(|(_, &(r, c))| (r, c))
-            .collect();
-        valid_prob = valid_prob
-            .iter()
-            .enumerate()
-            .filter(|&(i, &_)| !invalid_inds.contains(&i))
-            .map(|(_, &v)| v)
-            .collect();
-        let valid_inds: Vec<usize> = valid_pos.iter().enumerate().map(|(i, &(_, _))| i).collect();
-        valid_dist = valid_dist.select(Axis(0), &valid_inds);
+    if valid_pos.len() > valid_inds.len() {
+        let a = Axis(0);
+        valid_dist = valid_dist.select(a, &valid_inds);
+        valid_prob = valid_prob.select(a, &valid_inds);
+        valid_pos = valid_pos.select(a, &valid_inds);
     }
 
     (prob_arr, dist_arr)
