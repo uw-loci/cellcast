@@ -12,8 +12,10 @@ use crate::utils::{axes, border};
 
 type Backend = Wgpu<f32, i32>;
 
-const N_RAYS: usize = 32;
 const DIV: usize = 16;
+const N_RAYS: usize = 32;
+const PROB_THRESHOLD: f32 = 0.479071463157368;
+const NMS_THRESHOLD: f64 = 0.3;
 
 /// Perform inference with the StarDist 2-dimensional versatile fluo model.
 ///
@@ -83,10 +85,8 @@ where
     // ensure all values in ray distances are at least 1e-3, prevents negative
     // or zero distances
     let dist_arr = dist_arr.mapv(|v| v.max(1e-3));
-    // TODO: implement the optimal NMS prob threshold functions, until then use
-    // this value is from StarDist2D for the "blobs.tif" sample data
     // create a valid object mask and clip the board by 2 pixels
-    let mut valid_mask = manual_mask(&prob_arr, 0.479071463157368);
+    let mut valid_mask = manual_mask(&prob_arr, PROB_THRESHOLD);
     border::clip_mask_border(&mut valid_mask.view_mut(), 2);
     let valid_mask = valid_mask.into_dimensionality::<Ix2>().unwrap();
     // collect a Vec<(usize, usize)> as valid indices coords and only visit those
