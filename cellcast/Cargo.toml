@@ -14,8 +14,7 @@ crate-type = ["rlib"]
 [dependencies]
 burn = { version = "0.19.1", features = ["fusion", "std", "tui", "train", "vision", "wgpu"], default-features = false}
 burn-ndarray = "0.19.1"
+geo = "0.32"
 imgal = { path = "../../../imgal-sc/imgal/imgal" }
-pyo3 = { version = "0.27.1", features = ["extension-module"] }
-numpy = "0.27.0"
 ndarray = "0.16.1"
 rayon = "1.11.0"
