@@ -5,6 +5,7 @@
 
 use std::f32::consts::PI;
 
+use geo::{Area, BooleanOps, LineString, Polygon};
 use ndarray::ArrayView2;
 use rayon::prelude::*;
 
@@ -18,6 +19,31 @@ pub struct Polygon2D {
     pub dist: f32,
     /// The polygon vertices.
     pub vertices: Vec<(f32, f32)>,
+}
+
+/// TODO
+///
+/// # Description
+///
+/// todo
+///
+/// # Arguments
+///
+/// * `vertices_a`:
+/// * `vertices_b`:
+///
+/// # Returns
+///
+/// * `f32`:
+pub fn area_intersection_2d(vertices_a: &[(f32, f32)], vertices_b: &[(f32, f32)]) -> f32 {
+    // convert vertices to geo types
+    let line_a: LineString<f32> = vertices_a.to_vec().into();
+    let line_b: LineString<f32> = vertices_b.to_vec().into();
+    let poly_a = Polygon::new(line_a, vec![]);
+    let poly_b = Polygon::new(line_b, vec![]);
+    let inter = poly_a.intersection(&poly_b);
+
+    inter.unsigned_area() as f32
 }
 
 /// Create a vector of 2-dimensional polygons.
