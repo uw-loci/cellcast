@@ -124,10 +124,9 @@ pub fn build_polygons_2d(
 ///
 /// <https://en.wikipedia.org/wiki/Shoelace_formula>
 fn polygon_area_2d(vertices: &[(f32, f32)], n_rays: usize) -> f32 {
-    let area = (0..n_rays).fold(0.0, |mut acc, i| {
+    let area = (0..n_rays).fold(0.0, |acc, i| {
         let j = (i + 1) % n_rays;
-        acc += vertices[i].0 * vertices[j].1;
-        acc + vertices[i].1 * vertices[j].0
+        acc + (vertices[i].0 * vertices[j].1) - (vertices[i].1 * vertices[j].0)
     });
 
     area.abs() / 2.0
