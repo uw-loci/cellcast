@@ -23,7 +23,7 @@ pub fn sparse_polygon_nms_2d(
 
     // create NMS polygons and perform NMS
     let (n_polygons, n_rays) = poly_dist_sort.dim();
-    let nms_polys = polygon::build_nms_polygons_2d(
+    let nms_polys = polygon::build_polygons_2d(
         poly_dist_sort.view(),
         poly_pos_sort.view(),
         n_polys,

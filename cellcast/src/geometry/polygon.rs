@@ -9,7 +9,7 @@ use ndarray::ArrayView2;
 use rayon::prelude::*;
 
 #[derive(Debug, Clone)]
-pub struct NMSPolygon2D {
+pub struct Polygon2D {
     /// This polygon bounding box coordinates `(y1, y2, x1, x2)`.
     pub bbox: (f32, f32, f32, f32),
     /// The polygon area.
@@ -20,11 +20,12 @@ pub struct NMSPolygon2D {
     pub vertices: Vec<(f32, f32)>,
 }
 
-/// Create a vector of 2-dimensional NMS polygons.
+/// Create a vector of 2-dimensional polygons.
 ///
 /// # Description
 ///
-/// todo
+/// Creates a vector of 2-dimensional polygons from radial distances and the
+/// associated polygon centers.
 ///
 /// # Arguments
 ///
@@ -37,18 +38,18 @@ pub struct NMSPolygon2D {
 ///
 /// # Returns
 ///
-/// * `Vec<NMSPolygon2D>`: A vector of NMS polygons to be used for geo-spatial
+/// * `Vec<Polygon2D>`: A vector of NMS polygons to be used for geo-spatial
 ///   compute.
-pub fn build_nms_polygons_2d(
+pub fn build_polygons_2d(
     dist: ArrayView2<f32>,
     pos: ArrayView2<usize>,
     n_polys: usize,
     n_rays: usize,
-) -> Vec<NMSPolygon2D> {
+) -> Vec<Polygon2D> {
     // iterate through the radial distances in parrallel for each ray angle and
     // construct the NMS polygon vector
     let angle_step = 2.0 * PI / n_rays as f32;
-    let nms_polygons: Vec<NMSPolygon2D> = (0..n_polys)
+    let polygons: Vec<Polygon2D> = (0..n_polys)
         .into_par_iter()
         .map(|p| {
             // get the current polygon center, set up the vars and bounding box
@@ -79,7 +80,7 @@ pub fn build_nms_polygons_2d(
             });
             // compute the polygon area and create a new 2D NMS polygon
             let area = polygon_area(&vertices);
-            NMSPolygon2D {
+            Polygon2D {
                 bbox: (y_min, y_max, x_min, x_max),
                 area: area,
                 dist: max_radius,
@@ -88,7 +89,7 @@ pub fn build_nms_polygons_2d(
         })
         .collect();
 
-    todo!("Implement NMS polygon building");
+    polygons
 }
 
 fn polygon_area(vertices: &[(f32, f32)]) -> f32 {
