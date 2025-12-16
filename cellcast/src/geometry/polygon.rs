@@ -79,7 +79,7 @@ pub fn build_polygons_2d(
                 max_radius = max_radius.max(d);
             });
             // compute the polygon area and create a new 2D NMS polygon
-            let area = polygon_area(&vertices);
+            let area = polygon_area_2d(&vertices, n_rays);
             Polygon2D {
                 bbox: (y_min, y_max, x_min, x_max),
                 area: area,
@@ -92,6 +92,17 @@ pub fn build_polygons_2d(
     polygons
 }
 
-fn polygon_area(vertices: &[(f32, f32)]) -> f32 {
-    todo!("Implement polygon area compute.");
+/// Compute the area of a polygon using the Shoelace forumla.
+///
+/// # Reference
+///
+/// <https://en.wikipedia.org/wiki/Shoelace_formula>
+fn polygon_area_2d(vertices: &[(f32, f32)], n_rays: usize) -> f32 {
+    let area = (0..n_rays).fold(0.0, |mut acc, i| {
+        let j = (i + 1) % n_rays;
+        acc += vertices[i].0 * vertices[j].1;
+        acc + vertices[i].1 * vertices[j].0
+    });
+
+    area.abs() / 2.0
 }
