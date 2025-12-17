@@ -70,7 +70,8 @@ where
     let tensor =
         Tensor::<Backend, 1>::from_floats(norm_pad.into_flat().as_slice().unwrap(), &device);
 
-    // run StarDist network prediction, returns object probabilites and radial distances
+    // run StarDist network prediction, returns object probabilites and radial
+    // distances
     let (prob, dist) = stardist_model.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
     let prob: Vec<f32> = prob.into_data().into_vec().unwrap();
     let dist: Vec<f32> = dist.into_data().into_vec().unwrap();
@@ -81,7 +82,6 @@ where
     let dist_arr = Array3::from_shape_vec((res_row, res_col, N_RAYS), dist)
         .expect("StarDist 2D radial distances reshape failed.");
 
-    // === post-processing ===
     // ensure all values in ray distances are at least 1e-3, prevents negative
     // or zero distances
     let dist_arr = dist_arr.mapv(|v| v.max(1e-3));
@@ -89,10 +89,9 @@ where
     let mut valid_mask = manual_mask(&prob_arr, PROB_THRESHOLD);
     border::clip_mask_border(&mut valid_mask.view_mut(), 2);
     let valid_mask = valid_mask.into_dimensionality::<Ix2>().unwrap();
-    // collect a Vec<(usize, usize)> as valid indices coords and only visit those
-    // this will save lots of time even with bounds checking. We only need to visit
-    // every pixel in the valid mask array once.
-    // collect all valid (row, col) positions to avoid iterating the mask repeatedly
+
+    // collect all valid (row, col) positions to avoid iterating the mask
+    // repeatedly
     let valid_pos: Vec<(usize, usize)> = valid_mask
         .indexed_iter()
         .filter(|&((_, _), &v)| v)
@@ -100,6 +99,7 @@ where
         .collect();
     let flat_pos = valid_pos.iter().flat_map(|&(r, c)| [r, c]).collect();
     let mut valid_pos = Array2::from_shape_vec((valid_pos.len(), 2), flat_pos).unwrap();
+
     // filter probabilities and distances with valid indices
     let mut valid_prob =
         Array1::from_iter(valid_pos.axis_iter(Axis(0)).map(|v| prob_arr[[v[0], v[1]]]));
@@ -124,7 +124,7 @@ where
         })
         .collect();
 
-    // filter positions, probabilities, and distances if there are invalid indices
+    // remove invalid indices (if there are any) from pos, probs and dist
     if valid_pos.len() > valid_inds.len() {
         let a = Axis(0);
         valid_dist = valid_dist.select(a, &valid_inds);
