@@ -1,4 +1,5 @@
 pub mod geometry;
+pub mod labeling;
 pub mod models;
 pub mod networks;
 pub mod process;
