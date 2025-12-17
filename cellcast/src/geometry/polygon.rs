@@ -21,20 +21,21 @@ pub struct Polygon2D {
     pub vertices: Vec<(f32, f32)>,
 }
 
-/// TODO
+/// Compute the intersection area of two 2-dimensional polygons.
 ///
 /// # Description
 ///
-/// todo
+/// Computes the intersection (_i.e._ overlapping) area of two 2-dimensional
+/// polygons.
 ///
 /// # Arguments
 ///
-/// * `vertices_a`:
-/// * `vertices_b`:
+/// * `vertices_a`: The vertices of polygon `a`.
+/// * `vertices_b`: The vertices of polygon `b`.
 ///
 /// # Returns
 ///
-/// * `f32`:
+/// * `f32`: The intersection area of polygons `a` and `b`.
 pub fn area_intersection_2d(vertices_a: &[(f32, f32)], vertices_b: &[(f32, f32)]) -> f32 {
     // convert vertices to geo types
     let line_a: LineString<f32> = vertices_a.to_vec().into();
