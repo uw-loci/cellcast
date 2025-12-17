@@ -124,15 +124,15 @@ where
         })
         .collect();
 
-    // remove invalid indices (if there are any) from pos, probs and dist
+    // remove invalid indices (if there are any) from dist, prob and pos
+    let poly_ax = Axis(0);
     if valid_pos.len() > valid_inds.len() {
-        let a = Axis(0);
-        valid_dist = valid_dist.select(a, &valid_inds);
-        valid_prob = valid_prob.select(a, &valid_inds);
-        valid_pos = valid_pos.select(a, &valid_inds);
+        valid_dist = valid_dist.select(poly_ax, &valid_inds);
+        valid_prob = valid_prob.select(poly_ax, &valid_inds);
+        valid_pos = valid_pos.select(poly_ax, &valid_inds);
     }
 
-    // perform non-maximum supression and obtain indices of valid polygons
+    // perform non-maximum supression (NMS) and obtain indices of valid polygons
     let valid_poly_inds = nms::sparse_polygon_nms_2d(
         valid_dist.view(),
         valid_prob.view(),
@@ -146,5 +146,11 @@ where
         .map(|(i, _)| i)
         .collect();
 
+    // select valid polygon dist, prob and pos after NMS
+    let valid_dist = valid_dist.select(poly_ax, &valid_poly_inds);
+    let valid_prob = valid_prob.select(poly_ax, &valid_poly_inds);
+    let valid_pos = valid_pos.select(poly_ax, &valid_poly_inds);
+
+    // TODO convert radial distances and polygons to labels
     (prob_arr, dist_arr)
 }
