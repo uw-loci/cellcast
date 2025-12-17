@@ -6,6 +6,7 @@ use imgal::traits::numeric::AsNumeric;
 use imgal::transform::pad::reflect_pad;
 use ndarray::{Array1, Array2, Array3, ArrayBase, AsArray, Axis, Ix2, ViewRepr};
 
+use crate::labeling;
 use crate::networks::stardist::versatile_fluo_2d::Model;
 use crate::process::nms;
 use crate::utils::{axes, border};
@@ -34,11 +35,7 @@ const NMS_THRESHOLD: f32 = 0.3;
 /// * `(Array2<f32>, Array2<f32>)`: A tuple containing the probability
 ///   distribution (probs) and ray distances (dists) arrays.
 #[inline]
-pub fn predict<'a, T, A>(
-    data: A,
-    pmin: Option<f64>,
-    pmax: Option<f64>,
-) -> (Array2<f32>, Array3<f32>)
+pub fn predict<'a, T, A>(data: A, pmin: Option<f64>, pmax: Option<f64>) -> Array2<u16>
 where
     A: AsArray<'a, T, Ix2>,
     T: 'a + AsNumeric,
@@ -146,11 +143,27 @@ where
         .map(|(i, _)| i)
         .collect();
 
-    // select valid polygon dist, prob and pos after NMS
+    // filter dist, prob and pos arrays with for valid polygons after NMS
     let valid_dist = valid_dist.select(poly_ax, &valid_poly_inds);
     let valid_prob = valid_prob.select(poly_ax, &valid_poly_inds);
     let valid_pos = valid_pos.select(poly_ax, &valid_poly_inds);
 
+    // filter dist, prob and pos arrays by probability threshold
+    let valid_prob_inds: Vec<usize> = (0..valid_prob.len())
+        .filter(|&i| valid_prob[i] > PROB_THRESHOLD)
+        .collect();
+    let valid_dist = valid_dist.select(poly_ax, &valid_prob_inds);
+    let valid_prob = valid_prob.select(poly_ax, &valid_prob_inds);
+    let valid_pos = valid_pos.select(poly_ax, &valid_prob_inds);
+
     // TODO convert radial distances and polygons to labels
-    (prob_arr, dist_arr)
+    let labels = labeling::radial_polygon_to_label_2d(
+        valid_dist.view(),
+        valid_prob.view(),
+        valid_pos.view(),
+        (src_row, src_col),
+        None,
+    );
+
+    labels
 }

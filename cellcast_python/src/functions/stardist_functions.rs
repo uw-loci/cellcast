@@ -1,4 +1,4 @@
-use numpy::{IntoPyArray, PyArray2, PyArray3, PyReadonlyArray2};
+use numpy::{IntoPyArray, PyArray2, PyReadonlyArray2};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 
@@ -13,22 +13,22 @@ pub fn models_stardist_2d_versatile_fluo<'py>(
     data: Bound<'py, PyAny>,
     pmin: Option<f64>,
     pmax: Option<f64>,
-) -> PyResult<(Bound<'py, PyArray2<f32>>, Bound<'py, PyArray3<f32>>)> {
+) -> PyResult<Bound<'py, PyArray2<u16>>> {
     if let Ok(arr) = data.extract::<PyReadonlyArray2<u8>>() {
-        let (prob_arr, dist_arr) = stardist_2d_versatile_fluo::predict(&arr.as_array(), pmin, pmax);
-        return Ok((prob_arr.into_pyarray(py), dist_arr.into_pyarray(py)));
+        let labels = stardist_2d_versatile_fluo::predict(&arr.as_array(), pmin, pmax);
+        return Ok(labels.into_pyarray(py));
     } else if let Ok(arr) = data.extract::<PyReadonlyArray2<u16>>() {
-        let (prob_arr, dist_arr) = stardist_2d_versatile_fluo::predict(arr.as_array(), pmin, pmax);
-        return Ok((prob_arr.into_pyarray(py), dist_arr.into_pyarray(py)));
+        let labels = stardist_2d_versatile_fluo::predict(arr.as_array(), pmin, pmax);
+        return Ok(labels.into_pyarray(py));
     } else if let Ok(arr) = data.extract::<PyReadonlyArray2<u64>>() {
-        let (prob_arr, dist_arr) = stardist_2d_versatile_fluo::predict(arr.as_array(), pmin, pmax);
-        return Ok((prob_arr.into_pyarray(py), dist_arr.into_pyarray(py)));
+        let labels = stardist_2d_versatile_fluo::predict(arr.as_array(), pmin, pmax);
+        return Ok(labels.into_pyarray(py));
     } else if let Ok(arr) = data.extract::<PyReadonlyArray2<f32>>() {
-        let (prob_arr, dist_arr) = stardist_2d_versatile_fluo::predict(arr.as_array(), pmin, pmax);
-        return Ok((prob_arr.into_pyarray(py), dist_arr.into_pyarray(py)));
+        let labels = stardist_2d_versatile_fluo::predict(arr.as_array(), pmin, pmax);
+        return Ok(labels.into_pyarray(py));
     } else if let Ok(arr) = data.extract::<PyReadonlyArray2<f64>>() {
-        let (prob_arr, dist_arr) = stardist_2d_versatile_fluo::predict(arr.as_array(), pmin, pmax);
-        return Ok((prob_arr.into_pyarray(py), dist_arr.into_pyarray(py)));
+        let labels = stardist_2d_versatile_fluo::predict(arr.as_array(), pmin, pmax);
+        return Ok(labels.into_pyarray(py));
     } else {
         return Err(PyErr::new::<PyTypeError, _>(
             "Unsupported array dtype, supported array dtypes are u8, u16, u64, f32, and f64.",
