@@ -15,7 +15,7 @@ type Backend = Wgpu<f32, i32>;
 const DIV: usize = 16;
 const N_RAYS: usize = 32;
 const PROB_THRESHOLD: f32 = 0.479071463157368;
-const NMS_THRESHOLD: f64 = 0.3;
+const NMS_THRESHOLD: f32 = 0.3;
 
 /// Perform inference with the StarDist 2-dimensional versatile fluo model.
 ///
@@ -131,6 +131,20 @@ where
         valid_prob = valid_prob.select(a, &valid_inds);
         valid_pos = valid_pos.select(a, &valid_inds);
     }
+
+    // perform non-maximum supression and obtain indices of valid polygons
+    let valid_poly_inds = nms::sparse_polygon_nms_2d(
+        valid_dist.view(),
+        valid_prob.view(),
+        valid_pos.view(),
+        NMS_THRESHOLD,
+    );
+    let valid_poly_inds: Vec<usize> = valid_poly_inds
+        .iter()
+        .enumerate()
+        .filter(|&(_, &v)| v)
+        .map(|(i, _)| i)
+        .collect();
 
     (prob_arr, dist_arr)
 }
