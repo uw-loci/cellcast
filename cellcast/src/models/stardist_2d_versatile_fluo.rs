@@ -129,11 +129,21 @@ where
         valid_pos = valid_pos.select(poly_ax, &valid_inds);
     }
 
+    // get the indices that would sort probs in descending order
+    let n_polys = valid_prob.len();
+    let mut sorted_poly_inds: Vec<usize> = (0..n_polys).collect();
+    sorted_poly_inds.sort_by(|&a, &b| valid_prob[b].partial_cmp(&valid_prob[a]).unwrap());
+
+    // sort dist, prob and pos arrays with prob descending order indices
+    let poly_dist = valid_dist.select(poly_ax, &sorted_poly_inds);
+    let poly_pos = valid_pos.select(poly_ax, &sorted_poly_inds);
+
     // perform non-maximum supression (NMS) and obtain indices of valid polygons
     let valid_poly_inds = nms::sparse_polygon_nms_2d(
-        valid_dist.view(),
-        valid_prob.view(),
-        valid_pos.view(),
+        poly_dist.view(),
+        poly_pos.view(),
+        n_polys,
+        N_RAYS,
         NMS_THRESHOLD,
     );
     let valid_poly_inds: Vec<usize> = valid_poly_inds
@@ -144,23 +154,23 @@ where
         .collect();
 
     // filter dist, prob and pos arrays with for valid polygons after NMS
-    let valid_dist = valid_dist.select(poly_ax, &valid_poly_inds);
-    let valid_prob = valid_prob.select(poly_ax, &valid_poly_inds);
-    let valid_pos = valid_pos.select(poly_ax, &valid_poly_inds);
+    let poly_dist = poly_dist.select(poly_ax, &valid_poly_inds);
+    let poly_prob = valid_prob.select(poly_ax, &valid_poly_inds);
+    let poly_pos = poly_pos.select(poly_ax, &valid_poly_inds);
 
     // filter dist, prob and pos arrays by probability threshold
-    let valid_prob_inds: Vec<usize> = (0..valid_prob.len())
-        .filter(|&i| valid_prob[i] > PROB_THRESHOLD)
+    let valid_prob_inds: Vec<usize> = (0..poly_prob.len())
+        .filter(|&i| poly_prob[i] > PROB_THRESHOLD)
         .collect();
-    let valid_dist = valid_dist.select(poly_ax, &valid_prob_inds);
-    let valid_prob = valid_prob.select(poly_ax, &valid_prob_inds);
-    let valid_pos = valid_pos.select(poly_ax, &valid_prob_inds);
+    let poly_dist = poly_dist.select(poly_ax, &valid_prob_inds);
+    let poly_prob = poly_prob.select(poly_ax, &valid_prob_inds);
+    let poly_pos = poly_pos.select(poly_ax, &valid_prob_inds);
 
-    // TODO convert radial distances and polygons to labels
+    // convert radial distances and polygons to labels
     let labels = labeling::radial_polygon_to_label_2d(
-        valid_dist.view(),
-        valid_prob.view(),
-        valid_pos.view(),
+        poly_dist.view(),
+        poly_prob.view(),
+        poly_pos.view(),
         (src_row, src_col),
         None,
     );

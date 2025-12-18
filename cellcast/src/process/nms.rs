@@ -1,5 +1,5 @@
 use imgal::spatial::KDTree;
-use ndarray::{ArrayView1, ArrayView2, Axis};
+use ndarray::ArrayView2;
 
 use crate::geometry::polygon;
 
@@ -7,12 +7,12 @@ use crate::geometry::polygon;
 ///
 /// # Description
 ///
-/// todo
+/// the polygon distances and positions should both be sorted based on their
+/// probability before being passed to this function.
 ///
 /// # Arguments
 ///
 /// * `polygon_dist`:
-/// * `polygon_prob`:
 /// * `polygon_pos`:
 /// * `threshold`:
 ///
@@ -23,25 +23,16 @@ use crate::geometry::polygon;
 ///   is `false` then that polygon has been suppressed by NMS.
 pub fn sparse_polygon_nms_2d(
     polygon_dist: ArrayView2<f32>,
-    polygon_prob: ArrayView1<f32>,
     polygon_pos: ArrayView2<usize>,
+    n_polys: usize,
+    n_rays: usize,
     threshold: f32,
 ) -> Vec<bool> {
-    // get the indices that would sort polygon_prob in descending order
-    let (n_polys, n_rays) = polygon_dist.dim();
-    let mut sorted_inds: Vec<usize> = (0..n_polys).collect();
-    sorted_inds.sort_by(|&a, &b| polygon_prob[b].partial_cmp(&polygon_prob[a]).unwrap());
-
-    // sort dist, prob and pos arrays with prob descending order indices
-    let a = Axis(0);
-    let poly_dist_sort = polygon_dist.select(a, &sorted_inds);
-    let poly_pos_sort = polygon_pos.select(a, &sorted_inds);
-
     // create 2D polygons vector and perform NMS
     let mut suppressed: Vec<bool> = vec![false; n_polys];
     let polygons =
-        polygon::build_polygons_2d(poly_dist_sort.view(), poly_pos_sort.view(), n_polys, n_rays);
-    let kdtree = KDTree::build(poly_pos_sort.view());
+        polygon::build_polygons_2d(polygon_dist.view(), polygon_pos.view(), n_polys, n_rays);
+    let kdtree = KDTree::build(polygon_pos.view());
     let max_dist = polygons.iter().map(|p| p.dist).fold(0.0, f32::max);
     // iterate through each polygon and skip already suppressed polygons
     // the key here is that each polygon's probability is encoded in it's order
@@ -52,9 +43,9 @@ pub fn sparse_polygon_nms_2d(
             continue;
         }
         // find neighboring polygons within the computed search radius
-        let query = [poly_pos_sort[[p, 0]], poly_pos_sort[[p, 1]]];
+        let query = [polygon_pos[[p, 0]], polygon_pos[[p, 1]]];
         let radius = (max_dist + polygons[p].dist) as f64;
-        let neighbors = kdtree.search(&query, radius);
+        let neighbors = kdtree.search_for_indices(&query, radius);
         // skip already suppressed polygons
         for n in neighbors {
             // skip already process polygons
