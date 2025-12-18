@@ -41,6 +41,6 @@ from tifffile import imread
 # load 2D data for inference
 data = imread("path/to/data.tif")
 
-# run stardist inference, "results" contains the probabilites and ray distances
-results = ccm.stardist_2d_versatile_fluo.predict(data)
+# run stardist inference and produce instance segmentations
+labels = ccm.stardist_2d_versatile_fluo.predict(data)
 ```

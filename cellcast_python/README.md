@@ -28,7 +28,7 @@ $ mamba activate myenv
 
 This will install cellcast in the currently active Python environment.
 
-### Using `pyimgal`
+### Using `cellcast`
 
 Once cellcast_python  has been installed in a compatiable Python environment, `cellcast`
 will be available to import. The following example demonstrates how to perform
@@ -41,6 +41,6 @@ from tifffile import imread
 # load 2D data for inference
 data = imread("path/to/data.tif")
 
-# run stardist inference, "results" contains the probabilites and ray distances
-results = ccm.stardist_2d_versatile_fluo.predict(data)
+# run stardist inference and produce instance segmentations
+labels = ccm.stardist_2d_versatile_fluo.predict(data)
 ```
