@@ -45,7 +45,7 @@ pub fn sparse_polygon_nms_2d(
         // find neighboring polygons within the computed search radius
         let query = [polygon_pos[[p, 0]], polygon_pos[[p, 1]]];
         let radius = (max_dist + polygons[p].dist) as f64;
-        let neighbors = kdtree.search_for_indices(&query, radius);
+        let neighbors = kdtree.search_for_indices(&query, radius).unwrap();
         // skip already suppressed polygons
         for n in neighbors {
             // skip already process polygons
