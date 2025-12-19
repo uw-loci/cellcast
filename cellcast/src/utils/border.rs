@@ -12,6 +12,7 @@ use ndarray::{ArrayViewMutD, Axis, Slice};
 /// * `data`: The input n-dimensional array.
 /// * `size`: The number of elements to clip (_i.e._ set to false`) from the
 ///   input array.
+#[inline]
 pub fn clip_mask_border(data: &mut ArrayViewMutD<bool>, size: usize) {
     let shape = data.shape().to_vec();
     shape.iter().enumerate().for_each(|(i, &s)| {

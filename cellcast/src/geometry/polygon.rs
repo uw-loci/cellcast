@@ -36,6 +36,7 @@ pub struct Polygon2D {
 /// # Returns
 ///
 /// * `f32`: The intersection area of polygons `a` and `b`.
+#[inline]
 pub fn area_intersection_2d(vertices_a: &[(f32, f32)], vertices_b: &[(f32, f32)]) -> f32 {
     // convert vertices to geo types
     let line_a: LineString<f32> = vertices_a.to_vec().into();
@@ -124,6 +125,7 @@ pub fn build_polygons_2d(
 /// # Reference
 ///
 /// <https://en.wikipedia.org/wiki/Shoelace_formula>
+#[inline]
 fn polygon_area_2d(vertices: &[(f32, f32)], n_rays: usize) -> f32 {
     let area = (0..n_rays).fold(0.0, |acc, i| {
         let j = (i + 1) % n_rays;

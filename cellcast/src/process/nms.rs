@@ -72,6 +72,7 @@ pub fn sparse_polygon_nms_2d(
 }
 
 // Determine if two bounding boxes intersect.
+#[inline]
 fn bbox_intersect_2d(a: &(f32, f32, f32, f32), b: &(f32, f32, f32, f32)) -> bool {
     b.0 <= a.1 && a.0 <= b.1 && b.2 <= a.3 && a.2 <= b.3
 }
