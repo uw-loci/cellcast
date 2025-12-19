@@ -3,24 +3,34 @@ use ndarray::ArrayView2;
 
 use crate::geometry::polygon;
 
-/// TODO
+/// Perform sparse Non-Maximum Suppression (NMS) on 2-dimensional polygons.
 ///
 /// # Description
 ///
-/// the polygon distances and positions should both be sorted based on their
-/// probability before being passed to this function.
+/// Performs sparse None-Maximum Suppression (NMS) that suppresses overlapping
+/// polygons based on their intersection area. Input distances and polygon
+/// positions are expected in descending order, with the highest probability
+/// first.
 ///
 /// # Arguments
 ///
-/// * `polygon_dist`:
-/// * `polygon_pos`:
-/// * `threshold`:
+/// * `polygon_dist`: Input radial distance array with shape `(n_polys, n_rays)`
+///   containing the radial distances from polygon centers to their boundaries
+///   at each ray angle. This array must be pre-sorted in descending order by
+///   polygon probability.
+/// * `polygon_pos`: Input polygon positions array with shape `(n_polys, 2)`
+///   containing the (row, col) coordinates of polygon centers. This array must
+///   be pre-sorted in descending order by polygon probability.
+/// * `n_polys`: The number of polygons.
+/// * `n_rays`: The number of ray angles.
+/// * `threshold`: The overlap threshold in range `0` to `1`. Polygons exceeding
+///   this overlap threshold value are suppressed.
 ///
 /// # Returns
 ///
-/// * `Vec<usize>`: An array of valid polygon indices after performing NMS. If
-///   an element is `true` then that polygon is not suppressed. If an element
-///   is `false` then that polygon has been suppressed by NMS.
+/// * `Vec<bool>`: A boolean array of length `n_polys` where `True` indicates
+///   valid or non-suppressed polygon indices (*i.e.* polygons that should be
+///   kept).
 pub fn sparse_polygon_nms_2d(
     polygon_dist: ArrayView2<f32>,
     polygon_pos: ArrayView2<usize>,
@@ -71,7 +81,17 @@ pub fn sparse_polygon_nms_2d(
     suppressed.iter().map(|&v| !v).collect()
 }
 
-// Determine if two bounding boxes intersect.
+/// Determine if two bounding boxes intersect.
+///
+/// # Arguments
+///
+/// * `a`: Bounding box `a` as `(y_min, y_max, x_min, x_max)`.
+/// * `b`: Bounding box `b` as `(y_min, y_max, x_min, x_max)`.
+///
+/// # Returns
+///
+/// * `bool`: Returns `true` if the bounding boxes overlap, `false` if they do
+///   not.
 #[inline]
 fn bbox_intersect_2d(a: &(f32, f32, f32, f32), b: &(f32, f32, f32, f32)) -> bool {
     b.0 <= a.1 && a.0 <= b.1 && b.2 <= a.3 && a.2 <= b.3

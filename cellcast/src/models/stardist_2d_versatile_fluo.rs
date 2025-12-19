@@ -18,23 +18,26 @@ const N_RAYS: usize = 32;
 const PROB_THRESHOLD: f32 = 0.479071463157368;
 const NMS_THRESHOLD: f32 = 0.3;
 
-/// Perform inference with the StarDist 2-dimensional versatile fluo model.
+/// Predict object labels with the StarDist2D versatile fluo model.
 ///
 /// # Description
 ///
-/// Predict instance segmentations with the StarDist2D versatile fluo model.
+/// Performs inference and instance segmentations with the StarDist2D versatile
+/// fluo model. Input images into the StarDist2D network *must* be normalized
+/// first. Specify the minimum and maximum percentage to normalize the input
+/// image with `pmin` and `pmax`.
 ///
 /// # Arguments
 ///
 /// * `data`: The input 2-dimensional image.
-/// * `pmin`: The minimum percentage to normalize the input image.
-/// * `pmax`: The maximum percentage to normalize the input image.
+/// * `pmin`: The minimum percentage to linear percentile normalize the input
+///   image. If `None`, then `pmin = 1.0`.
+/// * `pmax`: The maximum percentage to linear percentile normalize the input
+///   image. If `None`, then `pmax = 99.8`.
 ///
 /// # Returns
 ///
-/// * `(Array2<f32>, Array2<f32>)`: A tuple containing the probability
-///   distribution (probs) and ray distances (dists) arrays.
-#[inline]
+/// * * `Array2<u16>`: The StarDist2D model label image.
 pub fn predict<'a, T, A>(data: A, pmin: Option<f64>, pmax: Option<f64>) -> Array2<u16>
 where
     A: AsArray<'a, T, Ix2>,
