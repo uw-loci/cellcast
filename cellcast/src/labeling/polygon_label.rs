@@ -163,14 +163,13 @@ fn render_polygon_2d(
     // if pixel in question is within the polygon, save the coordinates
     let mut raster_row: Vec<usize> = Vec::new();
     let mut raster_col: Vec<usize> = Vec::new();
-    for y in min_row..=max_row {
-        for x in min_col..=max_col {
-            if inside_polygon(y, x, size, &row_coords, &col_coords) {
-                raster_row.push(y);
-                raster_col.push(x);
-            }
-        }
-    }
+    (min_row..=max_row)
+        .flat_map(|y| (min_col..=max_col).map(move |x| (y, x)))
+        .filter(|&(y, x)| inside_polygon(y, x, size, &row_coords, &col_coords))
+        .for_each(|(y, x)| {
+            raster_row.push(y);
+            raster_col.push(x)
+        });
 
     (raster_row, raster_col)
 }
