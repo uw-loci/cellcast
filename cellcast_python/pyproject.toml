@@ -9,10 +9,6 @@ description = "A recast of cell segmentation models built on the Burn deep learn
 authors = [{ name = "cellcast developers" }]
 license = {text = "Unlicense OR MIT"}
 readme = "README.md"
-requires-python = ">=3.9"
-dependencies = [
-    "numpy",
-]
 keywords = ["image-processing", "algorithm", "rust"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -31,4 +27,15 @@ classifiers = [
     "Programming Language :: Rust",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Image Processing",
+]
+
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+]
+
+[dependency-groups]
+# Development tools
+dev = [
+    "maturin",
 ]
