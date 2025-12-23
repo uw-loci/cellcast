@@ -69,8 +69,8 @@ fn inside_polygon(
     col_coords: &[f32],
 ) -> bool {
     let mut inside = false;
-    let row = row as f32 + 0.5;
-    let col = col as f32 + 0.5;
+    let row = row as f32;
+    let col = col as f32;
     let mut j = size - 1;
     (0..size).for_each(|i| {
         let (xi, yi) = (col_coords[i], row_coords[i]);
