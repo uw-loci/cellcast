@@ -7,7 +7,7 @@ established machine learning models in a modern deep learning framework with a
 
 ## Build `cellcast` from souce
 
-To install ast-net from source first install the Rust toolchain from [rust-lang.org](https://rust-lang.org/tools/install/).
+To install cellcast from source first install the Rust toolchain from [rust-lang.org](https://rust-lang.org/tools/install/).
 Next create an environment (we recommend using `uv`) with the `maturin` development tool. This can be easily done with the
 `uv` tool and this repository's `pyproject.toml`.
 
