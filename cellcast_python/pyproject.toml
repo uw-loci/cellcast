@@ -9,10 +9,6 @@ description = "A recast of cell segmentation models built on the Burn deep learn
 authors = [{ name = "Edward Evans", email = "elevans2@wisc.edu" }]
 license = "Unlicense"
 readme = "README.md"
-requires-python = ">=3.9"
-dependencies = [
-    "numpy",
-]
 keywords = ["image-processing", "algorithm", "rust"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -31,4 +27,15 @@ classifiers = [
     "Programming Language :: Rust",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Image Processing",
+]
+
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+]
+
+[dependency-groups]
+# Development tools
+dev = [
+    "maturin",
 ]
