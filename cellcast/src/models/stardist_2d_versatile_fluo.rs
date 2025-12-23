@@ -53,7 +53,8 @@ where
 
     // percentile normalize the input data and reflect pad each axis to a size
     // that is divisiable by DIV
-    let norm = percentile_normalize(&view, pmin, pmax, None, None);
+    // TODO: remove this unwrap, handle the error properly
+    let norm = percentile_normalize(&view, pmin, pmax, None, None).unwrap();
     let norm = norm.mapv(|v| v as f32);
     let pad_config: Vec<usize> = view
         .shape()
