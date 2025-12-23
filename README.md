@@ -1,7 +1,5 @@
 # cellcast: A recast of cell segmentation models
 
-⚠️ Warning: This is an experimental project!
-
 This repository contains `cellcast`, a recast of cell segmentation models built
 on the Burn framework. The goal of this project is to modernize (_i.e._ recast)
 established machine learning models in a modern deep learning framework with a
