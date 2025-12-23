@@ -20,7 +20,15 @@ $ uv pip install numpy maturin
 This will create the environment for you with maturin. Next activate your environment and install Rust library with:
 
 ```bash
-$ maturin develop --release
+$ source ./venv/bin/activate
+$ (cellcast_python) maturin develop
+```
+
+This will compile cellcast as a *non-optimized* binary with debug symbols. This decreases compile time by skipping compiler optimizations
+and retaining debug symbols. If you want the compiler optimizations build cellcast with:
+
+```bash
+$ (cellcast_python) maturin develop --release
 ```
 
 **Note: This project also depends on development version of [imgal](https://github.com/imgal-sc/imgal) built from source.**
