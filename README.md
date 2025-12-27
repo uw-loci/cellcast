@@ -31,11 +31,6 @@ and retaining debug symbols. If you want the compiler optimizations build cellca
 $ (cellcast_python) maturin develop --release
 ```
 
-**Note: This project also depends on development version of [imgal](https://github.com/imgal-sc/imgal) built from source.**
-
-Until I release imgal version `0.2.0` you will need to link to the development version of the library. First clone imgal to
-a directory of your choice. Then change the path to the imgal dependency in the `Cargo.toml` in the cellcast directory (_i.e._ `cellcast/cellcast/Cargo.toml`).
-
 ## Example
 
 You can run the following stardist example:
