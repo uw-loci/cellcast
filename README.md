@@ -45,3 +45,13 @@ data = imread("path/to/data.tif")
 # run stardist inference and produce instance segmentations
 labels = ccm.stardist_2d_versatile_fluo.predict(data)
 ```
+
+## License
+
+Cellcast *itself* is a dual-licensed project with your choice of:
+
+- MIT License (see [LICENSE-MIT](LICENSE-MIT))
+- The Unlicense (see [LICENSE-UNLICENSE](LICENSE-UNLICENSE))
+
+These licenses only apply to the cellcast project and **do not** apply to the individual models supported
+by cellcast. You can find each model's associated license listed in the [MODEL-LICENSES](MODEL-LICENSES) file.
