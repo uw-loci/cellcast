@@ -4,7 +4,24 @@ use pyo3::prelude::*;
 
 use cellcast::models::stardist_2d_versatile_fluo;
 
-/// Perform inference with the Stardist 2-dimensional versatile fluo model.
+/// Predict object labels with the StarDist2D versatile fluo model.
+///
+/// Performs inference and instance segmentations with the StarDist2D versatile
+/// fluo model. Input images into the StarDist2D network *must* be normalized
+/// first. Specify the minimum and maximum percentage to normalize the input
+/// image with `pmin` and `pmax`.
+///
+/// Args:
+///     data: The input 2-dimensional image.
+///     pmin: The minimum percentage to linear percentile normalize the input
+///         image. If `None`, then `pmin = 1.0`.
+///     pmax: The maximum percentage to linear percentile normalize the input
+///         image. If `None`, then `pmax = 99.8`.
+///     prob_threshold: Optional object/polygon probability threshold. If
+///         `None`, then `prob_threshold == 0.479071463157368`.
+///
+/// Returns:
+///     The StarDist2D model label image.
 #[pyfunction]
 #[pyo3(name = "predict")]
 #[pyo3(signature = (data, pmin=None, pmax=None, prob_threshold=None))]
