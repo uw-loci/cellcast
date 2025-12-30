@@ -15,7 +15,7 @@ type Backend = Wgpu<f32, i32>;
 
 const DIV: usize = 16;
 const N_RAYS: usize = 32;
-const PROB_THRESHOLD: f32 = 0.479071463157368;
+const PROB_THRESHOLD: f64 = 0.479071463157368;
 const NMS_THRESHOLD: f32 = 0.3;
 
 /// Predict object labels with the StarDist2D versatile fluo model.
@@ -34,22 +34,27 @@ const NMS_THRESHOLD: f32 = 0.3;
 ///   image. If `None`, then `pmin = 1.0`.
 /// * `pmax`: The maximum percentage to linear percentile normalize the input
 ///   image. If `None`, then `pmax = 99.8`.
+/// * `prob_threshold`: Optional object/polygon probability threshold. If
+///   `None`, then `prob_threshold == 0.479071463157368`.
 ///
 /// # Returns
 ///
 /// * * `Array2<u16>`: The StarDist2D model label image.
-pub fn predict<'a, T, A>(data: A, pmin: Option<f64>, pmax: Option<f64>) -> Array2<u16>
+pub fn predict<'a, T, A>(
+    data: A,
+    pmin: Option<f64>,
+    pmax: Option<f64>,
+    prob_threshold: Option<f64>,
+) -> Array2<u16>
 where
     A: AsArray<'a, T, Ix2>,
     T: 'a + AsNumeric,
 {
-    // create a view of the data
     let view: ArrayBase<ViewRepr<&'a T>, Ix2> = data.into();
     let (src_row, src_col) = view.dim();
-
-    // set optional parameters if needed
     let pmin = pmin.unwrap_or(1.0);
     let pmax = pmax.unwrap_or(99.8);
+    let prob_threshold = prob_threshold.unwrap_or(PROB_THRESHOLD) as f32;
 
     // percentile normalize the input data and reflect pad each axis to a size
     // that is divisiable by DIV
@@ -87,7 +92,7 @@ where
     // or zero distances
     let dist_arr = dist_arr.mapv(|v| v.max(1e-3));
     // create a valid object mask and clip the board by 2 pixels
-    let mut valid_mask = manual_mask(&prob_arr, PROB_THRESHOLD);
+    let mut valid_mask = manual_mask(&prob_arr, prob_threshold);
     border::clip_mask_border(&mut valid_mask.view_mut(), 2);
     let valid_mask = valid_mask.into_dimensionality::<Ix2>().unwrap();
 
@@ -164,7 +169,7 @@ where
 
     // filter dist, prob and pos arrays by probability threshold
     let valid_prob_inds: Vec<usize> = (0..poly_prob.len())
-        .filter(|&i| poly_prob[i] > PROB_THRESHOLD)
+        .filter(|&i| poly_prob[i] > prob_threshold)
         .collect();
     let poly_dist = poly_dist.select(poly_ax, &valid_prob_inds);
     let poly_prob = poly_prob.select(poly_ax, &valid_prob_inds);
