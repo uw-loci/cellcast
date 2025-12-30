@@ -2,21 +2,32 @@ use std::f32::consts::TAU;
 
 use ndarray::{Array2, Array3, ArrayView1, ArrayView2, Axis};
 
-/// TODO
+/// Convert radial polygon representation into a 2-dimensional label image.
 ///
 /// # Description
 ///
-/// todo
+/// Converts radial polygons representation in polar coordinates (*i.e.* the
+/// radial distances from the center points) into 2-dimensional label images
+/// where each label is assigned a unique integer label. Low probability
+/// polygons are rendered first with higher probability polygons overwritting
+/// lower ones.
 ///
 /// # Arguments
 ///
-/// * `polygon_dist`:
-/// * `polygon_prob`:
-/// * `polygon_pos`:
+/// * `polygon_dist`: A 2D array of radial polygon distances with shape
+///   `(n_polys, n_rays)`.
+/// * `polygon_prob`: A 1D array of polygon probabilites with shape
+///   `(n_polys,)`.
+/// * `polygon_pos`: A 2D array of polygon center positions with shape
+///   `(n_polys, 2)`. The dimension order expected is (row, col).
+/// * `shape`: The shape of the output label image.
+/// * `scale`: Optional scaling factor for each axis. If `None` then no scaling
+///   is applied.
 ///
 /// # Returns
 ///
-/// * `Array2<u16>`: The 2-dimensional label image.
+/// * `Array2<u16>`: The 2-dimensional label image where the background pixels
+///   are labeled as `0` and polygons labeled with range `(1..n_polys)`.
 pub fn radial_polygon_to_label_2d(
     polygon_dist: ArrayView2<f32>,
     polygon_prob: ArrayView1<f32>,
@@ -58,8 +69,20 @@ pub fn radial_polygon_to_label_2d(
     labels
 }
 
-/// Check if the given point inside the given polygon using the ray casting
-/// algorithm.
+/// Check if the query point is inside the given polygon using ray casting.
+///
+/// # Arguments
+///
+/// * `row`: The "y" coordinate of a polygon.
+/// * `col`: The "x" coordinate of a polygon.
+/// * `size`: The size of the polygon.
+/// * `row_coords`: A slice of row coordinates for a polygon.
+/// * `col_coords`: A slice of col coordinates for a polygon.
+///
+/// # Returns
+///
+/// * `bool`: Returns `true`, if `row` and `col` are inside the polygon. Returns
+///   `false` if they are not.
 #[inline]
 fn inside_polygon(
     row: usize,
@@ -88,11 +111,14 @@ fn inside_polygon(
 ///
 /// # Arguments
 ///
-/// * `polygon_dist`:
-/// * `polygon_pos`:
-/// * `n_polys`:
-/// * `n_rays`:
-/// * `scale`:
+/// * `polygon_dist`: A 2D array of radial polygon distances with shape
+///   `(n_polys, n_rays)`.
+/// * `polygon_prob`: A 1D array of polygon probabilites with shape
+///   `(n_polys,)`.
+/// * `n_polys`: The number of polygons.
+/// * `n_rays`: The number of ray angles.
+/// * `scale`: The scaling factor per axis. If `None` then no scaling is
+///   applied.
 ///
 /// # Returns
 ///
@@ -107,7 +133,6 @@ fn radial_dist_to_coords_2d(
     n_rays: usize,
     scale: Option<(f32, f32)>,
 ) -> Array3<f32> {
-    // set the scale if needed
     let scale = scale.unwrap_or((1.0, 1.0));
 
     // get evenly spaced angles for 0 to 2*pi (TAU) and compute row (Y), col (X)
@@ -130,6 +155,19 @@ fn radial_dist_to_coords_2d(
     coords
 }
 
+/// Render/draw a polygon from a set of polygon cartesian coordinates.
+///
+/// # Arguments
+///
+/// * `row_coords`: A slice of row coordinates for the polygon.
+/// * `col_coords`: A slice of col coordinates for the polygon.
+/// * `size`: The size of the polygon (*i.e.* the number of points).
+/// * `shape`: The shape of the output image where the polygon is drawn.
+///
+/// # Returns
+///
+/// * `(Vec<usize>, Vec<usize>)`: A tuple of row and col vectors indicating
+///   which pixels are valid for polygon drawing.
 #[inline]
 fn render_polygon_2d(
     row_coords: &[f32],
