@@ -66,7 +66,7 @@ where
         .iter()
         .map(|&v| axes::divisible_pad(v, DIV))
         .collect();
-    let norm_pad = reflect_pad(&norm, &pad_config, Some(0)).unwrap();
+    let norm_pad = reflect_pad(&norm, &pad_config, Some(0))?;
     let pad_shape = norm_pad.shape().to_vec();
 
     // initialize an instance of the StarDist network and reshape the data into
