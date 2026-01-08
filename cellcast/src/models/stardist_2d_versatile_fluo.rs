@@ -1,5 +1,6 @@
 use burn::backend::Wgpu;
 use burn::prelude::*;
+use imgal::error::ImgalError;
 use imgal::image::percentile_normalize;
 use imgal::threshold::manual_mask;
 use imgal::traits::numeric::AsNumeric;
@@ -45,7 +46,7 @@ pub fn predict<'a, T, A>(
     pmin: Option<f64>,
     pmax: Option<f64>,
     prob_threshold: Option<f64>,
-) -> Array2<u16>
+) -> Result<Array2<u16>, ImgalError>
 where
     A: AsArray<'a, T, Ix2>,
     T: 'a + AsNumeric,
@@ -58,8 +59,7 @@ where
 
     // percentile normalize the input data and reflect pad each axis to a size
     // that is divisiable by DIV
-    // TODO: remove this unwrap, handle the error properly
-    let norm = percentile_normalize(&view, pmin, pmax, None, None).unwrap();
+    let norm = percentile_normalize(&view, pmin, pmax, None, None)?;
     let norm = norm.mapv(|v| v as f32);
     let pad_config: Vec<usize> = view
         .shape()
@@ -184,5 +184,5 @@ where
         None,
     );
 
-    labels
+    Ok(labels)
 }

@@ -2,6 +2,7 @@ use numpy::{IntoPyArray, PyArray2, PyReadonlyArray2};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 
+use crate::error::imgal_error_to_pyerr;
 use cellcast::models::stardist_2d_versatile_fluo;
 
 /// Predict object labels with the StarDist2D versatile fluo model.
@@ -33,25 +34,25 @@ pub fn models_stardist_2d_versatile_fluo<'py>(
     prob_threshold: Option<f64>,
 ) -> PyResult<Bound<'py, PyArray2<u16>>> {
     if let Ok(arr) = data.extract::<PyReadonlyArray2<u8>>() {
-        let labels =
-            stardist_2d_versatile_fluo::predict(&arr.as_array(), pmin, pmax, prob_threshold);
-        return Ok(labels.into_pyarray(py));
+        stardist_2d_versatile_fluo::predict(&arr.as_array(), pmin, pmax, prob_threshold)
+            .map(|output| output.into_pyarray(py))
+            .map_err(imgal_error_to_pyerr)
     } else if let Ok(arr) = data.extract::<PyReadonlyArray2<u16>>() {
-        let labels =
-            stardist_2d_versatile_fluo::predict(arr.as_array(), pmin, pmax, prob_threshold);
-        return Ok(labels.into_pyarray(py));
+        stardist_2d_versatile_fluo::predict(&arr.as_array(), pmin, pmax, prob_threshold)
+            .map(|output| output.into_pyarray(py))
+            .map_err(imgal_error_to_pyerr)
     } else if let Ok(arr) = data.extract::<PyReadonlyArray2<u64>>() {
-        let labels =
-            stardist_2d_versatile_fluo::predict(arr.as_array(), pmin, pmax, prob_threshold);
-        return Ok(labels.into_pyarray(py));
+        stardist_2d_versatile_fluo::predict(&arr.as_array(), pmin, pmax, prob_threshold)
+            .map(|output| output.into_pyarray(py))
+            .map_err(imgal_error_to_pyerr)
     } else if let Ok(arr) = data.extract::<PyReadonlyArray2<f32>>() {
-        let labels =
-            stardist_2d_versatile_fluo::predict(arr.as_array(), pmin, pmax, prob_threshold);
-        return Ok(labels.into_pyarray(py));
+        stardist_2d_versatile_fluo::predict(&arr.as_array(), pmin, pmax, prob_threshold)
+            .map(|output| output.into_pyarray(py))
+            .map_err(imgal_error_to_pyerr)
     } else if let Ok(arr) = data.extract::<PyReadonlyArray2<f64>>() {
-        let labels =
-            stardist_2d_versatile_fluo::predict(arr.as_array(), pmin, pmax, prob_threshold);
-        return Ok(labels.into_pyarray(py));
+        stardist_2d_versatile_fluo::predict(&arr.as_array(), pmin, pmax, prob_threshold)
+            .map(|output| output.into_pyarray(py))
+            .map_err(imgal_error_to_pyerr)
     } else {
         return Err(PyErr::new::<PyTypeError, _>(
             "Unsupported array dtype, supported array dtypes are u8, u16, u64, f32, and f64.",
