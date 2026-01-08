@@ -13,6 +13,6 @@ Abbreviations:
 
 Models:
 
-NAME                AUTHORS(S)                                               LICENSE
-----                ----------                                               -------
-* StarDist2D/3D     Uwe Schmidt (uschmidt83), Martin Weigert (maweigert)     BSD3
+NAME                AUTHORS(S)                                               LICENSE     DOI
+----                ----------                                               -------     ---
+* StarDist2D/3D     Uwe Schmidt (uschmidt83), Martin Weigert (maweigert)     BSD3        https://doi.org/10.48550/arXiv.1806.03535

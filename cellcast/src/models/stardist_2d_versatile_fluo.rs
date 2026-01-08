@@ -40,7 +40,13 @@ const NMS_THRESHOLD: f32 = 0.3;
 ///
 /// # Returns
 ///
-/// * * `Array2<u16>`: The StarDist2D model label image.
+/// * `Ok(Array2<u16>)`: The StarDist2D model label image.
+/// * `Err(ImgalError)`: If `pmin` and/or `pmax` are outside of range `0.0` to
+///   `1.0.`
+///
+/// # Reference
+///
+/// <https://doi.org/10.48550/arXiv.1806.03535>
 pub fn predict<'a, T, A>(
     data: A,
     pmin: Option<f64>,
