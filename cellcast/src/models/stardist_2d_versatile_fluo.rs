@@ -17,7 +17,7 @@ type Backend = Wgpu<f32, i32>;
 const DIV: usize = 16;
 const N_RAYS: usize = 32;
 const PROB_THRESHOLD: f64 = 0.479071463157368;
-const NMS_THRESHOLD: f32 = 0.3;
+const NMS_THRESHOLD: f64 = 0.3;
 
 /// Predict object labels with the StarDist2D versatile fluo model.
 ///
@@ -35,8 +35,10 @@ const NMS_THRESHOLD: f32 = 0.3;
 ///   image. If `None`, then `pmin = 1.0`.
 /// * `pmax`: The maximum percentage to linear percentile normalize the input
 ///   image. If `None`, then `pmax = 99.8`.
-/// * `prob_threshold`: Optional object/polygon probability threshold. If
-///   `None`, then `prob_threshold == 0.479071463157368`.
+/// * `prob_threshold`: The object/polygon probability threshold. If `None`,
+///    then `prob_threshold == 0.479071463157368`.
+/// * `nms_threshold`: The non-maximum suppression (NMS) threshold. If `None`,
+///    then `nms_threshold == 0.3`.
 ///
 /// # Returns
 ///
@@ -52,6 +54,7 @@ pub fn predict<'a, T, A>(
     pmin: Option<f64>,
     pmax: Option<f64>,
     prob_threshold: Option<f64>,
+    nms_threshold: Option<f64>,
 ) -> Result<Array2<u16>, ImgalError>
 where
     A: AsArray<'a, T, Ix2>,
@@ -62,6 +65,7 @@ where
     let pmin = pmin.unwrap_or(1.0);
     let pmax = pmax.unwrap_or(99.8);
     let prob_threshold = prob_threshold.unwrap_or(PROB_THRESHOLD) as f32;
+    let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
 
     // percentile normalize the input data and reflect pad each axis to a size
     // that is divisiable by DIV
@@ -159,7 +163,7 @@ where
         poly_pos.view(),
         n_polys,
         N_RAYS,
-        NMS_THRESHOLD,
+        nms_threshold,
     );
     let valid_poly_inds: Vec<usize> = valid_poly_inds
         .iter()
