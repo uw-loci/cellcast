@@ -3,14 +3,13 @@ use ndarray::ArrayView2;
 
 use crate::geometry::polygon;
 
-/// Perform sparse Non-Maximum Suppression (NMS) on 2-dimensional polygons.
+/// Perform Non-Maximum Suppression (NMS) on 2-dimensional polygons.
 ///
 /// # Description
 ///
-/// Performs sparse None-Maximum Suppression (NMS) that suppresses overlapping
-/// polygons based on their intersection area. Input distances and polygon
-/// positions are expected in descending order, with the highest probability
-/// first.
+/// Performs None-Maximum Suppression (NMS) that suppresses overlappin polygons
+/// based on their intersection area. Input distances and polygon positions are
+/// expected in descending order, with the highest probability first.
 ///
 /// # Arguments
 ///
@@ -31,7 +30,7 @@ use crate::geometry::polygon;
 /// * `Vec<bool>`: A boolean array of length `n_polys` where `True` indicates
 ///   valid or non-suppressed polygon indices (*i.e.* polygons that should be
 ///   kept).
-pub fn sparse_polygon_nms_2d(
+pub fn polygon_nms_2d(
     polygon_dist: ArrayView2<f32>,
     polygon_pos: ArrayView2<usize>,
     n_polys: usize,

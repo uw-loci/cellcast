@@ -158,7 +158,7 @@ where
     let poly_pos = valid_pos.select(poly_ax, &sorted_poly_inds);
 
     // perform non-maximum supression (NMS) and obtain indices of valid polygons
-    let valid_poly_inds = nms::sparse_polygon_nms_2d(
+    let valid_poly_inds = nms::polygon_nms_2d(
         poly_dist.view(),
         poly_pos.view(),
         n_polys,
