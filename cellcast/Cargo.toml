@@ -4,8 +4,10 @@ description = "A recast of cell segmentation models built on the Burn deep learn
 version = "0.1.0"
 authors = ["Edward Evans"]
 edition = "2024"
-license = "Unlicense"
-readme = "README.md"
+license = "Unlicense OR MIT"
+repository = "https://github.com/uw-loci/cellcast"
+readme = "../README.md"
+categories = ["algorithms","science"]
 
 [lib]
 name = "cellcast"
