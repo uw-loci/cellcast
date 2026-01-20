@@ -54,4 +54,4 @@ Cellcast *itself* is a dual-licensed project with your choice of:
 - The Unlicense (see [LICENSE-UNLICENSE](LICENSE-UNLICENSE))
 
 These licenses only apply to the cellcast project and **do not** apply to the individual models supported
-by cellcast. You can find each model's associated license listed in the [MODEL-LICENSES](MODEL-LICENSES) file.
+by cellcast. You can find each model's associated license listed in the [MODEL-LICENSES](cellcast/MODEL-LICENSES) file.
