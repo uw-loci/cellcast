@@ -43,7 +43,8 @@ impl<B: Backend> Default for Model<B> {
     fn default() -> Self {
         let url = "https://github.com/uw-loci/cellcast/raw/refs/heads/main/weights/stardist/2d_versatile_fluo.bin";
         let file_name = "2d_versatile_fluo.bin";
-        let weights_path = fetch::fetch_weights(url, file_name).unwrap();
+        let weights_path = fetch::fetch_weights(url, file_name, false)
+            .expect("Failed to download the 2d_versatile_fluo weights.");
         Self::from_file(weights_path.to_str().unwrap(), &Default::default())
     }
 }
