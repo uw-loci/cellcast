@@ -8,6 +8,8 @@ use burn::prelude::*;
 use burn::record::FullPrecisionSettings;
 use burn::record::Recorder;
 
+use crate::utils::fetch;
+
 #[derive(Module, Debug)]
 pub struct Model<B: Backend> {
     conv2d1: Conv2d<B>,
@@ -39,13 +41,10 @@ pub struct Model<B: Backend> {
 
 impl<B: Backend> Default for Model<B> {
     fn default() -> Self {
-        Self::from_file(
-            concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/src/weights/stardist/2d_versatile_fluo.bin"
-            ),
-            &Default::default(),
-        )
+        let url = "https://github.com/uw-loci/cellcast/raw/refs/heads/main/weights/stardist/2d_versatile_fluo.bin";
+        let file_name = "2d_versatile_fluo.bin";
+        let weights_path = fetch::fetch_weights(url, file_name).unwrap();
+        Self::from_file(weights_path.to_str().unwrap(), &Default::default())
     }
 }
 
