@@ -70,10 +70,9 @@ where
     let pmax = pmax.unwrap_or(99.8);
     let prob_threshold = prob_threshold.unwrap_or(PROB_THRESHOLD) as f32;
     let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
-    // percentile normalize the input data and reflect pad each axis to a size
-    // that is divisiable by DIV
     let norm = percentile_normalize(&view, pmin, pmax, None, None)?;
     let norm = norm.mapv(|v| v as f32);
+    // the StarDist model expects 2D images with axes that are divisible by 16
     let pad_config: Vec<usize> = view
         .shape()
         .iter()
@@ -81,54 +80,45 @@ where
         .collect();
     let norm_pad = reflect_pad(&norm, &pad_config, Some(0))?;
     let pad_shape = norm_pad.shape().to_vec();
-    let device_cpu;
-    let device_gpu;
-    let stardist_net_cpu;
-    let stardist_net_gpu;
-    let tensor_cpu;
-    let tensor_gpu;
+    // GPU and CPU computes must be in their own scope, the "device",
+    // "stardist_net" and "tensor" types are all connected
     let prob: Vec<f32>;
     let dist: Vec<f32>;
     if gpu {
-        device_gpu = Default::default();
-        stardist_net_gpu = Model::<WgpuBackend>::default();
-        tensor_gpu = Tensor::<WgpuBackend, 1>::from_floats(
+        let device = Default::default();
+        let stardist_net = Model::<WgpuBackend>::default();
+        let tensor = Tensor::<WgpuBackend, 1>::from_floats(
             norm_pad.into_flat().as_slice().unwrap(),
-            &device_gpu,
+            &device,
         );
-        let (p, d) =
-            stardist_net_gpu.forward(tensor_gpu, (pad_shape[0] as i32, pad_shape[1] as i32));
+        let (p, d) = stardist_net.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
         prob = p.into_data().into_vec().unwrap();
         dist = d.into_data().into_vec().unwrap();
     } else {
-        device_cpu = Default::default();
-        stardist_net_cpu = Model::<NdArrayBackend>::default();
-        tensor_cpu = Tensor::<NdArrayBackend, 1>::from_floats(
+        let device = Default::default();
+        let stardist_net = Model::<NdArrayBackend>::default();
+        let tensor = Tensor::<NdArrayBackend, 1>::from_floats(
             norm_pad.into_flat().as_slice().unwrap(),
-            &device_cpu,
+            &device,
         );
-        let (p, d) =
-            stardist_net_cpu.forward(tensor_cpu, (pad_shape[0] as i32, pad_shape[1] as i32));
+        let (p, d) = stardist_net.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
         prob = p.into_data().into_vec().unwrap();
         dist = d.into_data().into_vec().unwrap();
     }
-    // run StarDist network prediction, returns object probabilites and radial
-    // distances
+    // outputs from the StarDist network are flat 1D arrays, they need to be
+    // reshapped back into their input shape divided by 2
     let res_row: usize = pad_shape[0] / 2;
     let res_col: usize = pad_shape[1] / 2;
     let prob_arr = Array2::from_shape_vec((res_row, res_col), prob)
         .expect("StarDist 2D object probabilites reshape failed.");
     let dist_arr = Array3::from_shape_vec((res_row, res_col, N_RAYS), dist)
         .expect("StarDist 2D radial distances reshape failed.");
-
-    // ensure all values in ray distances are at least 1e-3, prevents negative
-    // or zero distances
+    // this mapv call ensures all values in the ray distances array are at least
+    // 1e-3 which prevents negative and/or zero distances
     let dist_arr = dist_arr.mapv(|v| v.max(1e-3));
-    // create a valid object mask and clip the board by 2 pixels
     let mut valid_mask = manual_mask(&prob_arr, prob_threshold);
     border::clip_mask_border(&mut valid_mask.view_mut(), 2);
     let valid_mask = valid_mask.into_dimensionality::<Ix2>().unwrap();
-
     // collect all valid (row, col) positions to avoid iterating the mask
     // repeatedly
     let valid_pos: Vec<(usize, usize)> = valid_mask
@@ -138,8 +128,8 @@ where
         .collect();
     let flat_pos = valid_pos.iter().flat_map(|&(r, c)| [r, c]).collect();
     let mut valid_pos = Array2::from_shape_vec((valid_pos.len(), 2), flat_pos).unwrap();
-
-    // filter probabilities and distances with valid indices
+    // filter probabilities and distances with valid indices, removing invalid
+    // positions
     let mut valid_prob =
         Array1::from_iter(valid_pos.axis_iter(Axis(0)).map(|v| prob_arr[[v[0], v[1]]]));
     let mut valid_dist = Array2::<f32>::zeros((valid_pos.len(), N_RAYS));
@@ -162,7 +152,6 @@ where
             }
         })
         .collect();
-
     // remove invalid indices (if there are any) from dist, prob and pos
     let poly_ax = Axis(0);
     if valid_pos.len() > valid_inds.len() {
@@ -170,16 +159,13 @@ where
         valid_prob = valid_prob.select(poly_ax, &valid_inds);
         valid_pos = valid_pos.select(poly_ax, &valid_inds);
     }
-
     // get the indices that would sort probs in descending order
     let n_polys = valid_prob.len();
     let mut sorted_poly_inds: Vec<usize> = (0..n_polys).collect();
     sorted_poly_inds.sort_by(|&a, &b| valid_prob[b].partial_cmp(&valid_prob[a]).unwrap());
-
     // sort dist, prob and pos arrays with prob descending order indices
     let poly_dist = valid_dist.select(poly_ax, &sorted_poly_inds);
     let poly_pos = valid_pos.select(poly_ax, &sorted_poly_inds);
-
     // perform non-maximum supression (NMS) and obtain indices of valid polygons
     let valid_poly_inds = nms::polygon_nms_2d(
         poly_dist.view(),
@@ -194,12 +180,10 @@ where
         .filter(|&(_, &v)| v)
         .map(|(i, _)| i)
         .collect();
-
     // filter dist, prob and pos arrays with for valid polygons after NMS
     let poly_dist = poly_dist.select(poly_ax, &valid_poly_inds);
     let poly_prob = valid_prob.select(poly_ax, &valid_poly_inds);
     let poly_pos = poly_pos.select(poly_ax, &valid_poly_inds);
-
     // filter dist, prob and pos arrays by probability threshold
     let valid_prob_inds: Vec<usize> = (0..poly_prob.len())
         .filter(|&i| poly_prob[i] > prob_threshold)
@@ -207,7 +191,6 @@ where
     let poly_dist = poly_dist.select(poly_ax, &valid_prob_inds);
     let poly_prob = poly_prob.select(poly_ax, &valid_prob_inds);
     let poly_pos = poly_pos.select(poly_ax, &valid_prob_inds);
-
     // convert radial distances and polygons to labels
     let labels = labeling::radial_polygon_to_label_2d(
         poly_dist.view(),
