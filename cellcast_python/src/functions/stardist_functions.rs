@@ -22,12 +22,14 @@ use cellcast::models::stardist_2d_versatile_fluo;
 ///         then `prob_threshold == 0.479071463157368`.
 ///     nms_threshold: The non-maximum suppression (NMS) threshold. If `None`,
 ///         then `nms_threshold == 0.3`.
+///     gpu: If `True`, GPU computation is used with the `Wgpu` backend. If
+///         `False`, then CPU computation is used with the `NdArray` backend.
 ///
 /// Returns:
 ///     The StarDist2D model label image.
 #[pyfunction]
 #[pyo3(name = "predict")]
-#[pyo3(signature = (data, pmin=None, pmax=None, prob_threshold=None, nms_threshold=None))]
+#[pyo3(signature = (data, pmin=None, pmax=None, prob_threshold=None, nms_threshold=None, gpu=None))]
 pub fn models_stardist_2d_versatile_fluo<'py>(
     py: Python<'py>,
     data: Bound<'py, PyAny>,
@@ -35,7 +37,9 @@ pub fn models_stardist_2d_versatile_fluo<'py>(
     pmax: Option<f64>,
     prob_threshold: Option<f64>,
     nms_threshold: Option<f64>,
+    gpu: Option<bool>,
 ) -> PyResult<Bound<'py, PyArray2<u16>>> {
+    let gpu = gpu.unwrap_or(true);
     if let Ok(arr) = data.extract::<PyReadonlyArray2<u8>>() {
         stardist_2d_versatile_fluo::predict(
             &arr.as_array(),
@@ -43,6 +47,7 @@ pub fn models_stardist_2d_versatile_fluo<'py>(
             pmax,
             prob_threshold,
             nms_threshold,
+            gpu,
         )
         .map(|output| output.into_pyarray(py))
         .map_err(imgal_error_to_pyerr)
@@ -53,6 +58,7 @@ pub fn models_stardist_2d_versatile_fluo<'py>(
             pmax,
             prob_threshold,
             nms_threshold,
+            gpu,
         )
         .map(|output| output.into_pyarray(py))
         .map_err(imgal_error_to_pyerr)
@@ -63,6 +69,7 @@ pub fn models_stardist_2d_versatile_fluo<'py>(
             pmax,
             prob_threshold,
             nms_threshold,
+            gpu,
         )
         .map(|output| output.into_pyarray(py))
         .map_err(imgal_error_to_pyerr)
@@ -73,6 +80,7 @@ pub fn models_stardist_2d_versatile_fluo<'py>(
             pmax,
             prob_threshold,
             nms_threshold,
+            gpu,
         )
         .map(|output| output.into_pyarray(py))
         .map_err(imgal_error_to_pyerr)
@@ -83,6 +91,7 @@ pub fn models_stardist_2d_versatile_fluo<'py>(
             pmax,
             prob_threshold,
             nms_threshold,
+            gpu,
         )
         .map(|output| output.into_pyarray(py))
         .map_err(imgal_error_to_pyerr)

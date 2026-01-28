@@ -1,4 +1,4 @@
-use burn::backend::Wgpu;
+use burn::backend::{NdArray, Wgpu};
 use burn::prelude::*;
 use imgal::error::ImgalError;
 use imgal::image::percentile_normalize;
@@ -12,7 +12,8 @@ use crate::networks::stardist::versatile_fluo_2d::Model;
 use crate::process::nms;
 use crate::utils::{axes, border};
 
-type Backend = Wgpu<f32, i32>;
+type NdArrayBackend = NdArray<f32, i32>;
+type WgpuBackend = Wgpu<f32, i32>;
 
 const DIV: usize = 16;
 const N_RAYS: usize = 32;
@@ -39,6 +40,8 @@ const NMS_THRESHOLD: f64 = 0.3;
 ///    then `prob_threshold == 0.479071463157368`.
 /// * `nms_threshold`: The non-maximum suppression (NMS) threshold. If `None`,
 ///    then `nms_threshold == 0.3`.
+/// * `gpu`: If `true`, GPU computation is used with the `Wgpu` backend. If
+///   `false` CPU computation is used with the `NdArray` backend.
 ///
 /// # Returns
 ///
@@ -55,6 +58,7 @@ pub fn predict<'a, T, A>(
     pmax: Option<f64>,
     prob_threshold: Option<f64>,
     nms_threshold: Option<f64>,
+    gpu: bool,
 ) -> Result<Array2<u16>, ImgalError>
 where
     A: AsArray<'a, T, Ix2>,
@@ -66,7 +70,6 @@ where
     let pmax = pmax.unwrap_or(99.8);
     let prob_threshold = prob_threshold.unwrap_or(PROB_THRESHOLD) as f32;
     let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
-
     // percentile normalize the input data and reflect pad each axis to a size
     // that is divisiable by DIV
     let norm = percentile_normalize(&view, pmin, pmax, None, None)?;
@@ -78,19 +81,39 @@ where
         .collect();
     let norm_pad = reflect_pad(&norm, &pad_config, Some(0))?;
     let pad_shape = norm_pad.shape().to_vec();
-
-    // initialize an instance of the StarDist network and reshape the data into
-    // a 1D tensor
-    let device = Default::default();
-    let stardist_model = Model::<Backend>::default();
-    let tensor =
-        Tensor::<Backend, 1>::from_floats(norm_pad.into_flat().as_slice().unwrap(), &device);
-
+    let device_cpu;
+    let device_gpu;
+    let stardist_net_cpu;
+    let stardist_net_gpu;
+    let tensor_cpu;
+    let tensor_gpu;
+    let prob: Vec<f32>;
+    let dist: Vec<f32>;
+    if gpu {
+        device_gpu = Default::default();
+        stardist_net_gpu = Model::<WgpuBackend>::default();
+        tensor_gpu = Tensor::<WgpuBackend, 1>::from_floats(
+            norm_pad.into_flat().as_slice().unwrap(),
+            &device_gpu,
+        );
+        let (p, d) =
+            stardist_net_gpu.forward(tensor_gpu, (pad_shape[0] as i32, pad_shape[1] as i32));
+        prob = p.into_data().into_vec().unwrap();
+        dist = d.into_data().into_vec().unwrap();
+    } else {
+        device_cpu = Default::default();
+        stardist_net_cpu = Model::<NdArrayBackend>::default();
+        tensor_cpu = Tensor::<NdArrayBackend, 1>::from_floats(
+            norm_pad.into_flat().as_slice().unwrap(),
+            &device_cpu,
+        );
+        let (p, d) =
+            stardist_net_cpu.forward(tensor_cpu, (pad_shape[0] as i32, pad_shape[1] as i32));
+        prob = p.into_data().into_vec().unwrap();
+        dist = d.into_data().into_vec().unwrap();
+    }
     // run StarDist network prediction, returns object probabilites and radial
     // distances
-    let (prob, dist) = stardist_model.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
-    let prob: Vec<f32> = prob.into_data().into_vec().unwrap();
-    let dist: Vec<f32> = dist.into_data().into_vec().unwrap();
     let res_row: usize = pad_shape[0] / 2;
     let res_col: usize = pad_shape[1] / 2;
     let prob_arr = Array2::from_shape_vec((res_row, res_col), prob)
