@@ -1,9 +1,9 @@
 [package]
 name = "cellcast_python"
 version = "0.1.0"
-authors = ["Edward Evans"]
+authors = ["cellcast developers"]
 edition = "2024"
-license = "Unlicense"
+license = "Unlicense OR MIT"
 repository = "https://github.com/uw-loci/cellcast"
 readme = "README.md"
 

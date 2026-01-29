@@ -6,8 +6,8 @@ build-backend = "maturin"
 name = "cellcast"
 version = "0.1.0.dev0"
 description = "A recast of cell segmentation models built on the Burn deep learning framework."
-authors = [{ name = "Edward Evans", email = "elevans2@wisc.edu" }]
-license = "Unlicense"
+authors = [{ name = "cellcast developers" }]
+license = {text = "Unlicense OR MIT"}
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [

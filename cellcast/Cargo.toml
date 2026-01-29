@@ -2,7 +2,7 @@
 name = "cellcast"
 description = "A recast of cell segmentation models built on the Burn deep learning framework."
 version = "0.1.0"
-authors = ["Edward Evans"]
+authors = ["cellcast developers"]
 edition = "2024"
 license = "Unlicense OR MIT"
 repository = "https://github.com/uw-loci/cellcast"
