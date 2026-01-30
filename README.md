@@ -1,5 +1,12 @@
 # cellcast: A recast of cell segmentation models
 
+<div align="center">
+
+[![crates.io](https://img.shields.io/crates/v/cellcast)](https://crates.io/crates/cellcast)
+[![pypi](https://img.shields.io/pypi/v/cellcast)](https://pypi.org/project/cellcast)
+![license](https://img.shields.io/badge/license-MIT/Unlicense-blue)
+
+</div>
 This repository contains `cellcast`, a recast of cell segmentation models built
 on the Burn framework. The goal of this project is to modernize (_i.e._ recast)
 established machine learning models in a modern deep learning framework with a
