@@ -7,6 +7,7 @@
 ![license](https://img.shields.io/badge/license-MIT/Unlicense-blue)
 
 </div>
+
 This repository contains `cellcast`, a recast of cell segmentation models built
 on the Burn framework. The goal of this project is to modernize (*i.e.* recast)
 established machine learning models in a modern deep learning framework with a
