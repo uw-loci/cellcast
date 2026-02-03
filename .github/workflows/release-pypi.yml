@@ -56,7 +56,7 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --manifest-path cellcast_python/Cargo.toml
           sccache: 'true'
-          manylinux: auto
+          manylinux: ${{ matrix.platform.target == 'aarch64-unknown-linux-gnu' && '2_28' || 'auto' }}
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
