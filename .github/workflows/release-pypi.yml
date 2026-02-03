@@ -54,7 +54,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --manifest-path cellcast_python/Cargo.toml --interpreter 3.10 3.11 3.12 3.13 3.14
+          args: --release --out dist --manifest-path cellcast_python/Cargo.toml --features abi3-py37
           sccache: 'true'
           manylinux: auto
 
@@ -108,11 +108,11 @@ jobs:
           echo "Total wheels: $(ls -1 dist/*.whl 2>/dev/null | wc -l)"
           echo "Source distributions: $(ls -1 dist/*.tar.gz 2>/dev/null | wc -l)"
           echo ""
-          echo "🐍 Python versions covered:"
-          ls -1 dist/*.whl 2>/dev/null | grep -oP 'cp3\d+' | sort -u || true
+          echo "🐍 ABI3 minimum version:"
+          ls -1 dist/*.whl 2>/dev/null | grep -oP 'cp3\d+(?=-abi3)' | sort -u || true
           echo ""
           echo "💻 Platforms covered:"
-          ls -1 dist/*.whl 2>/dev/null | sed 's/.*-cp[0-9]*-//' | sed 's/\.whl$//' | sort -u || true
+          ls -1 dist/*.whl 2>/dev/null | sed 's/.*-abi3-//' | sed 's/\.whl$//' | sort -u || true
 
   publish:
     name: Publish to PyPI
