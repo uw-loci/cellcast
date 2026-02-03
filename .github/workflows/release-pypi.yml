@@ -54,7 +54,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --manifest-path cellcast_python/Cargo.toml --features abi3-py37
+          args: --release --out dist --manifest-path cellcast_python/Cargo.toml
           sccache: 'true'
           manylinux: auto
 
