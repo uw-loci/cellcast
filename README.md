@@ -59,7 +59,7 @@ The `cellcast` Python package currently supports the following architectures:
 | macOS            | intel, arm64         |
 | Windows          | amd64                |
 
-These binaries are compiled for Python `3.10`, `3.11`, `3.12`, `3.13` and `3.14`.
+Cellcast is compatible with Python `>=3.7`.
 
 The example below demonstrates how to use cellcast and the StarDist 2D versatile fluo segmentation model with Python.
 Note that this example assumes you have access to 2D data and `tifffile` installed in your Python
