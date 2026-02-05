@@ -70,7 +70,7 @@ where
     let pmax = pmax.unwrap_or(99.8);
     let prob_threshold = prob_threshold.unwrap_or(PROB_THRESHOLD) as f32;
     let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
-    let norm = percentile_normalize(&view, pmin, pmax, None, None)?;
+    let norm = percentile_normalize(&view, pmin, pmax, None, None, true)?;
     let norm = norm.mapv(|v| v as f32);
     // the StarDist model expects 2D images with axes that are divisible by 16
     let pad_config: Vec<usize> = view
@@ -117,7 +117,7 @@ where
     // 1e-3 which prevents negative and/or zero distances
     let dist_arr = dist_arr.mapv(|v| v.max(1e-3));
     let mut valid_mask = manual_mask(&prob_arr, prob_threshold);
-    border::clip_mask_border(&mut valid_mask.view_mut(), 2);
+    border::clip_mask_border(&mut valid_mask.view_mut().into_dyn(), 2);
     let valid_mask = valid_mask.into_dimensionality::<Ix2>().unwrap();
     // collect all valid (row, col) positions to avoid iterating the mask
     // repeatedly

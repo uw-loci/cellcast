@@ -14,6 +14,6 @@ doc = false
 
 [dependencies]
 cellcast = { path = "../cellcast" }
-imgal = "0.2.0"
+imgal = { path = "../../../imgal-sc/imgal/imgal" }
 pyo3 = { version = "0.27.2", features = ["extension-module", "abi3-py37"] }
 numpy = "0.27.1"

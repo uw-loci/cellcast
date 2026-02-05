@@ -2045,9 +2045,7 @@ dependencies = [
 
 [[package]]
 name = "imgal"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fbf76561c6963e4f5cb8644b0c6e27a0359dc0d713f7b85a8a15312180c41a36"
+version = "0.2.1"
 dependencies = [
  "ndarray 0.17.2",
  "rand 0.9.2",
