@@ -16,9 +16,9 @@ The `cellcast` Python package currently supports the following architectures:
 
 | Operating System | Architecture         |
 | :---             | :---                 |
-| Linux            | amd64                |
+| Linux            | x86-64               |
 | macOS            | intel, arm64         |
-| Windows          | amd64                |
+| Windows          | x64-64               |
 
 Cellcast is compatible with Python `>=3.7`.
 

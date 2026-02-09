@@ -34,7 +34,7 @@ use cellcast::models::stardist_2d_versatile_fluo;
 
 fn main() {
   let data_2d = load_image("/path/to/data_2d.tif");
-  let labels = stardist_2d_versatile_fluo(&data, Some(1.0), Some(99.8), None, None, True);
+  let labels = stardist_2d_versatile_fluo.predict(&data, Some(1.0), Some(99.8), None, None, True);
 }
 
 fn load_image(path: &str) -> Array2<u16> {
@@ -55,9 +55,9 @@ The `cellcast` Python package currently supports the following architectures:
 
 | Operating System | Architecture         |
 | :---             | :---                 |
-| Linux            | amd64                |
+| Linux            | x86-64               |
 | macOS            | intel, arm64         |
-| Windows          | amd64                |
+| Windows          | x86-64               |
 
 Cellcast is compatible with Python `>=3.7`.
 
