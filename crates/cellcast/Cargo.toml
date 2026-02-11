@@ -14,8 +14,8 @@ name = "cellcast"
 crate-type = ["rlib"]
 
 [dependencies]
-burn = { version = "0.19.1", features = ["tui", "train", "wgpu", "ndarray"], default-features = false}
-burn-ndarray = "0.19.1"
+burn = { version = "0.20.1", features = ["tui", "train", "wgpu", "ndarray"], default-features = false}
+burn-ndarray = "0.20.1"
 geo = "0.32"
 imgal = "0.2.0"
 ndarray = "0.17.1"
