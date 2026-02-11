@@ -1,7 +1,7 @@
 [workspace]
 members = [
-  "cellcast",
-  "cellcast_python"
+  "crates/cellcast",
+  "crates/cellcast_python"
 ]
 resolver = "3"
 
