@@ -21,12 +21,11 @@ To use cellcast in your Rust project add it to your crate's dependencies and imp
 
 ```toml
 [dependencies]
-cellcast = "0.1.0"
+cellcast = "0.1.1"
 ```
 
 The example below demonstrates how to use cellcast and the StarDist 2D versatile fluo segmentation model with Rust.
-This example assumes you have the appropriate dependencies and helper functions to load your data as an
-`Array2<T>` type:
+This example assumes you have the appropriate dependencies and helper functions to load your data as an `Array2<T>` type:
 
 ```rust
 use ndarray::Array2;
@@ -42,9 +41,11 @@ fn load_image(path: &str) -> Array2<u16> {
 }
 ```
 
+*Note: `T` here can be any numeric value (*i.e.* `u8`, `i32`, `f64`).*
+
 ### Using cellcast with Python
 
-You can use cellcast with Python by using the `cellcast_python` crate. Pre-compiled releases are available on PyPI as the `cellcast` package
+You can use cellcast in your Python project by using the `cellcast_python` crate. Pre-compiled releases are available on PyPI as the `cellcast` package
 and can be easily installed with `pip`:
 
 ```bash
@@ -55,15 +56,14 @@ The `cellcast` Python package currently supports the following architectures:
 
 | Operating System | Architecture         |
 | :---             | :---                 |
-| Linux            | x86-64               |
+| Linux            | x86-64, arm64        |
 | macOS            | intel, arm64         |
 | Windows          | x86-64               |
 
-Cellcast is compatible with Python `>=3.7`.
+Cellcast is compatible with Python `>=3.7` and requires *only* `NumPy`.
 
 The example below demonstrates how to use cellcast and the StarDist 2D versatile fluo segmentation model with Python.
-Note that this example assumes you have access to 2D data and `tifffile` installed in your Python
-environment with cellcast:
+Note that this example assumes you have access to 2D data and `tifffile` installed in your Python environment with cellcast:
 
 ```python
 import cellcast.models as ccm
@@ -76,6 +76,8 @@ data_2d = imread("path/to/data_2d.tif")
 labels = ccm.stardist_2d_versatile_fluo.predict(data, gpu=True)
 ```
 
+Run `help()` on the `stardist_2d_versatile_fluo.predict` function to see the full function signature and default values. 
+
 ## Building from source
 
 You can build the entire cellcast project from the root of this repository with:
@@ -84,16 +86,18 @@ You can build the entire cellcast project from the root of this repository with:
 $ cargo build
 ```
 
-This will compile a *non-optimized* cellcast binaries. Pass the `--release` flag to
-compile optimized binaries (note that compilation time may take upwards of 10 minutes).
+This will compile a *non-optimized* cellcast binaries. Pass the `--release` flag to compile optimized binaries (note that compilation time may take upwards of 10 minutes). Because
+cellcast is a library, compiling it on it's own isn't very useful. However being able to successfully compile cellcast on your own computer means that you can change the backend
+from `Wgpu` to `Cuda` or whatever other supported backend you want. This means you *can* recompile cellcast with a new backend allowing you to take advantage of hardware specific
+optimizations not available to the `Wgpu` backend.
 
 ### Build `cellcast_python` from source
 
 To build and install cellcast for Python from source first install the Rust toolchain from [rust-lang.org](https://rust-lang.org/tools/install/).
-Next create a Python environment (we recommend using `uv`) with the `maturin` development tool in the "cellcast_python" directory:
+Next create a Python environment (we recommend using `uv`) with the `maturin` development tool in the **crates/cellcast_python** directory:
 
 ```bash
-$ cd cellcast_python
+$ cd crates/cellcast_python
 $ uv venv
 $ uv pip install numpy maturin
 ```
@@ -106,8 +110,7 @@ $ (cellcast_python) maturin develop
 ```
 
 This will compile cellcast as a *non-optimized* binary with debug symbols. This decreases compile time by skipping compiler optimizations
-and retaining debug symbols. To build *optimized* binaries of cellcast you must pass the `--release` flag. Note that this significantly increases
-compilation times to ~6-7 minutes.
+and retaining debug symbols. To build *optimized* binaries of cellcast you must pass the `--release` flag. Note that this significantly increases compilation times upwards of 10 minutes.
 
 ```bash
 $ (cellcast_python) maturin develop --release
