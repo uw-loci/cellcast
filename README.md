@@ -86,10 +86,21 @@ You can build the entire cellcast project from the root of this repository with:
 $ cargo build
 ```
 
-This will compile a *non-optimized* cellcast binaries. Pass the `--release` flag to compile optimized binaries (note that compilation time may take upwards of 10 minutes). Because
-cellcast is a library, compiling it on it's own isn't very useful. However being able to successfully compile cellcast on your own computer means that you can change the backend
-from `Wgpu` to `Cuda` or whatever other supported backend you want. This means you *can* recompile cellcast with a new backend allowing you to take advantage of hardware specific
-optimizations not available to the `Wgpu` backend.
+This will compile a cellcast *without optimizations*. Pass the `--release` flag to compile an *optimized* release version (note that compilation time may take upwards
+of 10 minutes). Because cellcast is a library, compiling it on it's own isn't very useful. However being able to successfully compile cellcast on your own computer
+means that you can change the backend from `Wgpu` to whatever other [supported Burn backend](https://github.com/Tracel-AI/burn?tab=readme-ov-file#supported-backends)
+you want. Recompiling cellcast with a *different* backend may allow you to take advantage of hardware specific optimizations not available to the `Wgpu` backend.
+
+Each model defines it's own backend parameters at the start of the file. For example the StarDist2D versatile fluo model defines the `Wgpu` and `NdArray` (for CPU inference)
+backends like this:
+
+```rust
+type NdArrayBackend = NdArray<f32, i32>;
+type WgpuBackend = Wgpu<f32, i32>;
+```
+
+Change the `Wgpu` backend to whatever one you want (*e.g* `Cuda`) and recompile your Rust project. If you are using `cellcast_python`, then make the necessary backend
+changes to the cellcast core library and recompile the project for python in the `cellcast_python` crate directory with `maturin`.
 
 ### Build `cellcast_python` from source
 
