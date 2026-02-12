@@ -1,8 +1,27 @@
 # cellcast_python
 
+<div align="center">
+
+[![pypi](https://img.shields.io/pypi/v/cellcast)](https://pypi.org/project/cellcast)
+![license](https://img.shields.io/badge/license-MIT/Unlicense-blue)
+
+</div>
+
 Python bindings for the [cellcast](https://github.com/uw-loci/cellcast) core Rust library.
 
 ## Installation
+
+### Requirements
+
+The `cellcast` Python package currently supports the following architectures:
+
+| Operating System | Architecture         |
+| :---             | :---                 |
+| Linux            | x86-64, arm64        |
+| macOS            | intel, arm64         |
+| Windows          | x86-64               |
+
+Cellcast is compatible with Python `>=3.7` and requires *only* `NumPy`.
 
 ### cellcast from PyPI
 
@@ -12,17 +31,7 @@ You can install the cellcast Python package from PyPI with:
 $ pip install cellcast
 ```
 
-The `cellcast` Python package currently supports the following architectures:
-
-| Operating System | Architecture         |
-| :---             | :---                 |
-| Linux            | x86-64               |
-| macOS            | intel, arm64         |
-| Windows          | x64-64               |
-
-Cellcast is compatible with Python `>=3.7`.
-
-## Build cellcast_python from source
+### Build cellcast_python from source
 
 To build the cellcat_python package from source, use the `maturin` build tool
 (this requires the Rust toolchain). If you're using `uv` to manage your Python
@@ -68,6 +77,8 @@ data_2d = imread("path/to/data_2d.tif")
 # run stardist inference and produce instance segmentations
 labels = ccm.stardist_2d_versatile_fluo.predict(data, gpu=True)
 ```
+
+Run `help()` on the `stardist_2d_versatile_fluo.predict` function to see the full function signature and default values. 
 
 ## License
 
