@@ -44,7 +44,7 @@ impl<B: Backend> Default for Model<B> {
         let url = "https://github.com/uw-loci/cellcast/raw/refs/heads/burn-v0.20-migration/weights/stardist/stardist_2d_versatile_fluo.bpk";
         let file_name = "stardist_2d_versatile_fluo.bpk";
         let weights_path = fetch::fetch_weights(url, file_name, false)
-            .expect("Failed to download the 2d_versatile_fluo weights.");
+            .expect("Failed to download the stardist_2d_versatile_fluo weights.");
         Self::from_file(weights_path.to_str().unwrap(), &Default::default())
     }
 }
@@ -54,11 +54,12 @@ impl<B: Backend> Model<B> {
     pub fn from_file(file: &str, device: &B::Device) -> Self {
         let mut model = Self::new(device);
         let mut store = BurnpackStore::from_file(file);
-        model.load_from(&mut store).expect("Failed to load burnpack file");
+        model
+            .load_from(&mut store)
+            .expect("Failed to load the StarDist2D model weights burnpack file.");
         model
     }
 }
-
 
 impl<B: Backend> Model<B> {
     #[allow(unused_variables)]
