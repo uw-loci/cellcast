@@ -5,8 +5,8 @@ use burn::nn::conv::Conv2dConfig;
 use burn::nn::pool::MaxPool2d;
 use burn::nn::pool::MaxPool2dConfig;
 use burn::prelude::*;
-use burn::record::FullPrecisionSettings;
-use burn::record::Recorder;
+use burn_store::BurnpackStore;
+use burn_store::ModuleSnapshot;
 
 use crate::utils::fetch;
 
@@ -41,20 +41,23 @@ pub struct Model<B: Backend> {
 
 impl<B: Backend> Default for Model<B> {
     fn default() -> Self {
-        let url = "https://github.com/uw-loci/cellcast/raw/refs/heads/main/weights/stardist/2d_versatile_fluo.bin";
-        let file_name = "2d_versatile_fluo.bin";
+        let url = "https://github.com/uw-loci/cellcast/raw/refs/heads/burn-v0.20-migration/weights/stardist/stardist_2d_versatile_fluo.bpk";
+        let file_name = "stardist_2d_versatile_fluo.bpk";
         let weights_path = fetch::fetch_weights(url, file_name, false)
-            .expect("Failed to download the 2d_versatile_fluo weights.");
+            .expect("Failed to download the stardist_2d_versatile_fluo weights.");
         Self::from_file(weights_path.to_str().unwrap(), &Default::default())
     }
 }
 
 impl<B: Backend> Model<B> {
+    /// Load model weights from a burnpack file.
     pub fn from_file(file: &str, device: &B::Device) -> Self {
-        let record = burn::record::BinFileRecorder::<FullPrecisionSettings>::new()
-            .load(file.into(), device)
-            .expect("Record file to exist.");
-        Self::new(device).load_record(record)
+        let mut model = Self::new(device);
+        let mut store = BurnpackStore::from_file(file);
+        model
+            .load_from(&mut store)
+            .expect("Failed to load the StarDist2D model weights burnpack file.");
+        model
     }
 }
 
