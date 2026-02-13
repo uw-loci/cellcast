@@ -7,8 +7,9 @@
 
 </div>
 
-TODO: write a better independent intro
-This crate contains the [cellcast](https://github.com/uw-loci/cellcast) core Rust library.
+This crate contains the [cellcast](https://github.com/uw-loci/cellcast) core Rust library. Cellcast is a recast of cell segmentation models
+built on the Burn tensor and deep learning framework. The goal of this project is to modernize (*i.e.* recast) established cell segmentation models
+with a WebGPU backend. Cellcast aims to make access to cell segmentation models **easy** and **reproducible**.
 
 ## Usage
 
@@ -48,7 +49,7 @@ You can build the cellcast core library with:
 $ cargo build
 ```
 
-This will compile a cellcast *without optimizations*. Pass the `--release` flag to compile an *optimized* release version (not that compilation time may take upwards
+This will compile a cellcast *without optimizations*. Pass the `--release` flag to compile an *optimized* release version (note that compilation time may take upwards
 of 10 minutes). Because cellcast is a library, compiling it on it's own isn't very useful. However being able to successfully compile cellcast on your own computer
 means that you can change the backend from `Wgpu` to whatever other [supported Burn backend](https://github.com/Tracel-AI/burn?tab=readme-ov-file#supported-backends)
 you want. Recompiling cellcast with a *different* backend may allow you to take advantage of hardware specific optimizations not available to the `Wgpu` backend.

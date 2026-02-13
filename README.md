@@ -10,8 +10,9 @@
 
 This repository contains `cellcast`, a recast of cell segmentation models built
 on the Burn framework. The goal of this project is to modernize (*i.e.* recast)
-established machine learning models in a modern deep learning framework with a
-`WebGPU` backend, enabling easy to install and GPU enabled cell segmentation networks.
+established cell segmentation machine learning models in a modern deep learning framework with a
+WebGPU backend. Because cellcast targets the WebGPU backend it can provide GPU agnostic cell
+segmentation models.
 
 ## Usage
 
@@ -100,7 +101,7 @@ type WgpuBackend = Wgpu<f32, i32>;
 ```
 
 Change the `Wgpu` backend to whatever one you want (*e.g* `Cuda`) and recompile your Rust project. If you are using `cellcast_python`, then make the necessary backend
-changes to the cellcast core library and recompile the project for python in the `cellcast_python` crate directory with `maturin`.
+changes to the cellcast core library and recompile the project for Python.
 
 ### Build `cellcast_python` from source
 

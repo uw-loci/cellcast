@@ -7,7 +7,10 @@
 
 </div>
 
-Python bindings for the [cellcast](https://github.com/uw-loci/cellcast) core Rust library.
+This crate contains the Python bindings (via PyO3) for the [cellcast](https://github.com/uw-loci/cellcast)
+core Rust library. Cellcast is a recast of cell segmentation models built on the Burn tensor and deep
+learning framework. The goal of this project is to modernize (*i.e.* recast) established cell segmentation models
+with a WebGPU backend. Cellcast aims to make access to cell segmentation models **easy** and **reproducible**.
 
 ## Installation
 
