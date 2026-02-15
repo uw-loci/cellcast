@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "cellcast"
-version = "0.1.2.dev0"
+version = "0.1.2"
 description = "A recast of cell segmentation models built on the Burn deep learning framework."
 authors = [{ name = "cellcast developers" }]
 license = {text = "Unlicense OR MIT"}
