@@ -1,6 +1,6 @@
 [package]
 name = "cellcast_python"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["cellcast developers"]
 edition = "2024"
 license = "Unlicense OR MIT"
