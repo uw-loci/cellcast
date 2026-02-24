@@ -19,7 +19,7 @@ To use cellcast in your Rust project add it to your crate's dependencies and imp
 
 ```toml
 [dependencies]
-cellcast = "0.1.1"
+cellcast = "0.1.2"
 ```
 
 The example below demonstrates how to use cellcast and the StarDist 2D versatile fluo segmentation model with Rust.
