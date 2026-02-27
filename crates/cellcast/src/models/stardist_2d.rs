@@ -17,7 +17,7 @@ type WgpuBackend = Wgpu<f32, i32>;
 
 const DIV: usize = 16;
 const N_RAYS: usize = 32;
-const PROB_THRESHOLD: f64 = 0.479071463157368;
+const FLUO_PROB_THRESHOLD: f64 = 0.479071463157368;
 const NMS_THRESHOLD: f64 = 0.3;
 
 /// Predict object labels with the StarDist2D versatile fluo model.
@@ -52,7 +52,7 @@ const NMS_THRESHOLD: f64 = 0.3;
 /// # Reference
 ///
 /// <https://doi.org/10.48550/arXiv.1806.03535>
-pub fn predict<'a, T, A>(
+pub fn predict_versatile_fluo<'a, T, A>(
     data: A,
     pmin: Option<f64>,
     pmax: Option<f64>,
@@ -68,7 +68,7 @@ where
     let (src_row, src_col) = view.dim();
     let pmin = pmin.unwrap_or(1.0);
     let pmax = pmax.unwrap_or(99.8);
-    let prob_threshold = prob_threshold.unwrap_or(PROB_THRESHOLD) as f32;
+    let prob_threshold = prob_threshold.unwrap_or(FLUO_PROB_THRESHOLD) as f32;
     let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
     let norm = percentile_normalize(&view, pmin, pmax, None, None)?;
     let norm = norm.mapv(|v| v as f32);
