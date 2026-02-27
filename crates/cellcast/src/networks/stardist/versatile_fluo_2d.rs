@@ -1,4 +1,5 @@
-// Generated from ONNX using burn-import and then modified as needed.
+// Generated from ONNX using burn-import and then modified for dynamic tensor
+// shape intputs.
 use burn::nn::PaddingConfig2d;
 use burn::nn::conv::Conv2d;
 use burn::nn::conv::Conv2dConfig;
