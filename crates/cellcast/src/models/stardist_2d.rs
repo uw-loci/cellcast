@@ -5,10 +5,10 @@ use imgal::image::percentile_normalize;
 use imgal::threshold::manual_mask;
 use imgal::traits::numeric::AsNumeric;
 use imgal::transform::pad::reflect_pad;
-use ndarray::{Array1, Array2, Array3, ArrayBase, AsArray, Axis, Ix2, ViewRepr};
+use ndarray::{Array1, Array2, Array3, ArrayBase, AsArray, Axis, Ix2, Ix3, ViewRepr};
 
 use crate::labeling;
-use crate::networks::stardist::versatile_fluo_2d::Model;
+use crate::networks::stardist::{versatile_fluo_2d, versatile_he_2d};
 use crate::process::nms;
 use crate::utils::{axes, border};
 
@@ -17,7 +17,10 @@ type WgpuBackend = Wgpu<f32, i32>;
 
 const DIV: usize = 16;
 const N_RAYS: usize = 32;
+const PMIN: f64 = 1.0;
+const PMAX: f64 = 99.8;
 const FLUO_PROB_THRESHOLD: f64 = 0.479071463157368;
+const HE_PROB_THRESHOLD: f64 = 0.6924782541382084;
 const NMS_THRESHOLD: f64 = 0.3;
 
 /// Predict object labels with the StarDist2D versatile fluo model.
@@ -64,16 +67,17 @@ where
     A: AsArray<'a, T, Ix2>,
     T: 'a + AsNumeric,
 {
-    let view: ArrayBase<ViewRepr<&'a T>, Ix2> = data.into();
-    let (src_row, src_col) = view.dim();
-    let pmin = pmin.unwrap_or(1.0);
-    let pmax = pmax.unwrap_or(99.8);
+    let data: ArrayBase<ViewRepr<&'a T>, Ix2> = data.into();
+    let pmin = pmin.unwrap_or(PMIN);
+    let pmax = pmax.unwrap_or(PMAX);
     let prob_threshold = prob_threshold.unwrap_or(FLUO_PROB_THRESHOLD) as f32;
     let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
-    let norm = percentile_normalize(&view, pmin, pmax, None, None)?;
+    let (src_row, src_col) = data.dim();
+    let norm = percentile_normalize(&data, pmin, pmax, None, None)?;
     let norm = norm.mapv(|v| v as f32);
-    // the StarDist model expects 2D images with axes that are divisible by 16
-    let pad_config: Vec<usize> = view
+    // this iterator determines how many pixels to pad in each axis to be
+    // divisible by 16 as expected by the network
+    let pad_config: Vec<usize> = data
         .shape()
         .iter()
         .map(|&v| axes::divisible_pad(v, DIV))
@@ -86,7 +90,7 @@ where
     let dist: Vec<f32>;
     if gpu {
         let device = Default::default();
-        let stardist_net = Model::<WgpuBackend>::default();
+        let stardist_net = versatile_fluo_2d::Model::<WgpuBackend>::default();
         let tensor = Tensor::<WgpuBackend, 1>::from_floats(
             norm_pad.into_flat().as_slice().unwrap(),
             &device,
@@ -96,7 +100,7 @@ where
         dist = d.into_data().into_vec().unwrap();
     } else {
         let device = Default::default();
-        let stardist_net = Model::<NdArrayBackend>::default();
+        let stardist_net = versatile_fluo_2d::Model::<NdArrayBackend>::default();
         let tensor = Tensor::<NdArrayBackend, 1>::from_floats(
             norm_pad.into_flat().as_slice().unwrap(),
             &device,
@@ -201,4 +205,83 @@ where
     );
 
     Ok(labels)
+}
+
+/// TODO
+///
+/// # Description
+///
+/// todo
+///
+/// # Arguments
+///
+/// * `data`:
+/// * `pmin`:
+/// * `pmax`:
+/// * `prob_threshold`:
+/// * `nms_threshold`:
+/// * `axis`: The channel axis. If `None` then `axis == 2`.
+/// * `gpu`:
+///
+/// # Returns
+///
+/// todo
+pub fn predict_versatile_he<'a, T, A>(
+    data: A,
+    pmin: Option<f64>,
+    pmax: Option<f64>,
+    prob_threshold: Option<f64>,
+    nms_threshold: Option<f64>,
+    axis: Option<usize>,
+    gpu: bool,
+) -> Result<Array2<u64>, ImgalError>
+where
+    A: AsArray<'a, T, Ix3>,
+    T: 'a + AsNumeric,
+{
+    let data: ArrayBase<ViewRepr<&'a T>, Ix3> = data.into();
+    let pmin = pmin.unwrap_or(PMIN);
+    let pmax = pmax.unwrap_or(PMAX);
+    let prob_threshold = prob_threshold.unwrap_or(HE_PROB_THRESHOLD);
+    let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD);
+    let axis = axis.unwrap_or(2);
+    if axis >= 3 {
+        return Err(ImgalError::InvalidAxis {
+            axis_idx: axis,
+            dim_len: 3,
+        });
+    }
+    let (src_row, src_col, _) = data.dim();
+    let norm = percentile_normalize(&data, pmin, pmax, None, None)?;
+    let norm = norm.mapv(|v| v as f32);
+    // this iterator determines how many pixels to pad in each axis (except the
+    // channel axis) to be divisible by 16 as expected by the network
+    let pad_config: Vec<usize> = data
+        .shape()
+        .iter()
+        .enumerate()
+        .map(|(i, &v)| {
+            if i == axis {
+                0
+            } else {
+                axes::divisible_pad(v, DIV)
+            }
+        })
+        .collect();
+    let norm_pad = reflect_pad(&norm, &pad_config, Some(0))?;
+    // GPU and CPU computes must be in their own scope, the "device",
+    // "stardist_net" and "tensor" types are all connected
+    let prob: Vec<f32>;
+    let dist: Vec<f32>;
+    if gpu {
+        let device = Default::default();
+        let stardist_net = versatile_he_2d::Model::<WgpuBackend>::default();
+        let tensor = Tensor::<WgpuBackend, 1>::from_floats(
+            norm_pad.into_flat().as_slice().unwrap(),
+            &device,
+        );
+        dbg!(&tensor);
+    } else {
+    }
+    todo!();
 }
