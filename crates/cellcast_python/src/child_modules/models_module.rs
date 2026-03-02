@@ -3,23 +3,16 @@ use pyo3::prelude::*;
 use crate::functions::stardist_functions;
 use crate::utils::py_import_module;
 
-/// Python bindings for the "stardist" submodule.
+/// Registration function for the "models" module and their submodules.
 pub fn register_models_module(parent_module: &Bound<'_, PyModule>) -> PyResult<()> {
     let models_module = PyModule::new(parent_module.py(), "models")?;
-    let stardist_2d_versatile_fluo_module =
-        PyModule::new(parent_module.py(), "stardist_2d_versatile_fluo")?;
-
-    // add module to Python's sys.modules
+    let stardist_2d_module = PyModule::new(parent_module.py(), "stardist_2d")?;
     py_import_module("models");
-    py_import_module("models.stardist_2d_versatile_fluo");
-
-    // add models::stardist submodule functions
-    stardist_2d_versatile_fluo_module.add_function(wrap_pyfunction!(
-        stardist_functions::models_stardist_2d_versatile_fluo,
-        &stardist_2d_versatile_fluo_module
+    py_import_module("models.stardist_2d");
+    stardist_2d_module.add_function(wrap_pyfunction!(
+        stardist_functions::stardist_2d_predict_versatile_fluo,
+        &stardist_2d_module
     )?)?;
-
-    // attach "models" submodules before attaching to the parent module
-    models_module.add_submodule(&stardist_2d_versatile_fluo_module)?;
+    models_module.add_submodule(&stardist_2d_module)?;
     parent_module.add_submodule(&models_module)
 }
