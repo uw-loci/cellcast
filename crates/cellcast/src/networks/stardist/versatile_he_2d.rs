@@ -42,7 +42,7 @@ pub struct Model<B: Backend> {
 
 impl<B: Backend> Default for Model<B> {
     fn default() -> Self {
-        let url = "https://github.com/uw-loci/cellcast/blob/main/weights/stardist/stardist_2d_versatile_he.bpk";
+        let url = "https://github.com/uw-loci/cellcast/raw/refs/heads/main/weights/stardist/stardist_2d_versatile_he.bpk";
         let file_name = "stardist_2d_versatile_he.bpk";
         let weights_path = fetch::fetch_weights(url, file_name, false)
             .expect("Failed to download the stardist_2d_versatile_he weights.");
