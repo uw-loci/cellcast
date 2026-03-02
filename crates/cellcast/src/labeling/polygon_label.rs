@@ -30,7 +30,7 @@ use ndarray::{Array2, Array3, ArrayView1, ArrayView2, Axis};
 ///
 /// # Returns
 ///
-/// * `Array2<u16>`: The 2-dimensional label image where the background pixels
+/// * `Array2<u64>`: The 2-dimensional label image where the background pixels
 ///   are labeled as `0` and polygons labeled with range `(1..n_polys)`.
 pub fn radial_polygon_to_label_2d(
     polygon_dist: ArrayView2<f32>,
@@ -38,7 +38,7 @@ pub fn radial_polygon_to_label_2d(
     polygon_pos: ArrayView2<usize>,
     shape: (usize, usize),
     scale: Option<(f32, f32)>,
-) -> Array2<u16> {
+) -> Array2<u64> {
     // sort valid polygon indices in ascending order (higher prob drawn last)
     // and select these polygons based on new prob order
     let (n_polys, n_rays) = polygon_dist.dim();
@@ -47,7 +47,6 @@ pub fn radial_polygon_to_label_2d(
     let poly_ax = Axis(0);
     let polygon_dist = polygon_dist.select(poly_ax, &sorted_inds);
     let polygon_pos = polygon_pos.select(poly_ax, &sorted_inds);
-
     // convert radial distances and point positions from polar to cartesian
     // coordinates and render the label image with original indices as labels
     let poly_coords = radial_dist_to_coords_2d(
@@ -57,10 +56,9 @@ pub fn radial_polygon_to_label_2d(
         n_rays,
         scale,
     );
-
     // create output label image and render the polygons
-    let label_ids: Vec<u16> = (0..n_polys).map(|p| (p + 1) as u16).collect();
-    let mut labels = Array2::<u16>::zeros(shape);
+    let label_ids: Vec<u64> = (0..n_polys).map(|p| (p + 1) as u64).collect();
+    let mut labels = Array2::<u64>::zeros(shape);
     (0..n_polys).zip(label_ids.iter()).for_each(|(p, &l)| {
         let poly_rows: Vec<f32> = (0..n_rays).map(|r| poly_coords[[p, r, 0]]).collect();
         let poly_cols: Vec<f32> = (0..n_rays).map(|r| poly_coords[[p, r, 1]]).collect();
@@ -69,7 +67,6 @@ pub fn radial_polygon_to_label_2d(
             labels[[raster_row[j], raster_col[j]]] = l;
         });
     });
-
     labels
 }
 

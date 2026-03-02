@@ -38,7 +38,7 @@ pub fn stardist_2d_predict_versatile_fluo<'py>(
     prob_threshold: Option<f64>,
     nms_threshold: Option<f64>,
     gpu: Option<bool>,
-) -> PyResult<Bound<'py, PyArray2<u16>>> {
+) -> PyResult<Bound<'py, PyArray2<u64>>> {
     let gpu = gpu.unwrap_or(true);
     if let Ok(arr) = data.extract::<PyReadonlyArray2<u8>>() {
         predict_versatile_fluo(
