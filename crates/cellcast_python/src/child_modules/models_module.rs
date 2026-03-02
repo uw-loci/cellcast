@@ -13,6 +13,10 @@ pub fn register_models_module(parent_module: &Bound<'_, PyModule>) -> PyResult<(
         stardist_functions::stardist_2d_predict_versatile_fluo,
         &stardist_2d_module
     )?)?;
+    stardist_2d_module.add_function(wrap_pyfunction!(
+        stardist_functions::stardist_2d_predict_versatile_he,
+        &stardist_2d_module
+    )?)?;
     models_module.add_submodule(&stardist_2d_module)?;
     parent_module.add_submodule(&models_module)
 }
