@@ -28,7 +28,7 @@ use cellcast::models::stardist_2d::{predict_versatile_fluo, predict_versatile_he
 /// Returns:
 ///     The StarDist2D model label image.
 #[pyfunction]
-#[pyo3(name = "predict")]
+#[pyo3(name = "predict_versatile_fluo")]
 #[pyo3(signature = (data, pmin=None, pmax=None, prob_threshold=None, nms_threshold=None, gpu=None))]
 pub fn stardist_2d_predict_versatile_fluo<'py>(
     py: Python<'py>,
