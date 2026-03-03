@@ -96,9 +96,9 @@ pub fn stardist_2d_predict_versatile_fluo<'py>(
         .map(|output| output.into_pyarray(py))
         .map_err(imgal_error_to_pyerr)
     } else {
-        return Err(PyErr::new::<PyTypeError, _>(
+        Err(PyErr::new::<PyTypeError, _>(
             "Unsupported array dtype, supported array dtypes are u8, u16, u64, f32, and f64.",
-        ));
+        ))
     }
 }
 
