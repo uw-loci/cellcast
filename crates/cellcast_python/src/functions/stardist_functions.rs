@@ -5,15 +5,14 @@ use pyo3::prelude::*;
 use crate::error::imgal_error_to_pyerr;
 use cellcast::models::stardist_2d::{predict_versatile_fluo, predict_versatile_he};
 
-/// Predict object labels with the StarDist2D versatile fluo model.
+/// Predict instance segmentation labels with the StarDist2D versatile fluo
+/// model.
 ///
-/// Performs inference and instance segmentations with the StarDist2D versatile
-/// fluo model. Input images into the StarDist2D network *must* be normalized
-/// first. Specify the minimum and maximum percentage to normalize the input
-/// image with `pmin` and `pmax`.
+/// Performs model inference with the StarDist2D versatile fluo model, returning
+/// instance segmentations of star-convex shapes.
 ///
 /// Args:
-///     data: The input 2-dimensional image.
+///     data: The input 2D image.
 ///     pmin: The minimum percentage to linear percentile normalize the input
 ///         image. If `None`, then `pmin = 1.0`.
 ///     pmax: The maximum percentage to linear percentile normalize the input
@@ -23,10 +22,11 @@ use cellcast::models::stardist_2d::{predict_versatile_fluo, predict_versatile_he
 ///     nms_threshold: The non-maximum suppression (NMS) threshold. If `None`,
 ///         then `nms_threshold == 0.3`.
 ///     gpu: If `True`, GPU computation is used with the `Wgpu` backend. If
-///         `False`, then CPU computation is used with the `NdArray` backend.
+///         `False`, then CPU computation is used with the `NdArray` backend. If
+///         `None` then `gpu == True`.
 ///
 /// Returns:
-///     The StarDist2D model label image.
+///     The StarDist2D fluo model instance segmentation label image.
 #[pyfunction]
 #[pyo3(name = "predict_versatile_fluo")]
 #[pyo3(signature = (data, pmin=None, pmax=None, prob_threshold=None, nms_threshold=None, gpu=None))]
@@ -102,7 +102,30 @@ pub fn stardist_2d_predict_versatile_fluo<'py>(
     }
 }
 
-/// TODO
+/// Predict instance segmentation labels with the StarDist2D versatile HE model.
+///
+/// # Description
+///
+/// Performs model inference with the StarDist2D versatile HE model, returning
+/// instance segmentations of star-convex shapes.
+///
+/// Args:
+///     data: The input 3D image, where the third dimension is the channel axis.
+///     pmin: The minimum percentage to linear percentile normalize the input
+///         image. If `None`, then `pmin = 1.0`.
+///     pmax: The maximum percentage to linear percentile normalize the input
+///         image. If `None`, then `pmax = 99.8`.
+///     prob_threshold: The object/polygon probability threshold. If `None`,
+///         then `prob_threshold == 0.6924782541382084`.
+///     nms_threshold: The non-maximum suppression (NMS) threshold. If `None`,
+///         then `nms_threshold == 0.3`.
+///     axis: The channel axis. If `None` then `axis == 2`.
+///     gpu: If `True`, GPU computation is used with the `Wgpu` backend. If
+///         `False`, then CPU computation is used with the `NdArray` backend. If
+///         `None` then `gpu == True`.
+///
+/// Returns:
+///     The StarDist2D HE model instance segmentation label image.
 #[pyfunction]
 #[pyo3(name = "predict_versatile_he")]
 #[pyo3(signature = (data, pmin=None, pmax=None, prob_threshold = None, nms_threshold=None, axis=None, gpu=None))]

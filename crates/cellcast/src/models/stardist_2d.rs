@@ -23,32 +23,32 @@ const FLUO_PROB_THRESHOLD: f64 = 0.479071463157368;
 const HE_PROB_THRESHOLD: f64 = 0.6924782541382084;
 const NMS_THRESHOLD: f64 = 0.3;
 
-/// Predict object labels with the StarDist2D versatile fluo model.
+/// Predict instance segmentation labels with the StarDist2D versatile fluo
+/// model.
 ///
 /// # Description
 ///
-/// Performs inference and instance segmentations with the StarDist2D versatile
-/// fluo model. Input images into the StarDist2D network *must* be normalized
-/// first. Specify the minimum and maximum percentage to normalize the input
-/// image with `pmin` and `pmax`.
+/// Performs model inference with the StarDist2D versatile fluo model, returning
+/// instance segmentations of star-convex shapes.
 ///
 /// # Arguments
 ///
-/// * `data`: The input 2-dimensional image.
+/// * `data`: The input 2D image.
 /// * `pmin`: The minimum percentage to linear percentile normalize the input
 ///   image. If `None`, then `pmin = 1.0`.
 /// * `pmax`: The maximum percentage to linear percentile normalize the input
 ///   image. If `None`, then `pmax = 99.8`.
 /// * `prob_threshold`: The object/polygon probability threshold. If `None`,
-///    then `prob_threshold == 0.479071463157368`.
+///   then `prob_threshold == 0.479071463157368`.
 /// * `nms_threshold`: The non-maximum suppression (NMS) threshold. If `None`,
-///    then `nms_threshold == 0.3`.
+///   then `nms_threshold == 0.3`.
 /// * `gpu`: If `true`, GPU computation is used with the `Wgpu` backend. If
 ///   `false` CPU computation is used with the `NdArray` backend.
 ///
 /// # Returns
 ///
-/// * `Ok(Array2<u64>)`: The StarDist2D model label image.
+/// * `Ok(Array2<u64>)`: The StarDist2D fluo model instance segmentation label
+///   image.
 /// * `Err(ImgalError)`: If `pmin` and/or `pmax` are outside of range `0.0` to
 ///   `1.0.`
 ///
@@ -119,25 +119,38 @@ where
     ))
 }
 
-/// TODO
+/// Predict instance segmentation labels with the StarDist2D versatile HE model.
 ///
 /// # Description
 ///
-/// todo
+/// Performs model inference with the StarDist2D versatile HE model, returning
+/// instance segmentations of star-convex shapes.
 ///
 /// # Arguments
 ///
-/// * `data`:
-/// * `pmin`:
-/// * `pmax`:
-/// * `prob_threshold`:
-/// * `nms_threshold`:
+/// * `data`: The input 3D image, where the third dimension is the channel axis.
+/// * `pmin`: The minimum percentage to linear percentile normalize the input
+///   image. If `None`, then `pmin = 1.0`.
+/// * `pmax`: The maximum percentage to linear percentile normalize the input
+///   image. If `None`, then `pmax = 99.8`.
+/// * `prob_threshold`: The object/polygon probability threshold. If `None`,
+///   then `prob_threshold == 0.6924782541382084`.
+/// * `nms_threshold`: The non-maximum suppression (NMS) threshold. If `None`,
+///   then `nms_threshold == 0.3`.
 /// * `axis`: The channel axis. If `None` then `axis == 2`.
-/// * `gpu`:
+/// * `gpu`: If `true`, GPU computation is used with the `Wgpu` backend. If
+///   `false` CPU computation is used with the `NdArray` backend.
 ///
 /// # Returns
 ///
-/// todo
+/// * `Ok(Array2<u64>)`: The StarDist2D HE model instance segmentation label
+///   image.
+/// * `Err(ImgalError)`: If `pmin` and/or `pmax` are outside of range `0.0` to
+///   `1.0.`
+///
+/// # Reference
+///
+/// <https://doi.org/10.48550/arXiv.1806.03535>
 pub fn predict_versatile_he<'a, T, A>(
     data: A,
     pmin: Option<f64>,
@@ -220,6 +233,21 @@ where
     ))
 }
 
+/// Process StarDist2D object probabilities and ray distance arrays into
+/// instance segmentations.
+///
+/// # Arguments
+///
+/// * `prob`: The object probabilities as a flat 1D array.
+/// * `dist`: The ray distances as a flat 1D array.
+/// * `prob_threshold`: The object probability threshold.
+/// * `nms_threshold`: The non-maximum suppression threshold.
+/// * `pad_shape`: The padded image shape.
+/// * `src_shape`: The original/source image shape.
+///
+/// # Returns
+///
+/// * `Array2<u64>`: The instance segmentation label image.
 fn prob_dist_to_labels(
     prob: Vec<f32>,
     dist: Vec<f32>,
