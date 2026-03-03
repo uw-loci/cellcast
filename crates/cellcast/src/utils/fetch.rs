@@ -44,11 +44,11 @@ pub fn fetch_weights(url: &str, file_name: &str, verbose: bool) -> Result<PathBu
     Ok(weights_path)
 }
 
-/// Download and save a .bin weights file.
+/// Download and save a .bpk weights file.
 ///
 /// # Arguments
 ///
-/// * `url`: The URL to the `.bin` model weights.
+/// * `url`: The URL to the `.bpk` model weights.
 /// * `file_path`: The file path to the cache directory where the weights are to
 ///   be saved.
 /// * `verbose`: If `true` then "INFO" status updates are printed to the
