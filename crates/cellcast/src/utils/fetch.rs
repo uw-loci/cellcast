@@ -41,7 +41,6 @@ pub fn fetch_weights(url: &str, file_name: &str, verbose: bool) -> Result<PathBu
         }
         _ = download_weights(url, &weights_path, verbose);
     }
-
     Ok(weights_path)
 }
 
@@ -58,11 +57,10 @@ fn download_weights(url: &str, file_path: &PathBuf, verbose: bool) -> Result<(),
     if verbose {
         println!("[INFO] Downloading weights from: {}", url);
     }
-    let response = blocking::get(url).expect(&format!("Failed to get a response from {}.", url));
+    let response = blocking::get(url).unwrap_or_else(|_| panic!("Failed to get a response from {}.", url));
     let bytes = response.bytes()?;
     let mut weights = fs::File::create(&file_path)?;
     weights.write_all(&bytes)?;
-
     Ok(())
 }
 
@@ -71,6 +69,5 @@ fn get_cache_dir() -> io::Result<PathBuf> {
     let dir = env::home_dir().unwrap_or_else(|| env::temp_dir());
     let dir = dir.join(CACHE_NAME);
     fs::create_dir_all(&dir)?;
-
     Ok(dir)
 }
