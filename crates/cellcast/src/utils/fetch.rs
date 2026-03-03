@@ -66,7 +66,7 @@ fn download_weights(url: &str, file_path: &PathBuf, verbose: bool) -> Result<(),
 
 /// Get the weights cache directory.
 fn get_cache_dir() -> io::Result<PathBuf> {
-    let dir = env::home_dir().unwrap_or_else(|| env::temp_dir());
+    let dir = env::home_dir().unwrap_or_else(env::temp_dir);
     let dir = dir.join(CACHE_NAME);
     fs::create_dir_all(&dir)?;
     Ok(dir)
