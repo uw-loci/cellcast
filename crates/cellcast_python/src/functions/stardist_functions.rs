@@ -42,7 +42,7 @@ pub fn stardist_2d_predict_versatile_fluo<'py>(
     let gpu = gpu.unwrap_or(true);
     if let Ok(arr) = data.extract::<PyReadonlyArray2<u8>>() {
         predict_versatile_fluo(
-            &arr.as_array(),
+            arr.as_array(),
             pmin,
             pmax,
             prob_threshold,
@@ -53,7 +53,7 @@ pub fn stardist_2d_predict_versatile_fluo<'py>(
         .map_err(imgal_error_to_pyerr)
     } else if let Ok(arr) = data.extract::<PyReadonlyArray2<u16>>() {
         predict_versatile_fluo(
-            &arr.as_array(),
+            arr.as_array(),
             pmin,
             pmax,
             prob_threshold,
@@ -64,7 +64,7 @@ pub fn stardist_2d_predict_versatile_fluo<'py>(
         .map_err(imgal_error_to_pyerr)
     } else if let Ok(arr) = data.extract::<PyReadonlyArray2<u64>>() {
         predict_versatile_fluo(
-            &arr.as_array(),
+            arr.as_array(),
             pmin,
             pmax,
             prob_threshold,
@@ -75,7 +75,7 @@ pub fn stardist_2d_predict_versatile_fluo<'py>(
         .map_err(imgal_error_to_pyerr)
     } else if let Ok(arr) = data.extract::<PyReadonlyArray2<f32>>() {
         predict_versatile_fluo(
-            &arr.as_array(),
+            arr.as_array(),
             pmin,
             pmax,
             prob_threshold,
@@ -86,7 +86,7 @@ pub fn stardist_2d_predict_versatile_fluo<'py>(
         .map_err(imgal_error_to_pyerr)
     } else if let Ok(arr) = data.extract::<PyReadonlyArray2<f64>>() {
         predict_versatile_fluo(
-            &arr.as_array(),
+            arr.as_array(),
             pmin,
             pmax,
             prob_threshold,
