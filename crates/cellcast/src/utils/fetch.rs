@@ -22,7 +22,7 @@ const CACHE_NAME: &str = ".cache/cellcast/weights";
 /// * `url`: The URL to the `.bin` model weights.
 /// * `file_name`: The name of the model weights file.
 /// * `verbose`: If `true` then "INFO" status updates are printed to the
-///    console. If `false`, then nothing is printed.
+///   console. If `false`, then nothing is printed.
 ///
 /// # Returns
 ///
@@ -53,7 +53,7 @@ pub fn fetch_weights(url: &str, file_name: &str, verbose: bool) -> Result<PathBu
 /// * `file_path`: The file path to the cache directory where the weights are to
 ///   be saved.
 /// * `verbose`: If `true` then "INFO" status updates are printed to the
-///    console. If `false`, then nothing is printed.
+///   console. If `false`, then nothing is printed.
 fn download_weights(url: &str, file_path: &PathBuf, verbose: bool) -> Result<(), Box<dyn Error>> {
     if verbose {
         println!("[INFO] Downloading weights from: {}", url);
