@@ -110,9 +110,9 @@ pub fn build_polygons_2d(
             let area = polygon_area_2d(&vertices, n_rays);
             Polygon2D {
                 bbox: (y_min, y_max, x_min, x_max),
-                area: area,
+                area,
                 dist: max_radius,
-                vertices: vertices,
+                vertices,
             }
         })
         .collect();
