@@ -104,7 +104,6 @@ fn inside_polygon(
         }
         j = i;
     });
-
     inside
 }
 
@@ -135,7 +134,6 @@ fn radial_dist_to_coords_2d(
     scale: Option<(f32, f32)>,
 ) -> Array3<f32> {
     let scale = scale.unwrap_or((1.0, 1.0));
-
     // get evenly spaced angles for 0 to 2*pi (TAU) and compute row (Y), col (X)
     // coordinates
     let angles: Vec<f32> = (0..n_rays)
@@ -152,7 +150,6 @@ fn radial_dist_to_coords_2d(
             coords[[p, r, 1]] = poly_x + d * a.cos() * scale.1;
         })
     });
-
     coords
 }
 
@@ -197,18 +194,16 @@ fn render_polygon_2d(
         .copied()
         .fold(f32::NEG_INFINITY, f32::max)
         .min((shape.1 - 1) as f32) as usize;
-
     // determine if pixels within the bounding box are within the polygon
     // if pixel in question is within the polygon, save the coordinates
     let mut raster_row: Vec<usize> = Vec::new();
     let mut raster_col: Vec<usize> = Vec::new();
     (min_row..=max_row)
         .flat_map(|y| (min_col..=max_col).map(move |x| (y, x)))
-        .filter(|&(y, x)| inside_polygon(y, x, size, &row_coords, &col_coords))
+        .filter(|&(y, x)| inside_polygon(y, x, size, row_coords, col_coords))
         .for_each(|(y, x)| {
             raster_row.push(y);
             raster_col.push(x)
         });
-
     (raster_row, raster_col)
 }
