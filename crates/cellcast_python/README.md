@@ -81,7 +81,7 @@ data_2d = imread("path/to/data_2d.tif")
 labels = sd.predict_versatile_fluo(data, gpu=True)
 ```
 
-Run `help()` on the `stardist_2d_versatile_fluo.predict` function to see the full function signature and default values. 
+Run `help()` on the `predict_versatile_fluo()` function to see the full function signature and default values. 
 
 ## License
 
