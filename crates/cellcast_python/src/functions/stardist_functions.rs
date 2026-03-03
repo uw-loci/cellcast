@@ -152,6 +152,54 @@ pub fn stardist_2d_predict_versatile_he<'py>(
         )
         .map(|output| output.into_pyarray(py))
         .map_err(imgal_error_to_pyerr)
+    } else if let Ok(arr) = data.extract::<PyReadonlyArray3<u16>>() {
+        predict_versatile_he(
+            arr.as_array(),
+            pmin,
+            pmax,
+            prob_threshold,
+            nms_threshold,
+            axis,
+            gpu,
+        )
+        .map(|output| output.into_pyarray(py))
+        .map_err(imgal_error_to_pyerr)
+    } else if let Ok(arr) = data.extract::<PyReadonlyArray3<u64>>() {
+        predict_versatile_he(
+            arr.as_array(),
+            pmin,
+            pmax,
+            prob_threshold,
+            nms_threshold,
+            axis,
+            gpu,
+        )
+        .map(|output| output.into_pyarray(py))
+        .map_err(imgal_error_to_pyerr)
+    } else if let Ok(arr) = data.extract::<PyReadonlyArray3<f32>>() {
+        predict_versatile_he(
+            arr.as_array(),
+            pmin,
+            pmax,
+            prob_threshold,
+            nms_threshold,
+            axis,
+            gpu,
+        )
+        .map(|output| output.into_pyarray(py))
+        .map_err(imgal_error_to_pyerr)
+    } else if let Ok(arr) = data.extract::<PyReadonlyArray3<f64>>() {
+        predict_versatile_he(
+            arr.as_array(),
+            pmin,
+            pmax,
+            prob_threshold,
+            nms_threshold,
+            axis,
+            gpu,
+        )
+        .map(|output| output.into_pyarray(py))
+        .map_err(imgal_error_to_pyerr)
     } else {
         Err(PyErr::new::<PyTypeError, _>(
             "Unsupported array dtype, supported array dtypes are u8, u16, u64, f32, and f64.",
