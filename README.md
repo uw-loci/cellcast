@@ -30,11 +30,11 @@ This example assumes you have the appropriate dependencies and helper functions 
 
 ```rust
 use ndarray::Array2;
-use cellcast::models::stardist_2d_versatile_fluo;
+use cellcast::models::stardist_2d::predict_versatile_fluo;
 
 fn main() {
   let data_2d = load_image("/path/to/data_2d.tif");
-  let labels = stardist_2d_versatile_fluo.predict(&data, Some(1.0), Some(99.8), None, None, True);
+  let labels = predict_versatile_fluo(&data, Some(1.0), Some(99.8), None, None, True);
 }
 
 fn load_image(path: &str) -> Array2<u16> {
@@ -67,14 +67,14 @@ The example below demonstrates how to use cellcast and the StarDist 2D versatile
 Note that this example assumes you have access to 2D data and `tifffile` installed in your Python environment with cellcast:
 
 ```python
-import cellcast.models as ccm
+import cellcast.models.stardist_2d as sd
 from tifffile import imread
 
 # load 2D data for inference
 data_2d = imread("path/to/data_2d.tif")
 
 # run stardist inference and produce instance segmentations
-labels = ccm.stardist_2d_versatile_fluo.predict(data, gpu=True)
+labels = sd.predict_versatile_fluo(data, gpu=True)
 ```
 
 Run `help()` on the `stardist_2d_versatile_fluo.predict` function to see the full function signature and default values. 

@@ -71,14 +71,14 @@ Python. Note that this example assumes you have access to 2D data and `tifffile`
 in your Python environment with cellcast:
 
 ```python
-import cellcast.models as ccm
+import cellcast.models.stardist_2d as sd
 from tifffile import imread
 
 # load 2D data for inference
 data_2d = imread("path/to/data_2d.tif")
 
 # run stardist inference and produce instance segmentations
-labels = ccm.stardist_2d_versatile_fluo.predict(data, gpu=True)
+labels = sd.predict_versatile_fluo(data, gpu=True)
 ```
 
 Run `help()` on the `stardist_2d_versatile_fluo.predict` function to see the full function signature and default values. 
