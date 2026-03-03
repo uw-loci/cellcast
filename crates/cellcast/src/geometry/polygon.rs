@@ -44,8 +44,7 @@ pub fn area_intersection_2d(vertices_a: &[(f32, f32)], vertices_b: &[(f32, f32)]
     let poly_a = Polygon::new(line_a, vec![]);
     let poly_b = Polygon::new(line_b, vec![]);
     let inter = poly_a.intersection(&poly_b);
-
-    inter.unsigned_area() as f32
+    inter.unsigned_area()
 }
 
 /// Create a vector of 2-dimensional polygons.
