@@ -57,7 +57,8 @@ fn download_weights(url: &str, file_path: &PathBuf, verbose: bool) -> Result<(),
     if verbose {
         println!("[INFO] Downloading weights from: {}", url);
     }
-    let response = blocking::get(url).unwrap_or_else(|_| panic!("Failed to get a response from {}.", url));
+    let response =
+        blocking::get(url).unwrap_or_else(|_| panic!("Failed to get a response from {}.", url));
     let bytes = response.bytes()?;
     let mut weights = fs::File::create(file_path)?;
     weights.write_all(&bytes)?;
