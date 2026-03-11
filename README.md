@@ -92,16 +92,15 @@ of 10 minutes). Because cellcast is a library, compiling it on it's own isn't ve
 means that you can change the backend from `Wgpu` to whatever other [supported Burn backend](https://github.com/Tracel-AI/burn?tab=readme-ov-file#supported-backends)
 you want. Recompiling cellcast with a *different* backend may allow you to take advantage of hardware specific optimizations not available to the `Wgpu` backend.
 
-Each model defines it's own backend parameters at the start of the file. For example the StarDist2D versatile fluo model defines the `Wgpu` and `NdArray` (for CPU inference)
-backends like this:
+The release version of cellcast uses the `NdArrayBackend` and `WgpuBackend` for CPU and GPU compute respectively. The CPU and GPU backends are defined in the `backend.rs`
+file in the `config` module. 
 
 ```rust
-type NdArrayBackend = NdArray<f32, i32>;
-type WgpuBackend = Wgpu<f32, i32>;
+pub(crate) type CpuBackend<E, I> = NdArray<E, I>;
+pub(crate) type GpuBackend<E, I> = Wgpu<E, I>;
 ```
 
-Change the `Wgpu` backend to whatever one you want (*e.g* `Cuda`) and recompile your Rust project. If you are using `cellcast_python`, then make the necessary backend
-changes to the cellcast core library and recompile the project for Python.
+Change the `Wgpu` and/or `NdArray` Burn backends here and recompile cellcast to change the project's backend.
 
 ### Build `cellcast_python` from source
 
