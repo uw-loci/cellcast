@@ -5,7 +5,7 @@
 //! ## Crate Status
 //!
 //! This crate is still under active development and it's API is not stable.
-pub mod config;
+mod config;
 pub mod geometry;
 pub mod labeling;
 pub mod models;
