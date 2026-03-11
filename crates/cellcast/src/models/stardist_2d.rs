@@ -1,4 +1,3 @@
-use burn::backend::{NdArray, Wgpu};
 use burn::prelude::*;
 use imgal::error::ImgalError;
 use imgal::image::percentile_normalize;
@@ -7,13 +6,14 @@ use imgal::traits::numeric::AsNumeric;
 use imgal::transform::pad::reflect_pad;
 use ndarray::{Array1, Array2, Array3, ArrayBase, AsArray, Axis, Ix2, Ix3, ViewRepr};
 
+use crate::config::backend::{CpuBackend, GpuBackend};
 use crate::labeling;
 use crate::networks::stardist::{versatile_fluo_2d, versatile_he_2d};
 use crate::process::nms;
 use crate::utils::{axes, border};
 
-type NdArrayBackend = NdArray<f32, i32>;
-type WgpuBackend = Wgpu<f32, i32>;
+type CpuConfigBackend = CpuBackend<f32, i32>;
+type GpuConfigBackend = GpuBackend<f32, i32>;
 
 const DIV: usize = 16;
 const N_RAYS: usize = 32;
@@ -90,8 +90,8 @@ where
     let dist: Vec<f32>;
     if gpu {
         let device = Default::default();
-        let stardist_net = versatile_fluo_2d::Model::<WgpuBackend>::default();
-        let tensor = Tensor::<WgpuBackend, 1>::from_floats(
+        let stardist_net = versatile_fluo_2d::Model::<GpuConfigBackend>::default();
+        let tensor = Tensor::<GpuConfigBackend, 1>::from_floats(
             norm_pad.into_flat().as_slice().unwrap(),
             &device,
         );
@@ -100,8 +100,8 @@ where
         dist = d.into_data().into_vec().unwrap();
     } else {
         let device = Default::default();
-        let stardist_net = versatile_fluo_2d::Model::<NdArrayBackend>::default();
-        let tensor = Tensor::<NdArrayBackend, 1>::from_floats(
+        let stardist_net = versatile_fluo_2d::Model::<CpuConfigBackend>::default();
+        let tensor = Tensor::<CpuConfigBackend, 1>::from_floats(
             norm_pad.into_flat().as_slice().unwrap(),
             &device,
         );
@@ -202,23 +202,23 @@ where
     let dist: Vec<f32>;
     if gpu {
         let device = Default::default();
-        let stardist_net = versatile_he_2d::Model::<WgpuBackend>::default();
+        let stardist_net = versatile_he_2d::Model::<GpuConfigBackend>::default();
         let td = TensorData::new(
             norm_pad.into_flat().to_vec(),
             [1, pad_shape[0], pad_shape[1], 3],
         );
-        let tensor = Tensor::<WgpuBackend, 4>::from_data(td, &device);
+        let tensor = Tensor::<GpuConfigBackend, 4>::from_data(td, &device);
         let (p, d) = stardist_net.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
         prob = p.into_data().into_vec().unwrap();
         dist = d.into_data().into_vec().unwrap();
     } else {
         let device = Default::default();
-        let stardist_net = versatile_he_2d::Model::<NdArrayBackend>::default();
+        let stardist_net = versatile_he_2d::Model::<CpuConfigBackend>::default();
         let td = TensorData::new(
             norm_pad.into_flat().to_vec(),
             [1, pad_shape[0], pad_shape[1], 3],
         );
-        let tensor = Tensor::<NdArrayBackend, 4>::from_data(td, &device);
+        let tensor = Tensor::<CpuConfigBackend, 4>::from_data(td, &device);
         let (p, d) = stardist_net.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
         prob = p.into_data().into_vec().unwrap();
         dist = d.into_data().into_vec().unwrap();
