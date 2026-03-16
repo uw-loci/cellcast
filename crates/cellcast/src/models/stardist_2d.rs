@@ -12,9 +12,6 @@ use crate::networks::stardist::{versatile_fluo_2d, versatile_he_2d};
 use crate::process::nms;
 use crate::utils::{axes, border};
 
-type CpuConfigBackend = CpuBackend<f32, i32>;
-type GpuConfigBackend = GpuBackend<f32, i32>;
-
 const DIV: usize = 16;
 const N_RAYS: usize = 32;
 const PMIN: f64 = 1.0;
@@ -22,6 +19,9 @@ const PMAX: f64 = 99.8;
 const FLUO_PROB_THRESHOLD: f64 = 0.479071463157368;
 const HE_PROB_THRESHOLD: f64 = 0.6924782541382084;
 const NMS_THRESHOLD: f64 = 0.3;
+
+type CpuConfigBackend = CpuBackend<f32, i32>;
+type GpuConfigBackend = GpuBackend<f32, i32>;
 
 /// Predict instance segmentation labels with the StarDist2D versatile fluo
 /// model.
@@ -75,7 +75,7 @@ where
     let (src_row, src_col) = data.dim();
     let norm = percentile_normalize(&data, pmin, pmax, None, None)?;
     let norm = norm.mapv(|v| v as f32);
-    // this iterator determines how many pixels to pad in each axis to be
+    // this pattern determines how many pixels to pad in each axis to be
     // divisible by 16 as expected by the network
     let pad_config: Vec<usize> = data
         .shape()
