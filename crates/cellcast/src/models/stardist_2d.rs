@@ -109,7 +109,7 @@ where
         prob = p.into_data().into_vec().unwrap();
         dist = d.into_data().into_vec().unwrap();
     }
-    Ok(prob_dist_to_labels(
+    Ok(prob_dist_to_labels_2d(
         prob,
         dist,
         prob_threshold,
@@ -223,7 +223,7 @@ where
         prob = p.into_data().into_vec().unwrap();
         dist = d.into_data().into_vec().unwrap();
     }
-    Ok(prob_dist_to_labels(
+    Ok(prob_dist_to_labels_2d(
         prob,
         dist,
         prob_threshold,
@@ -248,7 +248,7 @@ where
 /// # Returns
 ///
 /// * `Array2<u64>`: The instance segmentation label image.
-fn prob_dist_to_labels(
+fn prob_dist_to_labels_2d(
     prob: Vec<f32>,
     dist: Vec<f32>,
     prob_threshold: f32,
