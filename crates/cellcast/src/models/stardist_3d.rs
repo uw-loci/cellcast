@@ -51,6 +51,6 @@ where
         norm_pad.into_flat().as_slice().unwrap(),
         &device,
     );
-    let (p, d) = stardist_net.forward();
+    // let (p, d) = stardist_net.forward();
     todo!();
 }
