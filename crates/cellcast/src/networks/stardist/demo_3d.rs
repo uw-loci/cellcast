@@ -209,8 +209,12 @@ impl<B: Backend> Model<B> {
     }
 
     #[allow(clippy::let_and_return, clippy::approx_constant)]
-    pub fn forward(&self, input: Tensor<B, 5>) -> (Tensor<B, 5>, Tensor<B, 5>) {
-        let reshape1_out1 = input.reshape([1, 1, 512, 512, 512]);
+    pub fn forward(
+        &self,
+        input: Tensor<B, 5>,
+        shape: (i32, i32, i32),
+    ) -> (Tensor<B, 5>, Tensor<B, 5>) {
+        let reshape1_out1 = input.reshape([1, 1, shape.0, shape.1, shape.2]);
         let conv3d1_out1 = self.conv3d1.forward(reshape1_out1);
         let conv3d2_out1 = self.conv3d2.forward(conv3d1_out1);
         let pad1_out1 = conv3d2_out1
@@ -251,7 +255,7 @@ impl<B: Backend> Model<B> {
         let transpose1_out1 = conv3d17_out1.permute([0, 2, 3, 4, 1]);
         let conv3d18_out1 = self.conv3d18.forward(relu13_out1);
         let sigmoid1_out1 = burn::tensor::activation::sigmoid(conv3d18_out1);
-        let reshape2_out1 = sigmoid1_out1.reshape([1, 512, 256, 256, 1]);
+        let reshape2_out1 = sigmoid1_out1.reshape([1, shape.0, shape.1 / 2, shape.2 / 2, 1]);
         (reshape2_out1, transpose1_out1)
     }
 }

@@ -25,6 +25,7 @@ pub fn predict_demo<'a, T, A>(
     pmax: Option<f64>,
     prob_threshold: Option<f64>,
     nms_threshold: Option<f64>,
+    axis: Option<usize>,
 ) -> Result<Array3<u64>, ImgalError>
 where
     A: AsArray<'a, T, Ix3>,
@@ -35,22 +36,37 @@ where
     let pmax = pmax.unwrap_or(PMAX);
     let prob_threshold = prob_threshold.unwrap_or(PROB_THRESHOLD) as f32;
     let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
+    let axis = axis.unwrap_or(0);
     let norm = percentile_normalize(&data, pmin, pmax, None, None)?;
     let norm = norm.mapv(|v| v as f32);
     // this pattern determines how many pixels to pad in each axis to be
-    // divisible by 16 as expected by the network
+    // divisible by 16 as expected by the network, except for the planes (z)
+    // axis which remains fixed (i.e. an asymmetrical pad)
     let pad_config: Vec<usize> = data
         .shape()
         .iter()
-        .map(|&v| axes::divisible_pad(v, DIV))
+        .enumerate()
+        .map(|(i, &v)| {
+            if i == axis {
+                v
+            } else {
+                axes::divisible_pad(v, DIV)
+            }
+        })
         .collect();
     let norm_pad = reflect_pad(&norm, &pad_config, Some(0))?;
+    let mut pad_shape = norm_pad.shape().to_vec();
+    let plns = pad_shape.remove(axis);
     let device = Default::default();
     let stardist_net = demo_3d::Model::<GpuConfigBackend>::default();
-    let tensor = Tensor::<GpuConfigBackend, 1>::from_floats(
-        norm_pad.into_flat().as_slice().unwrap(),
-        &device,
+    let td = TensorData::new(
+        norm_pad.into_flat().to_vec(),
+        [1, 1, plns, pad_shape[0], pad_shape[1]],
     );
-    // let (p, d) = stardist_net.forward();
+    let tensor = Tensor::<GpuConfigBackend, 5>::from_data(td, &device);
+    let (p, d) = stardist_net.forward(
+        tensor,
+        (plns as i32, pad_shape[0] as i32, pad_shape[1] as i32),
+    );
     todo!();
 }
