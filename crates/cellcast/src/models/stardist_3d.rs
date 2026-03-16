@@ -3,7 +3,7 @@ use imgal::error::ImgalError;
 use imgal::image::normalize::percentile_normalize;
 use imgal::traits::numeric::AsNumeric;
 use imgal::transform::pad::reflect_pad;
-use ndarray::{Array3, ArrayBase, AsArray, Ix3, ViewRepr};
+use ndarray::{Array3, Array4, ArrayBase, AsArray, Ix3, ViewRepr};
 
 use crate::config::backend::{CpuBackend, GpuBackend};
 use crate::networks::stardist::demo_3d;
@@ -26,7 +26,7 @@ pub fn predict_demo<'a, T, A>(
     prob_threshold: Option<f64>,
     nms_threshold: Option<f64>,
     axis: Option<usize>,
-) -> Result<Array3<u64>, ImgalError>
+) -> Result<(Array3<f32>, Array4<f32>), ImgalError>
 where
     A: AsArray<'a, T, Ix3>,
     T: 'a + AsNumeric,
@@ -68,5 +68,22 @@ where
         tensor,
         (plns as i32, pad_shape[0] as i32, pad_shape[1] as i32),
     );
-    todo!();
+    let prob: Vec<f32> = p.into_data().into_vec().unwrap();
+    let dist: Vec<f32> = d.into_data().into_vec().unwrap();
+    Ok(prob_dist_to_labels_3d(prob, dist, pad_shape, plns))
+}
+
+fn prob_dist_to_labels_3d(
+    prob: Vec<f32>,
+    dist: Vec<f32>,
+    pad_shape: Vec<usize>,
+    plns: usize,
+) -> (Array3<f32>, Array4<f32>) {
+    let res_row: usize = pad_shape[0] / 2;
+    let res_col: usize = pad_shape[1] / 2;
+    let prob_arr = Array3::from_shape_vec((plns, res_row, res_col), prob)
+        .expect("StarDist 3D object probabilites reshape failed.");
+    let dist_arr = Array4::from_shape_vec((plns, res_row, res_col, N_RAYS), dist)
+        .expect("StarDist 3D radial distances reshape failed.");
+    (prob_arr, dist_arr)
 }
