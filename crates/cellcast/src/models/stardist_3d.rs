@@ -1,0 +1,56 @@
+use burn::prelude::*;
+use imgal::error::ImgalError;
+use imgal::image::normalize::percentile_normalize;
+use imgal::traits::numeric::AsNumeric;
+use imgal::transform::pad::reflect_pad;
+use ndarray::{Array3, ArrayBase, AsArray, Ix3, ViewRepr};
+
+use crate::config::backend::{CpuBackend, GpuBackend};
+use crate::networks::stardist::demo_3d;
+use crate::utils::axes;
+
+const DIV: usize = 16;
+const N_RAYS: usize = 96;
+const PMIN: f64 = 1.0;
+const PMAX: f64 = 99.8;
+const PROB_THRESHOLD: f64 = 0.7079326182611463;
+const NMS_THRESHOLD: f64 = 0.3;
+
+type CpuConfigBackend = CpuBackend<f32, i32>;
+type GpuConfigBackend = GpuBackend<f32, i32>;
+
+pub fn predict_demo<'a, T, A>(
+    data: A,
+    pmin: Option<f64>,
+    pmax: Option<f64>,
+    prob_threshold: Option<f64>,
+    nms_threshold: Option<f64>,
+) -> Result<Array3<u64>, ImgalError>
+where
+    A: AsArray<'a, T, Ix3>,
+    T: 'a + AsNumeric,
+{
+    let data: ArrayBase<ViewRepr<&'a T>, Ix3> = data.into();
+    let pmin = pmin.unwrap_or(PMIN);
+    let pmax = pmax.unwrap_or(PMAX);
+    let prob_threshold = prob_threshold.unwrap_or(PROB_THRESHOLD) as f32;
+    let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
+    let norm = percentile_normalize(&data, pmin, pmax, None, None)?;
+    let norm = norm.mapv(|v| v as f32);
+    // this pattern determines how many pixels to pad in each axis to be
+    // divisible by 16 as expected by the network
+    let pad_config: Vec<usize> = data
+        .shape()
+        .iter()
+        .map(|&v| axes::divisible_pad(v, DIV))
+        .collect();
+    let norm_pad = reflect_pad(&norm, &pad_config, Some(0))?;
+    let device = Default::default();
+    let stardist_net = demo_3d::Model::<GpuConfigBackend>::default();
+    let tensor = Tensor::<GpuConfigBackend, 1>::from_floats(
+        norm_pad.into_flat().as_slice().unwrap(),
+        &device,
+    );
+    let (p, d) = stardist_net.forward();
+    todo!();
+}
