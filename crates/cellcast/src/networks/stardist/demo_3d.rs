@@ -1,10 +1,13 @@
-// Generated from ONNX "/home/edward/Documents/workspaces/dev/model-converter/onnx_models/stardist_3d_3d_demo_sym_padded.onnx" by burn-import
+// Generated from ONNX using burn-import and then modified for dynamic tensor
+// shape intputs.
 use burn::nn::PaddingConfig3d;
 use burn::nn::conv::Conv3d;
 use burn::nn::conv::Conv3dConfig;
 use burn::prelude::*;
 use burn_store::BurnpackStore;
 use burn_store::ModuleSnapshot;
+
+use crate::utils::fetch;
 
 #[derive(Module, Debug)]
 pub struct Model<B: Backend> {
@@ -32,10 +35,11 @@ pub struct Model<B: Backend> {
 
 impl<B: Backend> Default for Model<B> {
     fn default() -> Self {
-        Self::from_file(
-            "/home/edward/Documents/workspaces/dev/model-converter/burn_models/stardist_3d_3d_demo_sym_padded.bpk",
-            &Default::default(),
-        )
+        let url = "https://github.com/uw-loci/cellcast/raw/refs/heads/main/weights/stardist/stardist_3d_demo.bpk";
+        let file_name = "stardist_3d_demo.bpk";
+        let weights_path = fetch::fetch_weights(url, file_name, false)
+            .expect("Failed to download the stardist_3d_demo weights.");
+        Self::from_file(weights_path.to_str().unwrap(), &Default::default())
     }
 }
 
