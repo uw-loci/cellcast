@@ -48,7 +48,7 @@ where
         .enumerate()
         .map(|(i, &v)| {
             if i == axis {
-                v
+                0
             } else {
                 axes::divisible_pad(v, DIV)
             }
