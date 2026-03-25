@@ -26,6 +26,7 @@ pub fn predict_demo<'a, T, A>(
     prob_threshold: Option<f64>,
     nms_threshold: Option<f64>,
     axis: Option<usize>,
+    gpu: bool,
 ) -> Result<(Array3<f32>, Array4<f32>), ImgalError>
 where
     A: AsArray<'a, T, Ix3>,
@@ -57,19 +58,33 @@ where
     let norm_pad = reflect_pad(&norm, &pad_config, Some(0))?;
     let mut pad_shape = norm_pad.shape().to_vec();
     let plns = pad_shape.remove(axis);
-    let device = Default::default();
-    let stardist_net = demo_3d::Model::<GpuConfigBackend>::default();
     let td = TensorData::new(
         norm_pad.into_flat().to_vec(),
         [1, 1, plns, pad_shape[0], pad_shape[1]],
     );
-    let tensor = Tensor::<GpuConfigBackend, 5>::from_data(td, &device);
-    let (p, d) = stardist_net.forward(
-        tensor,
-        (plns as i32, pad_shape[0] as i32, pad_shape[1] as i32),
-    );
-    let prob: Vec<f32> = p.into_data().into_vec().unwrap();
-    let dist: Vec<f32> = d.into_data().into_vec().unwrap();
+    let prob: Vec<f32>;
+    let dist: Vec<f32>;
+    if gpu {
+        let device = Default::default();
+        let stardist_net = demo_3d::Model::<GpuConfigBackend>::default();
+        let tensor = Tensor::<GpuConfigBackend, 5>::from_data(td, &device);
+        let (p, d) = stardist_net.forward(
+            tensor,
+            (plns as i32, pad_shape[0] as i32, pad_shape[1] as i32),
+        );
+        prob = p.into_data().into_vec().unwrap();
+        dist = d.into_data().into_vec().unwrap();
+    } else {
+        let device = Default::default();
+        let stardist_net = demo_3d::Model::<CpuConfigBackend>::default();
+        let tensor = Tensor::<CpuConfigBackend, 5>::from_data(td, &device);
+        let (p, d) = stardist_net.forward(
+            tensor,
+            (plns as i32, pad_shape[0] as i32, pad_shape[1] as i32),
+        );
+        prob = p.into_data().into_vec().unwrap();
+        dist = d.into_data().into_vec().unwrap();
+    }
     Ok(prob_dist_to_labels_3d(prob, dist, pad_shape, plns))
 }
 

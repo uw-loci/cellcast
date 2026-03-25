@@ -211,7 +211,7 @@ pub fn stardist_2d_predict_versatile_he<'py>(
 /// TODO
 #[pyfunction]
 #[pyo3(name = "predict_demo")]
-#[pyo3(signature = (data, pmin=None, pmax=None, prob_threshold=None, nms_threshold=None, axis=None))]
+#[pyo3(signature = (data, pmin=None, pmax=None, prob_threshold=None, nms_threshold=None, axis=None, gpu=None))]
 pub fn stardist_3d_predict_demo<'py>(
     py: Python<'py>,
     data: Bound<'py, PyAny>,
@@ -220,7 +220,9 @@ pub fn stardist_3d_predict_demo<'py>(
     prob_threshold: Option<f64>,
     nms_threshold: Option<f64>,
     axis: Option<usize>,
+    gpu: Option<bool>,
 ) -> PyResult<(Bound<'py, PyArray3<f32>>, Bound<'py, PyArray4<f32>>)> {
+    let gpu = gpu.unwrap_or(true);
     if let Ok(arr) = data.extract::<PyReadonlyArray3<u8>>() {
         predict_demo(
             arr.as_array(),
@@ -229,6 +231,7 @@ pub fn stardist_3d_predict_demo<'py>(
             prob_threshold,
             nms_threshold,
             axis,
+            gpu,
         )
         .map(|output| (output.0.into_pyarray(py), output.1.into_pyarray(py)))
         .map_err(imgal_error_to_pyerr)
@@ -240,6 +243,7 @@ pub fn stardist_3d_predict_demo<'py>(
             prob_threshold,
             nms_threshold,
             axis,
+            gpu,
         )
         .map(|output| (output.0.into_pyarray(py), output.1.into_pyarray(py)))
         .map_err(imgal_error_to_pyerr)
@@ -251,6 +255,7 @@ pub fn stardist_3d_predict_demo<'py>(
             prob_threshold,
             nms_threshold,
             axis,
+            gpu,
         )
         .map(|output| (output.0.into_pyarray(py), output.1.into_pyarray(py)))
         .map_err(imgal_error_to_pyerr)
@@ -262,6 +267,7 @@ pub fn stardist_3d_predict_demo<'py>(
             prob_threshold,
             nms_threshold,
             axis,
+            gpu,
         )
         .map(|output| (output.0.into_pyarray(py), output.1.into_pyarray(py)))
         .map_err(imgal_error_to_pyerr)
@@ -273,6 +279,7 @@ pub fn stardist_3d_predict_demo<'py>(
             prob_threshold,
             nms_threshold,
             axis,
+            gpu,
         )
         .map(|output| (output.0.into_pyarray(py), output.1.into_pyarray(py)))
         .map_err(imgal_error_to_pyerr)
