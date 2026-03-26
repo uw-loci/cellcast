@@ -86,25 +86,20 @@ where
     let pad_shape = norm_pad.shape().to_vec();
     // GPU and CPU computes must be in their own scope, the "device",
     // "stardist_net" and "tensor" types are all connected
+    let (raw_data, _) = norm_pad.into_raw_vec_and_offset();
     let prob: Vec<f32>;
     let dist: Vec<f32>;
     if gpu {
         let device = Default::default();
         let stardist_net = versatile_fluo_2d::Model::<GpuConfigBackend>::default();
-        let tensor = Tensor::<GpuConfigBackend, 1>::from_floats(
-            norm_pad.into_flat().as_slice().unwrap(),
-            &device,
-        );
+        let tensor = Tensor::<GpuConfigBackend, 1>::from_floats(raw_data.as_slice(), &device);
         let (p, d) = stardist_net.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
         prob = p.into_data().into_vec().unwrap();
         dist = d.into_data().into_vec().unwrap();
     } else {
         let device = Default::default();
         let stardist_net = versatile_fluo_2d::Model::<CpuConfigBackend>::default();
-        let tensor = Tensor::<CpuConfigBackend, 1>::from_floats(
-            norm_pad.into_flat().as_slice().unwrap(),
-            &device,
-        );
+        let tensor = Tensor::<CpuConfigBackend, 1>::from_floats(raw_data.as_slice(), &device);
         let (p, d) = stardist_net.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
         prob = p.into_data().into_vec().unwrap();
         dist = d.into_data().into_vec().unwrap();

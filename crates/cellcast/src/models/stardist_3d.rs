@@ -58,10 +58,8 @@ where
     let norm_pad = reflect_pad(&norm, &pad_config, Some(0))?;
     let mut pad_shape = norm_pad.shape().to_vec();
     let plns = pad_shape.remove(axis);
-    let td = TensorData::new(
-        norm_pad.into_flat().to_vec(),
-        [1, 1, plns, pad_shape[0], pad_shape[1]],
-    );
+    let (raw_data, _) = norm_pad.into_raw_vec_and_offset();
+    let td = TensorData::new(raw_data, [1, 1, plns, pad_shape[0], pad_shape[1]]);
     let prob: Vec<f32>;
     let dist: Vec<f32>;
     if gpu {
