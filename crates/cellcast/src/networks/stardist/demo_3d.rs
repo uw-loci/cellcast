@@ -214,8 +214,7 @@ impl<B: Backend> Model<B> {
         input: Tensor<B, 5>,
         shape: (i32, i32, i32),
     ) -> (Tensor<B, 5>, Tensor<B, 5>) {
-        let reshape1_out1 = input.reshape([1, 1, shape.0, shape.1, shape.2]);
-        let conv3d1_out1 = self.conv3d1.forward(reshape1_out1);
+        let conv3d1_out1 = self.conv3d1.forward(input);
         let conv3d2_out1 = self.conv3d2.forward(conv3d1_out1);
         let pad1_out1 = conv3d2_out1
             .clone()
