@@ -216,38 +216,48 @@ impl<B: Backend> Model<B> {
     ) -> (Tensor<B, 5>, Tensor<B, 5>) {
         let conv3d1_out1 = self.conv3d1.forward(input);
         let conv3d2_out1 = self.conv3d2.forward(conv3d1_out1);
-        let pad1_out1 = conv3d2_out1
-            .clone()
-            .pad((0, 1, 0, 1), burn::tensor::ops::PadMode::Constant(0_f32));
-        let conv3d3_out1 = self.conv3d3.forward(pad1_out1);
-        let relu1_out1 = burn::tensor::activation::relu(conv3d3_out1);
-        let conv3d4_out1 = self.conv3d4.forward(relu1_out1);
-        let relu2_out1 = burn::tensor::activation::relu(conv3d4_out1);
-        let conv3d5_out1 = self.conv3d5.forward(relu2_out1);
-        let conv3d6_out1 = self.conv3d6.forward(conv3d2_out1);
-        let add1_out1 = conv3d6_out1.add(conv3d5_out1);
-        let relu3_out1 = burn::tensor::activation::relu(add1_out1);
-        let conv3d7_out1 = self.conv3d7.forward(relu3_out1.clone());
-        let relu4_out1 = burn::tensor::activation::relu(conv3d7_out1);
-        let conv3d8_out1 = self.conv3d8.forward(relu4_out1);
-        let relu5_out1 = burn::tensor::activation::relu(conv3d8_out1);
-        let conv3d9_out1 = self.conv3d9.forward(relu5_out1);
-        let add2_out1 = relu3_out1.add(conv3d9_out1);
-        let relu6_out1 = burn::tensor::activation::relu(add2_out1);
-        let conv3d10_out1 = self.conv3d10.forward(relu6_out1.clone());
-        let relu7_out1 = burn::tensor::activation::relu(conv3d10_out1);
-        let conv3d11_out1 = self.conv3d11.forward(relu7_out1);
-        let relu8_out1 = burn::tensor::activation::relu(conv3d11_out1);
-        let conv3d12_out1 = self.conv3d12.forward(relu8_out1);
-        let add3_out1 = relu6_out1.add(conv3d12_out1);
-        let relu9_out1 = burn::tensor::activation::relu(add3_out1);
-        let conv3d13_out1 = self.conv3d13.forward(relu9_out1.clone());
-        let relu10_out1 = burn::tensor::activation::relu(conv3d13_out1);
-        let conv3d14_out1 = self.conv3d14.forward(relu10_out1);
-        let relu11_out1 = burn::tensor::activation::relu(conv3d14_out1);
-        let conv3d15_out1 = self.conv3d15.forward(relu11_out1);
-        let add4_out1 = relu9_out1.add(conv3d15_out1);
-        let relu12_out1 = burn::tensor::activation::relu(add4_out1);
+        let relu1_out1 = {
+            let pad1_out1 = conv3d2_out1
+                .clone()
+                .pad((0, 1, 0, 1), burn::tensor::ops::PadMode::Constant(0_f32));
+            let conv3d3_out1 = self.conv3d3.forward(pad1_out1);
+            burn::tensor::activation::relu(conv3d3_out1)
+        };
+        let relu3_out1 = {
+            let conv3d4_out1 = self.conv3d4.forward(relu1_out1);
+            let relu2_out1 = burn::tensor::activation::relu(conv3d4_out1);
+            let conv3d5_out1 = self.conv3d5.forward(relu2_out1);
+            let conv3d6_out1 = self.conv3d6.forward(conv3d2_out1);
+            let add1_out1 = conv3d6_out1.add(conv3d5_out1);
+            burn::tensor::activation::relu(add1_out1)
+        };
+        let relu6_out1 = {
+            let conv3d7_out1 = self.conv3d7.forward(relu3_out1.clone());
+            let relu4_out1 = burn::tensor::activation::relu(conv3d7_out1);
+            let conv3d8_out1 = self.conv3d8.forward(relu4_out1);
+            let relu5_out1 = burn::tensor::activation::relu(conv3d8_out1);
+            let conv3d9_out1 = self.conv3d9.forward(relu5_out1);
+            let add2_out1 = relu3_out1.add(conv3d9_out1);
+            burn::tensor::activation::relu(add2_out1)
+        };
+        let relu9_out1 = {
+            let conv3d10_out1 = self.conv3d10.forward(relu6_out1.clone());
+            let relu7_out1 = burn::tensor::activation::relu(conv3d10_out1);
+            let conv3d11_out1 = self.conv3d11.forward(relu7_out1);
+            let relu8_out1 = burn::tensor::activation::relu(conv3d11_out1);
+            let conv3d12_out1 = self.conv3d12.forward(relu8_out1);
+            let add3_out1 = relu6_out1.add(conv3d12_out1);
+            burn::tensor::activation::relu(add3_out1)
+        };
+        let relu12_out1 = {
+            let conv3d13_out1 = self.conv3d13.forward(relu9_out1.clone());
+            let relu10_out1 = burn::tensor::activation::relu(conv3d13_out1);
+            let conv3d14_out1 = self.conv3d14.forward(relu10_out1);
+            let relu11_out1 = burn::tensor::activation::relu(conv3d14_out1);
+            let conv3d15_out1 = self.conv3d15.forward(relu11_out1);
+            let add4_out1 = relu9_out1.add(conv3d15_out1);
+            burn::tensor::activation::relu(add4_out1)
+        };
         let conv3d16_out1 = self.conv3d16.forward(relu12_out1);
         let relu13_out1 = burn::tensor::activation::relu(conv3d16_out1);
         let conv3d17_out1 = self.conv3d17.forward(relu13_out1.clone());
