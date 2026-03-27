@@ -251,16 +251,15 @@ fn prob_dist_to_labels_2d(
     pad_shape: Vec<usize>,
     src_shape: (usize, usize),
 ) -> Array2<u64> {
-    // outputs from the StarDist network are flat 1D arrays, they need to be
-    // reshapped back into their input shape divided by 2
+    // create arrays from the flat StarDist network output
     let res_row: usize = pad_shape[0] / 2;
     let res_col: usize = pad_shape[1] / 2;
     let prob_arr = Array2::from_shape_vec((res_row, res_col), prob)
         .expect("StarDist 2D object probabilites reshape failed.");
     let dist_arr = Array3::from_shape_vec((res_row, res_col, N_RAYS), dist)
         .expect("StarDist 2D radial distances reshape failed.");
-    // this mapv call ensures all values in the ray distances array are at least
-    // 1e-3 which prevents negative and/or zero distances
+    // ensure all values in the dist array are at least 1e-3, prevents negative and/or zero
+    // distances
     let dist_arr = dist_arr.mapv(|v| v.max(1e-3));
     let mut valid_mask = manual_mask(&prob_arr, prob_threshold);
     border::clip_mask_border(&mut valid_mask.view_mut(), 2);

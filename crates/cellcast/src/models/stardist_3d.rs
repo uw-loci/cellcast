@@ -1,13 +1,14 @@
 use burn::prelude::*;
 use imgal::error::ImgalError;
 use imgal::image::normalize::percentile_normalize;
+use imgal::threshold::manual::manual_mask;
 use imgal::traits::numeric::AsNumeric;
 use imgal::transform::pad::reflect_pad;
-use ndarray::{Array3, Array4, ArrayBase, AsArray, Ix3, ViewRepr};
+use ndarray::{Array1, Array2, Array3, Array4, ArrayBase, AsArray, Axis, Ix3, ViewRepr};
 
 use crate::config::backend::{CpuBackend, GpuBackend};
 use crate::networks::stardist::demo_3d;
-use crate::utils::axes;
+use crate::utils::{axes, border};
 
 const DIV: usize = 16;
 const N_RAYS: usize = 96;
@@ -83,20 +84,53 @@ where
         prob = p.into_data().into_vec().unwrap();
         dist = d.into_data().into_vec().unwrap();
     }
-    Ok(prob_dist_to_labels_3d(prob, dist, pad_shape, plns))
+    Ok(prob_dist_to_labels_3d(
+        prob,
+        dist,
+        prob_threshold,
+        nms_threshold,
+        pad_shape,
+        plns,
+    ))
 }
 
 fn prob_dist_to_labels_3d(
     prob: Vec<f32>,
     dist: Vec<f32>,
+    prob_threshold: f32,
+    nms_threshold: f32,
     pad_shape: Vec<usize>,
     plns: usize,
 ) -> (Array3<f32>, Array4<f32>) {
+    // create arrays from the flat StarDist network output
     let res_row: usize = pad_shape[0] / 2;
     let res_col: usize = pad_shape[1] / 2;
     let prob_arr = Array3::from_shape_vec((plns, res_row, res_col), prob)
         .expect("StarDist 3D object probabilites reshape failed.");
     let dist_arr = Array4::from_shape_vec((N_RAYS, plns, res_row, res_col), dist)
         .expect("StarDist 3D radial distances reshape failed.");
+    // ensure all values in the dist array are at least 1e-3, prevents negative and/or zero
+    // distances
+    let dist_arr = dist_arr.mapv(|v| v.max(1e-3));
+    let mut valid_mask = manual_mask(&prob_arr, prob_threshold);
+    border::clip_mask_border(&mut valid_mask.view_mut(), 2);
+    let valid_mask = valid_mask.into_dimensionality::<Ix3>().unwrap();
+    // collect all valid (pln, row, col) positions to avoid iterating the mask
+    // repeatedly
+    let valid_pos: Vec<(usize, usize, usize)> = valid_mask
+        .indexed_iter()
+        .filter(|&((_, _, _), &v)| v)
+        .map(|((p, r, c), _)| (p, r, c))
+        .collect();
+    let flat_pos = valid_pos.iter().flat_map(|&(p, r, c)| [p, r, c]).collect();
+    let mut valid_pos = Array2::from_shape_vec((valid_pos.len(), 3), flat_pos).unwrap();
+    // filter probabilities and distances with valid indices, removing invalid
+    // positions
+    let mut valid_prob = Array1::from_iter(
+        valid_pos
+            .axis_iter(Axis(0))
+            .map(|v| prob_arr[[v[0], v[1], v[2]]]),
+    );
+    dbg!(valid_prob);
     (prob_arr, dist_arr)
 }
