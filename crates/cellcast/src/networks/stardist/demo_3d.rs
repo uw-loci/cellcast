@@ -261,10 +261,9 @@ impl<B: Backend> Model<B> {
         let conv3d16_out1 = self.conv3d16.forward(relu12_out1);
         let relu13_out1 = burn::tensor::activation::relu(conv3d16_out1);
         let conv3d17_out1 = self.conv3d17.forward(relu13_out1.clone());
-        let transpose1_out1 = conv3d17_out1.permute([0, 2, 3, 4, 1]);
         let conv3d18_out1 = self.conv3d18.forward(relu13_out1);
         let sigmoid1_out1 = burn::tensor::activation::sigmoid(conv3d18_out1);
         let reshape2_out1 = sigmoid1_out1.reshape([1, shape.0, shape.1 / 2, shape.2 / 2, 1]);
-        (reshape2_out1, transpose1_out1)
+        (reshape2_out1, conv3d17_out1)
     }
 }

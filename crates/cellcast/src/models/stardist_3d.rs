@@ -96,7 +96,7 @@ fn prob_dist_to_labels_3d(
     let res_col: usize = pad_shape[1] / 2;
     let prob_arr = Array3::from_shape_vec((plns, res_row, res_col), prob)
         .expect("StarDist 3D object probabilites reshape failed.");
-    let dist_arr = Array4::from_shape_vec((plns, res_row, res_col, N_RAYS), dist)
+    let dist_arr = Array4::from_shape_vec((N_RAYS, plns, res_row, res_col), dist)
         .expect("StarDist 3D radial distances reshape failed.");
     (prob_arr, dist_arr)
 }
