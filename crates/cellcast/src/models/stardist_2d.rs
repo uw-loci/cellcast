@@ -277,7 +277,7 @@ fn prob_dist_to_labels_2d(
     // positions
     let mut valid_prob =
         Array1::from_iter(valid_pos.axis_iter(Axis(0)).map(|v| prob_arr[[v[0], v[1]]]));
-    let mut valid_dist = Array2::<f32>::zeros((valid_pos.len(), N_RAYS));
+    let mut valid_dist = Array2::<f32>::zeros((valid_pos.dim().0, N_RAYS));
     (0..N_RAYS).for_each(|n| {
         valid_pos.axis_iter(Axis(0)).enumerate().for_each(|(i, v)| {
             valid_dist[[i, n]] = dist_arr[[v[0], v[1], n]];
