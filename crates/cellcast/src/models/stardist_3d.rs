@@ -33,14 +33,25 @@ where
     A: AsArray<'a, T, Ix3>,
     T: 'a + AsNumeric,
 {
+    let axis = axis.unwrap_or(0);
+    if axis >= 3 {
+        return Err(ImgalError::InvalidAxis {
+            axis_idx: axis,
+            dim_len: 3,
+        });
+    }
     let data: ArrayBase<ViewRepr<&'a T>, Ix3> = data.into();
     let pmin = pmin.unwrap_or(PMIN);
     let pmax = pmax.unwrap_or(PMAX);
     let prob_threshold = prob_threshold.unwrap_or(PROB_THRESHOLD) as f32;
     let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
-    let axis = axis.unwrap_or(0);
     let norm = percentile_normalize(&data, pmin, pmax, None, None)?;
     let norm = norm.mapv(|v| v as f32);
+    let (src_row, src_col) = {
+        let mut shape = data.shape().to_vec();
+        shape.remove(axis);
+        (shape[0], shape[1])
+    };
     // this pattern determines how many pixels to pad in each axis to be
     // divisible by 16 as expected by the network, except for the planes (z)
     // axis which remains fixed (i.e. an asymmetrical pad)
@@ -90,7 +101,7 @@ where
         prob_threshold,
         nms_threshold,
         pad_shape,
-        plns,
+        (plns, src_row, src_col),
     ))
 }
 
@@ -100,14 +111,14 @@ fn prob_dist_to_labels_3d(
     prob_threshold: f32,
     nms_threshold: f32,
     pad_shape: Vec<usize>,
-    plns: usize,
+    src_shape: (usize, usize, usize),
 ) -> (Array3<f32>, Array4<f32>) {
     // create arrays from the flat StarDist network output
     let res_row: usize = pad_shape[0] / 2;
     let res_col: usize = pad_shape[1] / 2;
-    let prob_arr = Array3::from_shape_vec((plns, res_row, res_col), prob)
+    let prob_arr = Array3::from_shape_vec((src_shape.0, res_row, res_col), prob)
         .expect("StarDist 3D object probabilites reshape failed.");
-    let dist_arr = Array4::from_shape_vec((N_RAYS, plns, res_row, res_col), dist)
+    let dist_arr = Array4::from_shape_vec((N_RAYS, src_shape.0, res_row, res_col), dist)
         .expect("StarDist 3D radial distances reshape failed.");
     // ensure all values in the dist array are at least 1e-3, prevents negative and/or zero
     // distances
@@ -131,6 +142,40 @@ fn prob_dist_to_labels_3d(
             .axis_iter(Axis(0))
             .map(|v| prob_arr[[v[0], v[1], v[2]]]),
     );
-    dbg!(valid_prob);
+    let mut valid_dist = Array2::<f32>::zeros((valid_pos.dim().0, N_RAYS));
+    (0..N_RAYS).for_each(|n| {
+        valid_pos.axis_iter(Axis(0)).enumerate().for_each(|(i, v)| {
+            valid_dist[[i, n]] = dist_arr[[n, v[0], v[1], v[2]]];
+        });
+    });
+    // scale each valid position by 2 and collect the valid indices of positions
+    // inside of the source image dimensions (used for point filtering)
+    valid_pos.mapv_inplace(|v| v * 2);
+    let valid_inds: Vec<usize> = valid_pos
+        .axis_iter(Axis(0))
+        .enumerate()
+        .filter_map(|(i, v)| {
+            if v[0] < src_shape.0 || v[1] < src_shape.1 || v[2] < src_shape.2 {
+                Some(i)
+            } else {
+                None
+            }
+        })
+        .collect();
+    // remove invalid indices (if there are any) from dist, prob and pos
+    let poly_ax = Axis(0);
+    if valid_pos.len() > valid_inds.len() {
+        valid_dist = valid_dist.select(poly_ax, &valid_inds);
+        valid_prob = valid_prob.select(poly_ax, &valid_inds);
+        valid_pos = valid_pos.select(poly_ax, &valid_inds);
+    }
+    // get the indices that would sort probs in descending order
+    let n_polys = valid_prob.len();
+    let mut sorted_poly_inds: Vec<usize> = (0..n_polys).collect();
+    sorted_poly_inds.sort_by(|&a, &b| valid_prob[b].partial_cmp(&valid_prob[a]).unwrap());
+    // sort dist, prob and pos arrays with prob descending order indices
+    let poly_dist = valid_dist.select(poly_ax, &sorted_poly_inds);
+    let poly_pos = valid_pos.select(poly_ax, &sorted_poly_inds);
+    // TODO 3D NMS
     (prob_arr, dist_arr)
 }
