@@ -249,69 +249,83 @@ impl<B: Backend> Model<B> {
 
     #[allow(clippy::let_and_return, clippy::approx_constant)]
     pub fn forward(&self, input: Tensor<B, 4>, shape: (i32, i32)) -> (Tensor<B, 4>, Tensor<B, 4>) {
-        let conv2d1_out1 = self.conv2d1.forward(input);
-        let relu1_out1 = burn::tensor::activation::relu(conv2d1_out1);
-        let conv2d2_out1 = self.conv2d2.forward(relu1_out1);
-        let relu2_out1 = burn::tensor::activation::relu(conv2d2_out1);
-        let maxpool2d1_out1 = self.maxpool2d1.forward(relu2_out1);
-        let conv2d3_out1 = self.conv2d3.forward(maxpool2d1_out1);
-        let relu3_out1 = burn::tensor::activation::relu(conv2d3_out1);
-        let conv2d4_out1 = self.conv2d4.forward(relu3_out1);
-        let relu4_out1 = burn::tensor::activation::relu(conv2d4_out1);
-        let maxpool2d2_out1 = self.maxpool2d2.forward(relu4_out1.clone());
-        let conv2d5_out1 = self.conv2d5.forward(maxpool2d2_out1);
-        let relu5_out1 = burn::tensor::activation::relu(conv2d5_out1);
-        let conv2d6_out1 = self.conv2d6.forward(relu5_out1);
-        let relu6_out1 = burn::tensor::activation::relu(conv2d6_out1);
-        let maxpool2d3_out1 = self.maxpool2d3.forward(relu6_out1.clone());
-        let conv2d7_out1 = self.conv2d7.forward(maxpool2d3_out1);
-        let relu7_out1 = burn::tensor::activation::relu(conv2d7_out1);
-        let conv2d8_out1 = self.conv2d8.forward(relu7_out1);
-        let relu8_out1 = burn::tensor::activation::relu(conv2d8_out1);
-        let maxpool2d4_out1 = self.maxpool2d4.forward(relu8_out1.clone());
-        let conv2d9_out1 = self.conv2d9.forward(maxpool2d4_out1);
-        let relu9_out1 = burn::tensor::activation::relu(conv2d9_out1);
-        let conv2d10_out1 = self.conv2d10.forward(relu9_out1);
-        let relu10_out1 = burn::tensor::activation::relu(conv2d10_out1);
-        let unsqueeze1_out1: Tensor<B, 5> = relu10_out1.unsqueeze_dims(&[3]);
-        let tile1_out1 = unsqueeze1_out1.repeat(&[1, 1, 1, 2, 1]);
-        let transpose1_out1 = tile1_out1.permute([0, 2, 3, 4, 1]);
-        let reshape2_out1 = transpose1_out1.reshape([1, shape.0 / 8, shape.1 / 16, 128]);
-        let unsqueeze2_out1: Tensor<B, 5> = reshape2_out1.unsqueeze_dims(&[3]);
-        let tile2_out1 = unsqueeze2_out1.repeat(&[1, 1, 1, 2, 1]);
-        let reshape3_out1 = tile2_out1.reshape([1, shape.0 / 8, shape.1 / 8, 128]);
-        let transpose2_out1 = reshape3_out1.permute([0, 3, 1, 2]);
-        let concat1_out1 = burn::tensor::Tensor::cat([transpose2_out1, relu8_out1].into(), 1);
-        let conv2d11_out1 = self.conv2d11.forward(concat1_out1);
-        let relu11_out1 = burn::tensor::activation::relu(conv2d11_out1);
-        let conv2d12_out1 = self.conv2d12.forward(relu11_out1);
-        let relu12_out1 = burn::tensor::activation::relu(conv2d12_out1);
-        let unsqueeze3_out1: Tensor<B, 5> = relu12_out1.unsqueeze_dims(&[3]);
-        let tile3_out1 = unsqueeze3_out1.repeat(&[1, 1, 1, 2, 1]);
-        let transpose3_out1 = tile3_out1.permute([0, 2, 3, 4, 1]);
-        let reshape4_out1 = transpose3_out1.reshape([1, shape.0 / 4, shape.1 / 8, 64]);
-        let unsqueeze4_out1: Tensor<B, 5> = reshape4_out1.unsqueeze_dims(&[3]);
-        let tile4_out1 = unsqueeze4_out1.repeat(&[1, 1, 1, 2, 1]);
-        let reshape5_out1 = tile4_out1.reshape([1, shape.0 / 4, shape.1 / 4, 64]);
-        let transpose4_out1 = reshape5_out1.permute([0, 3, 1, 2]);
-        let concat2_out1 = burn::tensor::Tensor::cat([transpose4_out1, relu6_out1].into(), 1);
-        let conv2d13_out1 = self.conv2d13.forward(concat2_out1);
-        let relu13_out1 = burn::tensor::activation::relu(conv2d13_out1);
-        let conv2d14_out1 = self.conv2d14.forward(relu13_out1);
-        let relu14_out1 = burn::tensor::activation::relu(conv2d14_out1);
-        let unsqueeze5_out1: Tensor<B, 5> = relu14_out1.unsqueeze_dims(&[3]);
-        let tile5_out1 = unsqueeze5_out1.repeat(&[1, 1, 1, 2, 1]);
-        let transpose5_out1 = tile5_out1.permute([0, 2, 3, 4, 1]);
-        let reshape6_out1 = transpose5_out1.reshape([1, shape.0 / 2, shape.1 / 4, 32]);
-        let unsqueeze6_out1: Tensor<B, 5> = reshape6_out1.unsqueeze_dims(&[3]);
-        let tile6_out1 = unsqueeze6_out1.repeat(&[1, 1, 1, 2, 1]);
-        let reshape7_out1 = tile6_out1.reshape([1, shape.0 / 2, shape.1 / 2, 32]);
-        let transpose6_out1 = reshape7_out1.permute([0, 3, 1, 2]);
-        let concat3_out1 = burn::tensor::Tensor::cat([transpose6_out1, relu4_out1].into(), 1);
-        let conv2d15_out1 = self.conv2d15.forward(concat3_out1);
-        let relu15_out1 = burn::tensor::activation::relu(conv2d15_out1);
-        let conv2d16_out1 = self.conv2d16.forward(relu15_out1);
-        let relu16_out1 = burn::tensor::activation::relu(conv2d16_out1);
+        let relu4_out1 = {
+            let conv2d1_out1 = self.conv2d1.forward(input);
+            let relu1_out1 = burn::tensor::activation::relu(conv2d1_out1);
+            let conv2d2_out1 = self.conv2d2.forward(relu1_out1);
+            let relu2_out1 = burn::tensor::activation::relu(conv2d2_out1);
+            let maxpool2d1_out1 = self.maxpool2d1.forward(relu2_out1);
+            let conv2d3_out1 = self.conv2d3.forward(maxpool2d1_out1);
+            let relu3_out1 = burn::tensor::activation::relu(conv2d3_out1);
+            let conv2d4_out1 = self.conv2d4.forward(relu3_out1);
+            burn::tensor::activation::relu(conv2d4_out1)
+        };
+        let relu6_out1 = {
+            let maxpool2d2_out1 = self.maxpool2d2.forward(relu4_out1.clone());
+            let conv2d5_out1 = self.conv2d5.forward(maxpool2d2_out1);
+            let relu5_out1 = burn::tensor::activation::relu(conv2d5_out1);
+            let conv2d6_out1 = self.conv2d6.forward(relu5_out1);
+            burn::tensor::activation::relu(conv2d6_out1)
+        };
+        let relu8_out1 = {
+            let maxpool2d3_out1 = self.maxpool2d3.forward(relu6_out1.clone());
+            let conv2d7_out1 = self.conv2d7.forward(maxpool2d3_out1);
+            let relu7_out1 = burn::tensor::activation::relu(conv2d7_out1);
+            let conv2d8_out1 = self.conv2d8.forward(relu7_out1);
+            burn::tensor::activation::relu(conv2d8_out1)
+        };
+        let relu10_out1 = {
+            let maxpool2d4_out1 = self.maxpool2d4.forward(relu8_out1.clone());
+            let conv2d9_out1 = self.conv2d9.forward(maxpool2d4_out1);
+            let relu9_out1 = burn::tensor::activation::relu(conv2d9_out1);
+            let conv2d10_out1 = self.conv2d10.forward(relu9_out1);
+            burn::tensor::activation::relu(conv2d10_out1)
+        };
+        let relu12_out1 = {
+            let unsqueeze1_out1: Tensor<B, 5> = relu10_out1.unsqueeze_dims(&[3]);
+            let tile1_out1 = unsqueeze1_out1.repeat(&[1, 1, 1, 2, 1]);
+            let transpose1_out1 = tile1_out1.permute([0, 2, 3, 4, 1]);
+            let reshape2_out1 = transpose1_out1.reshape([1, shape.0 / 8, shape.1 / 16, 128]);
+            let unsqueeze2_out1: Tensor<B, 5> = reshape2_out1.unsqueeze_dims(&[3]);
+            let tile2_out1 = unsqueeze2_out1.repeat(&[1, 1, 1, 2, 1]);
+            let reshape3_out1 = tile2_out1.reshape([1, shape.0 / 8, shape.1 / 8, 128]);
+            let transpose2_out1 = reshape3_out1.permute([0, 3, 1, 2]);
+            let concat1_out1 = burn::tensor::Tensor::cat([transpose2_out1, relu8_out1].into(), 1);
+            let conv2d11_out1 = self.conv2d11.forward(concat1_out1);
+            let relu11_out1 = burn::tensor::activation::relu(conv2d11_out1);
+            let conv2d12_out1 = self.conv2d12.forward(relu11_out1);
+            burn::tensor::activation::relu(conv2d12_out1)
+        };
+        let relu14_out1 = {
+            let unsqueeze3_out1: Tensor<B, 5> = relu12_out1.unsqueeze_dims(&[3]);
+            let tile3_out1 = unsqueeze3_out1.repeat(&[1, 1, 1, 2, 1]);
+            let transpose3_out1 = tile3_out1.permute([0, 2, 3, 4, 1]);
+            let reshape4_out1 = transpose3_out1.reshape([1, shape.0 / 4, shape.1 / 8, 64]);
+            let unsqueeze4_out1: Tensor<B, 5> = reshape4_out1.unsqueeze_dims(&[3]);
+            let tile4_out1 = unsqueeze4_out1.repeat(&[1, 1, 1, 2, 1]);
+            let reshape5_out1 = tile4_out1.reshape([1, shape.0 / 4, shape.1 / 4, 64]);
+            let transpose4_out1 = reshape5_out1.permute([0, 3, 1, 2]);
+            let concat2_out1 = burn::tensor::Tensor::cat([transpose4_out1, relu6_out1].into(), 1);
+            let conv2d13_out1 = self.conv2d13.forward(concat2_out1);
+            let relu13_out1 = burn::tensor::activation::relu(conv2d13_out1);
+            let conv2d14_out1 = self.conv2d14.forward(relu13_out1);
+            burn::tensor::activation::relu(conv2d14_out1)
+        };
+        let relu16_out1 = {
+            let unsqueeze5_out1: Tensor<B, 5> = relu14_out1.unsqueeze_dims(&[3]);
+            let tile5_out1 = unsqueeze5_out1.repeat(&[1, 1, 1, 2, 1]);
+            let transpose5_out1 = tile5_out1.permute([0, 2, 3, 4, 1]);
+            let reshape6_out1 = transpose5_out1.reshape([1, shape.0 / 2, shape.1 / 4, 32]);
+            let unsqueeze6_out1: Tensor<B, 5> = reshape6_out1.unsqueeze_dims(&[3]);
+            let tile6_out1 = unsqueeze6_out1.repeat(&[1, 1, 1, 2, 1]);
+            let reshape7_out1 = tile6_out1.reshape([1, shape.0 / 2, shape.1 / 2, 32]);
+            let transpose6_out1 = reshape7_out1.permute([0, 3, 1, 2]);
+            let concat3_out1 = burn::tensor::Tensor::cat([transpose6_out1, relu4_out1].into(), 1);
+            let conv2d15_out1 = self.conv2d15.forward(concat3_out1);
+            let relu15_out1 = burn::tensor::activation::relu(conv2d15_out1);
+            let conv2d16_out1 = self.conv2d16.forward(relu15_out1);
+            burn::tensor::activation::relu(conv2d16_out1)
+        };
         let conv2d17_out1 = self.conv2d17.forward(relu16_out1);
         let relu17_out1 = burn::tensor::activation::relu(conv2d17_out1);
         let conv2d18_out1 = self.conv2d18.forward(relu17_out1.clone());
