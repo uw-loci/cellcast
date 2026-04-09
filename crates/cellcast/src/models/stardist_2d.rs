@@ -1,7 +1,7 @@
 use burn::prelude::*;
 use imgal::error::ImgalError;
 use imgal::image::percentile_normalize;
-use imgal::threshold::manual_mask;
+use imgal::threshold::manual::manual_mask;
 use imgal::traits::numeric::AsNumeric;
 use imgal::transform::pad::reflect_pad;
 use ndarray::{Array1, Array2, Array3, ArrayBase, AsArray, Axis, Ix2, Ix3, ViewRepr};
@@ -73,7 +73,7 @@ where
     let prob_threshold = prob_threshold.unwrap_or(FLUO_PROB_THRESHOLD) as f32;
     let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
     let (src_row, src_col) = data.dim();
-    let norm = percentile_normalize(&data, pmin, pmax, None, None)?;
+    let norm = percentile_normalize(&data, pmin, pmax, false, None, None, false)?;
     let norm = norm.mapv(|v| v as f32);
     // this pattern determines how many pixels to pad in each axis to be
     // divisible by 16 as expected by the network
@@ -82,7 +82,7 @@ where
         .iter()
         .map(|&v| axes::divisible_pad(v, DIV))
         .collect();
-    let norm_pad = reflect_pad(&norm, &pad_config, Some(0))?;
+    let norm_pad = reflect_pad(&norm, &pad_config, Some(0), false)?;
     let pad_shape = norm_pad.shape().to_vec();
     // GPU and CPU computes must be in their own scope, the "device",
     // "stardist_net" and "tensor" types are all connected
@@ -173,7 +173,7 @@ where
         });
     }
     let (src_row, src_col, _) = data.dim();
-    let norm = percentile_normalize(&data, pmin, pmax, None, None)?;
+    let norm = percentile_normalize(&data, pmin, pmax, false, None, None, false)?;
     let norm = norm.mapv(|v| v as f32);
     // this iterator determines how many pixels to pad in each axis (except the
     // channel axis) to be divisible by 16 as expected by the network
@@ -189,7 +189,7 @@ where
             }
         })
         .collect();
-    let norm_pad = reflect_pad(&norm, &pad_config, Some(0))?;
+    let norm_pad = reflect_pad(&norm, &pad_config, Some(0), false)?;
     let mut pad_shape = norm_pad.shape().to_vec();
     pad_shape.remove(axis);
     // GPU and CPU computes must be in their own scope, the "device",
@@ -256,8 +256,8 @@ fn prob_dist_to_labels_2d(
     // ensure all values in the dist array are at least 1e-3, prevents negative and/or zero
     // distances
     let dist_arr = dist_arr.mapv(|v| v.max(1e-3));
-    let mut valid_mask = manual_mask(&prob_arr, prob_threshold);
-    border::clip_mask_border(&mut valid_mask.view_mut(), 2);
+    let mut valid_mask = manual_mask(&prob_arr, prob_threshold, false);
+    border::clip_mask_border(&mut valid_mask.view_mut().into_dyn(), 2);
     let valid_mask = valid_mask.into_dimensionality::<Ix2>().unwrap();
     // collect all valid (row, col) positions to avoid iterating the mask
     // repeatedly

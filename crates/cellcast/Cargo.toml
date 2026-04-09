@@ -18,7 +18,7 @@ burn = { version = "0.20", features = ["tui", "train", "wgpu", "ndarray"], defau
 burn-store = "0.20"
 burn-ndarray = "0.20"
 geo = "0.32"
-imgal = "0.2"
+imgal = { git = "https://github.com/imgal-sc/imgal", branch = "main" }
 ndarray = "0.17"
 rayon = "1.11"
 reqwest = { version = "0.13", features = ["blocking"]}

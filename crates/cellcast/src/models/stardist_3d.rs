@@ -1,6 +1,6 @@
 use burn::prelude::*;
 use imgal::error::ImgalError;
-use imgal::image::normalize::percentile_normalize;
+use imgal::image::percentile_normalize;
 use imgal::threshold::manual::manual_mask;
 use imgal::traits::numeric::AsNumeric;
 use imgal::transform::pad::reflect_pad;
@@ -45,7 +45,7 @@ where
     let pmax = pmax.unwrap_or(PMAX);
     let prob_threshold = prob_threshold.unwrap_or(PROB_THRESHOLD) as f32;
     let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
-    let norm = percentile_normalize(&data, pmin, pmax, None, None)?;
+    let norm = percentile_normalize(&data, pmin, pmax, false, None, None, false)?;
     let norm = norm.mapv(|v| v as f32);
     let (src_row, src_col) = {
         let mut shape = data.shape().to_vec();
@@ -67,7 +67,7 @@ where
             }
         })
         .collect();
-    let norm_pad = reflect_pad(&norm, &pad_config, Some(0))?;
+    let norm_pad = reflect_pad(&norm, &pad_config, Some(0), false)?;
     let mut pad_shape = norm_pad.shape().to_vec();
     let plns = pad_shape.remove(axis);
     let (raw_data, _) = norm_pad.into_raw_vec_and_offset();
@@ -123,8 +123,8 @@ fn prob_dist_to_labels_3d(
     // ensure all values in the dist array are at least 1e-3, prevents negative and/or zero
     // distances
     let dist_arr = dist_arr.mapv(|v| v.max(1e-3));
-    let mut valid_mask = manual_mask(&prob_arr, prob_threshold);
-    border::clip_mask_border(&mut valid_mask.view_mut(), 2);
+    let mut valid_mask = manual_mask(&prob_arr, prob_threshold, false);
+    border::clip_mask_border(&mut valid_mask.view_mut().into_dyn(), 2);
     let valid_mask = valid_mask.into_dimensionality::<Ix3>().unwrap();
     // collect all valid (pln, row, col) positions to avoid iterating the mask
     // repeatedly
