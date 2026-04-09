@@ -165,6 +165,7 @@ where
     let pmax = pmax.unwrap_or(PMAX);
     let prob_threshold = prob_threshold.unwrap_or(HE_PROB_THRESHOLD) as f32;
     let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
+    let norm = percentile_normalize(&data, pmin, pmax, false, axis, None, false)?;
     let axis = axis.unwrap_or(2);
     if axis >= 3 {
         return Err(ImgalError::InvalidAxis {
@@ -173,7 +174,6 @@ where
         });
     }
     let (src_row, src_col, _) = data.dim();
-    let norm = percentile_normalize(&data, pmin, pmax, false, None, None, false)?;
     let norm = norm.mapv(|v| v as f32);
     // this iterator determines how many pixels to pad in each axis (except the
     // channel axis) to be divisible by 16 as expected by the network
