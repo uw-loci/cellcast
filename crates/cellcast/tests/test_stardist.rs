@@ -1,10 +1,10 @@
-use ndarray::{arr2, Ix2};
+use ndarray::{Ix2, arr2};
 
+use cellcast::models::stardist_2d::predict_versatile_fluo;
 use imgal::error::ImgalError;
 use imgal::simulation::blob::logistic_metaballs;
 use imgal::simulation::noise::poisson_noise_mut;
 use imgal::spatial::roi::roi_cloud_map;
-use cellcast::models::stardist_2d::predict_versatile_fluo;
 
 const CENTERS: [[f64; 2]; 5] = [
     [55.5, 60.0],
@@ -34,7 +34,7 @@ fn stardist_2d_predict_versatile_fluo_expected_results() -> Result<(), ImgalErro
     )?;
     poisson_noise_mut(data.view_mut(), 0.8, None, false);
     let data = data.into_dimensionality::<Ix2>().unwrap();
-    let labels = predict_versatile_fluo(&data, None, None, None, None, true)?;
+    let labels = predict_versatile_fluo(&data, None, None, None, None, false)?;
     let rcm = roi_cloud_map(&labels, false);
     assert_eq!(rcm.len(), 5);
     assert_eq!(rcm.get(&1).expect("ROI 1 not foud.").dim().0, 3177);
