@@ -8,6 +8,7 @@ use ndarray::{Array1, Array2, Array3, Array4, ArrayBase, AsArray, Axis, Ix3, Vie
 
 use crate::config::backend::{CpuBackend, GpuBackend};
 use crate::networks::stardist::demo_3d;
+use crate::process::nms::polyhedron_nms;
 use crate::utils::{axes, border};
 
 const DIV: usize = 16;
@@ -180,5 +181,12 @@ fn prob_dist_to_labels_3d(
     let poly_dist = valid_dist.select(poly_ax, &sorted_poly_inds);
     let poly_pos = valid_pos.select(poly_ax, &sorted_poly_inds);
     // TODO 3D NMS
+    let valid_poly_inds = polyhedron_nms(
+        poly_dist.view(),
+        poly_pos.view(),
+        n_polys,
+        N_RAYS,
+        nms_threshold,
+    );
     (prob_arr, dist_arr)
 }

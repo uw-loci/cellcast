@@ -1,5 +1,9 @@
+use std::f64::consts::PI;
+
+use imgal::error::ImgalError;
 use imgal::spatial::KDTree;
-use ndarray::ArrayView2;
+use imgal::spatial::convex_hull::quickhull_3d;
+use ndarray::{Array1, Array2, ArrayView2, Axis, stack};
 
 use crate::geometry::polygon;
 
@@ -74,10 +78,24 @@ pub fn polygon_nms(
             }
         }
     }
-
     // invert the suppressed array, `true` indicates valid or non-suppressed
     // polygon indices
     suppressed.iter().map(|&v| !v).collect()
+}
+
+/// TODO
+pub fn polyhedron_nms(
+    polyhedron_dist: ArrayView2<f32>,
+    polyhedron_pos: ArrayView2<usize>,
+    n_polys: usize,
+    n_rays: usize,
+    threshold: f32,
+) -> Result<Vec<bool>, ImgalError> {
+    let mut suppressed: Vec<bool> = vec![false; n_polys];
+    let gs = golden_spiral(n_rays, None)?;
+    dbg!(gs.0);
+    dbg!(gs.1);
+    todo!();
 }
 
 /// Determine if two bounding boxes intersect.
@@ -94,4 +112,26 @@ pub fn polygon_nms(
 #[inline]
 fn bbox_intersect_2d(a: &(f32, f32, f32, f32), b: &(f32, f32, f32, f32)) -> bool {
     b.0 <= a.1 && a.0 <= b.1 && b.2 <= a.3 && a.2 <= b.3
+}
+
+/// TODO
+fn golden_spiral(
+    n_points: usize,
+    anisotropy: Option<[f64; 3]>,
+) -> Result<(Array2<f64>, Array2<usize>), ImgalError> {
+    let anisotropy = Array1::from_iter(anisotropy.unwrap_or([1.0_f64; 3]));
+    let golden_angle = (3.0 - 5.0_f64.sqrt()) * PI;
+    let phi = Array1::from_iter(0..n_points).mapv(|v| v as f64 * golden_angle);
+    let z = Array1::linspace(-1.0, 1.0, n_points);
+    let rho = z.mapv(|v| (1.0_f64 - v * v).sqrt());
+    let a = &rho * phi.mapv(|v| v.sin());
+    let b = &rho * phi.mapv(|v| v.cos());
+    let ax = Axis(1);
+    let points = stack(ax, &[z.view(), a.view(), b.view()])
+        .expect("Failed to create Golden spiral point cloud.");
+    let points = points / anisotropy;
+    let (mut verts, faces) = quickhull_3d(&points, false)?;
+    let norms = verts.map_axis(ax, |r| r.dot(&r).sqrt());
+    verts /= &norms.insert_axis(ax);
+    Ok((verts, faces))
 }
