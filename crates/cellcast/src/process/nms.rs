@@ -30,7 +30,7 @@ use crate::geometry::polygon;
 /// * `Vec<bool>`: A boolean array of length `n_polys` where `True` indicates
 ///   valid or non-suppressed polygon indices (*i.e.* polygons that should be
 ///   kept).
-pub fn polygon_nms_2d(
+pub fn polygon_nms(
     polygon_dist: ArrayView2<f32>,
     polygon_pos: ArrayView2<usize>,
     n_polys: usize,

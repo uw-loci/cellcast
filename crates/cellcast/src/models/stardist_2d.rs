@@ -9,7 +9,7 @@ use ndarray::{Array1, Array2, Array3, ArrayBase, AsArray, Axis, Ix2, Ix3, ViewRe
 use crate::config::backend::{CpuBackend, GpuBackend};
 use crate::labeling;
 use crate::networks::stardist::{versatile_fluo_2d, versatile_he_2d};
-use crate::process::nms;
+use crate::process::nms::polygon_nms;
 use crate::utils::{axes, border};
 
 const DIV: usize = 16;
@@ -307,7 +307,7 @@ fn prob_dist_to_labels_2d(
     let poly_dist = valid_dist.select(poly_ax, &sorted_poly_inds);
     let poly_pos = valid_pos.select(poly_ax, &sorted_poly_inds);
     // perform non-maximum supression (NMS) and obtain indices of valid polygons
-    let valid_poly_inds = nms::polygon_nms_2d(
+    let valid_poly_inds = polygon_nms(
         poly_dist.view(),
         poly_pos.view(),
         n_polys,
