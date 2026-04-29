@@ -150,9 +150,13 @@ fn prob_dist_to_labels_3d(
     });
     // scale each valid position by 2 and collect the valid indices of positions
     // inside of the source image dimensions (used for point filtering)
-    valid_pos.mapv_inplace(|v| v * 2);
+    let poly_ax = Axis(0);
+    valid_pos.axis_iter_mut(poly_ax).for_each(|mut v| {
+        v[1] = v[1] * 2;
+        v[2] = v[2] * 2;
+    });
     let valid_inds: Vec<usize> = valid_pos
-        .axis_iter(Axis(0))
+        .axis_iter(poly_ax)
         .enumerate()
         .filter_map(|(i, v)| {
             if v[0] < src_shape.0 || v[1] < src_shape.1 || v[2] < src_shape.2 {
@@ -163,7 +167,6 @@ fn prob_dist_to_labels_3d(
         })
         .collect();
     // remove invalid indices (if there are any) from dist, prob and pos
-    let poly_ax = Axis(0);
     if valid_pos.len() > valid_inds.len() {
         valid_dist = valid_dist.select(poly_ax, &valid_inds);
         valid_prob = valid_prob.select(poly_ax, &valid_inds);
