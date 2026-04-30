@@ -114,7 +114,21 @@ fn bbox_intersect_2d(a: &(f32, f32, f32, f32), b: &(f32, f32, f32, f32)) -> bool
     b.0 <= a.1 && a.0 <= b.1 && b.2 <= a.3 && a.2 <= b.3
 }
 
-/// TODO
+/// Create a golden spiral unit sphere. The unit sphere is used to determine
+/// which directions a ray points.
+///
+/// # Arguments
+///
+/// * `n_points`: The number of points (*i.e.* rays) for the golden spiral
+///   sphere.
+/// * `anisotropy`: The 1D anisotropy array. If `None` then
+///   `anisotropy = [1.0_f64; 3]`.
+///
+/// # Returns
+///
+/// * `Ok((Array2<f64>, Array2<usize>))`: The golden spiral 3D convex hull
+///   vertices and triangular face indices.
+#[inline]
 fn golden_spiral(
     n_points: usize,
     anisotropy: Option<[f64; 3]>,
