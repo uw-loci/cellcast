@@ -129,34 +129,37 @@ fn prob_dist_to_labels_3d(
     let valid_mask = valid_mask.into_dimensionality::<Ix3>().unwrap();
     // collect all valid (pln, row, col) positions to avoid iterating the mask
     // repeatedly
-    let valid_pos: Vec<(usize, usize, usize)> = valid_mask
+    let valid_pnts: Vec<(usize, usize, usize)> = valid_mask
         .indexed_iter()
         .filter(|&((_, _, _), &v)| v)
         .map(|((p, r, c), _)| (p, r, c))
         .collect();
-    let flat_pos = valid_pos.iter().flat_map(|&(p, r, c)| [p, r, c]).collect();
-    let mut valid_pos = Array2::from_shape_vec((valid_pos.len(), 3), flat_pos).unwrap();
+    let flat_pnts = valid_pnts.iter().flat_map(|&(p, r, c)| [p, r, c]).collect();
+    let mut valid_pnts = Array2::from_shape_vec((valid_pnts.len(), 3), flat_pnts).unwrap();
     // filter probabilities and distances with valid indices, removing invalid
     // positions
     let mut valid_prob = Array1::from_iter(
-        valid_pos
+        valid_pnts
             .axis_iter(Axis(0))
             .map(|v| prob_arr[[v[0], v[1], v[2]]]),
     );
-    let mut valid_dist = Array2::<f32>::zeros((valid_pos.dim().0, N_RAYS));
+    let mut valid_dist = Array2::<f32>::zeros((valid_pnts.dim().0, N_RAYS));
     (0..N_RAYS).for_each(|n| {
-        valid_pos.axis_iter(Axis(0)).enumerate().for_each(|(i, v)| {
-            valid_dist[[i, n]] = dist_arr[[n, v[0], v[1], v[2]]];
-        });
+        valid_pnts
+            .axis_iter(Axis(0))
+            .enumerate()
+            .for_each(|(i, v)| {
+                valid_dist[[i, n]] = dist_arr[[n, v[0], v[1], v[2]]];
+            });
     });
     // scale each valid position by 2 and collect the valid indices of positions
     // inside of the source image dimensions (used for point filtering)
     let poly_ax = Axis(0);
-    valid_pos.axis_iter_mut(poly_ax).for_each(|mut v| {
+    valid_pnts.axis_iter_mut(poly_ax).for_each(|mut v| {
         v[1] = v[1] * 2;
         v[2] = v[2] * 2;
     });
-    let valid_inds: Vec<usize> = valid_pos
+    let valid_inds: Vec<usize> = valid_pnts
         .axis_iter(poly_ax)
         .enumerate()
         .filter_map(|(i, v)| {
@@ -168,10 +171,10 @@ fn prob_dist_to_labels_3d(
         })
         .collect();
     // remove invalid indices (if there are any) from dist, prob and pos
-    if valid_pos.len() > valid_inds.len() {
+    if valid_pnts.len() > valid_inds.len() {
         valid_dist = valid_dist.select(poly_ax, &valid_inds);
         valid_prob = valid_prob.select(poly_ax, &valid_inds);
-        valid_pos = valid_pos.select(poly_ax, &valid_inds);
+        valid_pnts = valid_pnts.select(poly_ax, &valid_inds);
     }
     // get the indices that would sort probs in descending order
     let n_polys = valid_prob.len();
@@ -179,11 +182,12 @@ fn prob_dist_to_labels_3d(
     sorted_poly_inds.sort_by(|&a, &b| valid_prob[b].partial_cmp(&valid_prob[a]).unwrap());
     // sort dist, prob and pos arrays with prob descending order indices
     let poly_dist = valid_dist.select(poly_ax, &sorted_poly_inds);
-    let poly_pos = valid_pos.select(poly_ax, &sorted_poly_inds);
-    // TODO 3D NMS
+    let poly_pnts = valid_pnts.select(poly_ax, &sorted_poly_inds);
+    let poly_prob = valid_prob.select(poly_ax, &sorted_poly_inds);
     let valid_poly_inds = polyhedron_nms(
         poly_dist.view(),
-        poly_pos.view(),
+        poly_pnts.view(),
+        poly_prob.view(),
         n_polys,
         N_RAYS,
         nms_threshold,
