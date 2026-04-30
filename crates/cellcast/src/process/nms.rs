@@ -3,9 +3,10 @@ use std::f64::consts::PI;
 use imgal::error::ImgalError;
 use imgal::spatial::KDTree;
 use imgal::spatial::convex_hull::quickhull_3d;
-use ndarray::{Array1, Array2, ArrayView2, Axis, stack};
+use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, stack};
 
 use crate::geometry::polygon;
+use crate::geometry::polyhedron::polyhedron_volume;
 
 /// Perform Non-Maximum Suppression (NMS) on 2-dimensional polygons.
 ///
@@ -84,17 +85,43 @@ pub fn polygon_nms(
 }
 
 /// TODO
+///
+/// # Description
+///
+/// todo
+///
+/// # Arguments
+///
+/// * `polyhedron_dist`:
+/// * `polyhedron_pnts`:
+/// * `polyhedron_prob`:
+/// * `n_polys`:
+/// * `n_rays`:
+/// * `threshold`:
+///
+/// # Returns
+///
+/// * `Ok(Vec<bool>)`:
+/// * `Err(ImgalError)`:
 pub fn polyhedron_nms(
     polyhedron_dist: ArrayView2<f32>,
-    polyhedron_pos: ArrayView2<usize>,
+    polyhedron_pnts: ArrayView2<usize>,
+    polyhedron_prob: ArrayView1<f32>,
     n_polys: usize,
     n_rays: usize,
     threshold: f32,
 ) -> Result<Vec<bool>, ImgalError> {
-    let mut suppressed: Vec<bool> = vec![false; n_polys];
     let gs = golden_spiral(n_rays, None)?;
-    dbg!(gs.0);
-    dbg!(gs.1);
+    let mut suppressed: Vec<bool> = vec![false; n_polys];
+    let mut bboxes: Vec<[i32; 6]> = vec![[0; 6]; n_polys];
+    let mut volumes: Vec<f32> = Vec::with_capacity(n_polys);
+    (0..n_polys).for_each(|i| {
+        let cur_dist = polyhedron_dist.row(i);
+        let cur_pnt = polyhedron_pnts.row(i);
+        let cur_bbox = bboxes[i];
+        volumes.push(polyhedron_volume(cur_dist, gs.0.view(), gs.1.view()));
+    });
+    dbg!(volumes);
     todo!();
 }
 
