@@ -1,12 +1,9 @@
-use std::f64::consts::PI;
-
 use imgal::error::ImgalError;
 use imgal::spatial::KDTree;
-use imgal::spatial::convex_hull::quickhull_3d;
-use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, stack};
+use ndarray::{ArrayView1, ArrayView2};
 
 use crate::geometry::polygon;
-use crate::geometry::polyhedron::polyhedron_volume;
+use crate::geometry::polyhedron::{golden_spiral, polyhedron_volume};
 
 /// Perform Non-Maximum Suppression (NMS) on 2-dimensional polygons.
 ///
@@ -139,40 +136,4 @@ pub fn polyhedron_nms(
 #[inline]
 fn bbox_intersect_2d(a: &(f32, f32, f32, f32), b: &(f32, f32, f32, f32)) -> bool {
     b.0 <= a.1 && a.0 <= b.1 && b.2 <= a.3 && a.2 <= b.3
-}
-
-/// Create a golden spiral unit sphere. The unit sphere is used to determine
-/// which directions a ray points.
-///
-/// # Arguments
-///
-/// * `n_points`: The number of points (*i.e.* rays) for the golden spiral
-///   sphere.
-/// * `anisotropy`: The 1D anisotropy array. If `None` then
-///   `anisotropy = [1.0_f64; 3]`.
-///
-/// # Returns
-///
-/// * `Ok((Array2<f64>, Array2<usize>))`: The golden spiral 3D convex hull
-///   vertices and triangular face indices.
-#[inline]
-fn golden_spiral(
-    n_points: usize,
-    anisotropy: Option<[f64; 3]>,
-) -> Result<(Array2<f64>, Array2<usize>), ImgalError> {
-    let anisotropy = Array1::from_iter(anisotropy.unwrap_or([1.0_f64; 3]));
-    let golden_angle = (3.0 - 5.0_f64.sqrt()) * PI;
-    let phi = Array1::from_iter(0..n_points).mapv(|v| v as f64 * golden_angle);
-    let z = Array1::linspace(-1.0, 1.0, n_points);
-    let rho = z.mapv(|v| (1.0_f64 - v * v).sqrt());
-    let a = &rho * phi.mapv(|v| v.sin());
-    let b = &rho * phi.mapv(|v| v.cos());
-    let ax = Axis(1);
-    let points = stack(ax, &[z.view(), a.view(), b.view()])
-        .expect("Failed to create Golden spiral point cloud.");
-    let points = points / anisotropy;
-    let (mut verts, faces) = quickhull_3d(&points, false)?;
-    let norms = verts.map_axis(ax, |r| r.dot(&r).sqrt());
-    verts /= &norms.insert_axis(ax);
-    Ok((verts, faces))
 }
