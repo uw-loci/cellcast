@@ -136,28 +136,37 @@ pub fn polyhedron_volume(
     gs_vertices: ArrayView2<f64>,
     gs_faces: ArrayView2<usize>,
 ) -> f32 {
-    let origin = vec![0.0_f32; 3];
+    let origin = [0.0_f32; 3];
     let n_faces = gs_faces.dim().0;
     (0..n_faces).fold(0.0_f32, |acc, f| {
         let tri = gs_faces.row(f);
-        let a: Vec<f32> = (0..3)
-            .map(|i| {
-                let ti = tri[0];
-                distances[ti] * gs_vertices[[ti, i]] as f32
-            })
-            .collect();
-        let b: Vec<f32> = (0..3)
-            .map(|i| {
-                let ti = tri[1];
-                distances[ti] * gs_vertices[[ti, i]] as f32
-            })
-            .collect();
-        let c: Vec<f32> = (0..3)
-            .map(|i| {
-                let ti = tri[2];
-                distances[ti] * gs_vertices[[ti, i]] as f32
-            })
-            .collect();
+        let a: [f32; 3] = {
+            let i = tri[0];
+            let di = distances[i];
+            [
+                di * gs_vertices[[i, 0]] as f32,
+                di * gs_vertices[[i, 1]] as f32,
+                di * gs_vertices[[i, 2]] as f32,
+            ]
+        };
+        let b: [f32; 3] = {
+            let i = tri[1];
+            let di = distances[i];
+            [
+                di * gs_vertices[[i, 0]] as f32,
+                di * gs_vertices[[i, 1]] as f32,
+                di * gs_vertices[[i, 2]] as f32,
+            ]
+        };
+        let c: [f32; 3] = {
+            let i = tri[2];
+            let di = distances[i];
+            [
+                di * gs_vertices[[i, 0]] as f32,
+                di * gs_vertices[[i, 1]] as f32,
+                di * gs_vertices[[i, 2]] as f32,
+            ]
+        };
         let v = tetrahedron_volume(&a, &b, &c, &origin) as f32;
         acc + v
     })
