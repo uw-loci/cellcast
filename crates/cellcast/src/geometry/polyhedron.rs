@@ -5,6 +5,34 @@ use imgal::spatial::convex_hull::quickhull_3d;
 use imgal::spatial::geometry::tetrahedron_volume;
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, stack};
 
+/// Estimate the average anisotropy of a slice of polyhedra bounding boxes.
+///
+/// # Arguments
+///
+/// * `bboxes`: The slice of bounding boxes.
+/// * `n_polys`: The number of polyhedra.
+///
+/// # Returns
+///
+/// * `[f32; 3]`: The estimated average anisotropy.
+#[inline]
+pub fn estimate_anisotropy(bboxes: &[[usize; 6]], n_polys: usize) -> [f32; 3] {
+    let eps = 1e-10;
+    let avg_aniso: [f32; 3] = (0..n_polys).fold([0.0_f32; 3], |mut acc, i| {
+        let n = n_polys as f32;
+        acc[0] += (bboxes[i][1] - bboxes[i][0]) as f32 / n;
+        acc[1] += (bboxes[i][3] - bboxes[i][2]) as f32 / n;
+        acc[2] += (bboxes[i][5] - bboxes[i][4]) as f32 / n;
+        acc
+    });
+    let tmp = avg_aniso[0].max(avg_aniso[1]).max(avg_aniso[2]);
+    [
+        tmp / avg_aniso[0].max(eps),
+        tmp / avg_aniso[1].max(eps),
+        tmp / avg_aniso[2].max(eps),
+    ]
+}
+
 /// Create a golden spiral unit sphere. The unit sphere is used to determine
 /// which direction a ray points.
 ///
