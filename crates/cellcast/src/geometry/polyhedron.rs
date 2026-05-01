@@ -41,22 +41,25 @@ pub fn golden_spiral(
     Ok((verts, faces))
 }
 
-/// TODO
+/// Compute the axis-aligned bounding box of a polyhedron.
 ///
 /// # Description
 ///
-/// todo
+/// Computes the axis-aligned bounding box (*i.e.* `bbox`) of a polyhedron,
+/// returning the voxel index coordinates.
 ///
 /// # Arguments
 ///
-/// * `distances`:
-/// * `center`:
-/// * `gs_vertices`:
-/// * `n_rays`:
+/// * `distances`: The polyhedron distances.
+/// * `center`: The center of the bounding box.
+/// * `gs_vertices`: The "Golden Spiral" unit sphere vertices with shape
+///   `(n_points, 3)`.
+/// * `n_rays`: The number of ray angles.
 ///
 /// # Returns
 ///
-/// * `[usize; 6]`:
+/// * `[usize; 6]`: The bounding box coordinates in
+///   `[z_min, z_max, y_min, y_max, x_min, x_max]` order.
 #[inline]
 pub fn polyhedron_bbox(
     distances: ArrayView1<f32>,
@@ -88,7 +91,8 @@ pub fn polyhedron_bbox(
 ///
 /// # Description
 ///
-/// todo
+/// Computes the volume of a polyhedron by summing signed tetrahedra from the
+/// origin, `[0, 0, 0]`.
 ///
 /// # Arguments
 ///

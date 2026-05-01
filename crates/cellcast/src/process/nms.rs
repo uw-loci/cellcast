@@ -139,16 +139,16 @@ fn bbox_intersect_2d(a: &(f32, f32, f32, f32), b: &(f32, f32, f32, f32)) -> bool
     b.0 <= a.1 && a.0 <= b.1 && b.2 <= a.3 && a.2 <= b.3
 }
 
-/// TODO
+/// Estimate the average anisotropy of a slice of bounding boxes.
 ///
 /// # Arguments
 ///
-/// * `bboxes`:
-/// * `n_polys`:
+/// * `bboxes`: The slice of bounding boxes.
+/// * `n_polys`: The number of polyhedra.
 ///
 /// # Returns
 ///
-/// * `[f32; 3]`:
+/// * `[f32; 3]`: The estimated average anisotropy.
 #[inline]
 fn estimate_anisotropy(bboxes: &[[usize; 6]], n_polys: usize) -> [f32; 3] {
     let eps = 1e-10;
