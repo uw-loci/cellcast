@@ -3,7 +3,10 @@ use imgal::spatial::KDTree;
 use ndarray::{ArrayView1, ArrayView2};
 
 use crate::geometry::polygon;
-use crate::geometry::polyhedron::{golden_spiral, polyhedron_bbox, polyhedron_volume};
+use crate::geometry::polyhedron::{
+    estimate_anisotropy, golden_spiral, bounding_inner_radius, bounding_outer_radius, polyhedron_bbox,
+    polyhedron_volume,
+};
 
 /// Perform Non-Maximum Suppression (NMS) on 2-dimensional polygons.
 ///
@@ -109,17 +112,26 @@ pub fn polyhedron_nms(
     threshold: f32,
 ) -> Result<Vec<bool>, ImgalError> {
     let gs = golden_spiral(n_rays, None)?;
+    let verts = gs.0.view();
+    let faces = gs.1.view();
     let mut suppressed: Vec<bool> = vec![false; n_polys];
-    let (bboxes, vols): (Vec<[usize; 6]>, Vec<f32>) = (0..n_polys)
+    let (bboxes, vols, rad_i, rad_o): (Vec<[usize; 6]>, Vec<f32>, Vec<f32>, Vec<f32>) = (0
+        ..n_polys)
         .map(|i| {
             let cur_dist = polyhedron_dist.row(i);
             let cur_pnt = polyhedron_pnts.row(i);
-            let vol = polyhedron_volume(cur_dist, gs.0.view(), gs.1.view());
-            let bbox = polyhedron_bbox(cur_dist, cur_pnt, gs.0.view(), n_rays);
-            (bbox, vol)
+            let bbox = polyhedron_bbox(cur_dist, cur_pnt, verts);
+            let vol = polyhedron_volume(cur_dist, verts, faces);
+            let ri = bounding_inner_radius(cur_dist, verts, faces);
+            let ro = bounding_outer_radius(cur_dist);
+            (bbox, vol, ri, ro)
         })
         .collect();
     let aniso = estimate_anisotropy(&bboxes.as_slice(), n_polys);
+    dbg!(&bboxes[..10]);
+    dbg!(&vols[..10]);
+    dbg!(&rad_i[..10]);
+    dbg!(&rad_o[..10]);
     todo!();
 }
 
