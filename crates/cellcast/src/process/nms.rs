@@ -4,8 +4,8 @@ use ndarray::{ArrayView1, ArrayView2};
 
 use crate::geometry::polygon;
 use crate::geometry::polyhedron::{
-    estimate_anisotropy, golden_spiral, bounding_inner_radius, bounding_outer_radius, polyhedron_bbox,
-    polyhedron_volume,
+    bounding_inner_radius, bounding_inner_radius_iso, bounding_outer_radius, bounding_outer_radius_iso, estimate_anisotropy,
+    golden_spiral, polyhedron_bbox, polyhedron_volume,
 };
 
 /// Perform Non-Maximum Suppression (NMS) on 2-dimensional polygons.
@@ -115,7 +115,7 @@ pub fn polyhedron_nms(
     let verts = gs.0.view();
     let faces = gs.1.view();
     let mut suppressed: Vec<bool> = vec![false; n_polys];
-    let (bboxes, vols, rad_i, rad_o): (Vec<[usize; 6]>, Vec<f32>, Vec<f32>, Vec<f32>) = (0
+    let (bboxes, vols, rad_in, rad_out): (Vec<[usize; 6]>, Vec<f32>, Vec<f32>, Vec<f32>) = (0
         ..n_polys)
         .map(|i| {
             let cur_dist = polyhedron_dist.row(i);
@@ -128,10 +128,20 @@ pub fn polyhedron_nms(
         })
         .collect();
     let aniso = estimate_anisotropy(&bboxes.as_slice(), n_polys);
+    let (rad_in_iso, rad_out_iso): (Vec<f32>, Vec<f32>) = (0..n_polys)
+        .map(|i| {
+            let cur_dist = polyhedron_dist.row(i);
+            let rii = bounding_inner_radius_iso(cur_dist, verts, faces, aniso);
+            let roi = bounding_outer_radius_iso(cur_dist, verts, aniso);
+            (rii, roi)
+        })
+        .collect();
     dbg!(&bboxes[..10]);
     dbg!(&vols[..10]);
-    dbg!(&rad_i[..10]);
-    dbg!(&rad_o[..10]);
+    dbg!(&rad_in[..10]);
+    dbg!(&rad_out[..10]);
+    dbg!(&rad_in_iso[..10]);
+    dbg!(&rad_out_iso[..10]);
     todo!();
 }
 

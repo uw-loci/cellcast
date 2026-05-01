@@ -122,11 +122,78 @@ pub fn bounding_inner_radius(
     })
 }
 
+/// TODO
+#[inline]
+pub fn bounding_inner_radius_iso(
+    distances: ArrayView1<f32>,
+    gs_vertices: ArrayView2<f64>,
+    gs_faces: ArrayView2<usize>,
+    anisotropy: [f32; 3],
+) -> f32 {
+    let eps = 1e-10;
+    (0..gs_faces.dim().0).fold(0.0_f32, |acc, i| {
+        let i_a = gs_faces[[i, 0]];
+        let i_b = gs_faces[[i, 1]];
+        let i_c = gs_faces[[i, 2]];
+        let a = {
+            let dist = distances[i_a];
+            [
+                anisotropy[0] * dist * gs_vertices[[i_a, 0]] as f32,
+                anisotropy[1] * dist * gs_vertices[[i_a, 1]] as f32,
+                anisotropy[2] * dist * gs_vertices[[i_a, 2]] as f32,
+            ]
+        };
+        let b = {
+            let dist = distances[i_b];
+            [
+                anisotropy[0] * dist * gs_vertices[[i_b, 0]] as f32,
+                anisotropy[1] * dist * gs_vertices[[i_b, 1]] as f32,
+                anisotropy[2] * dist * gs_vertices[[i_b, 2]] as f32,
+            ]
+        };
+        let c = {
+            let dist = distances[i_c];
+            [
+                anisotropy[0] * dist * gs_vertices[[i_c, 0]] as f32,
+                anisotropy[1] * dist * gs_vertices[[i_c, 1]] as f32,
+                anisotropy[2] * dist * gs_vertices[[i_c, 2]] as f32,
+            ]
+        };
+        // compute the edge vectors and cross product
+        let (baz, bay, bax) = (b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+        let (caz, cay, cax) = (c[0] - a[0], c[1] - a[1], c[2] - a[2]);
+        let nz = bax * cay - bay * cax;
+        let ny = baz * cax - bax * caz;
+        let nx = bay * caz - baz * cay;
+        let norm = 1.0 / (nz * nz + ny * ny + nx * nx).sqrt().max(eps);
+        let (nz, ny, nx) = (nz * norm, ny * norm, nx * norm);
+        let dist = a[0] * nz + a[1] * ny + a[2] * nx;
+        acc.min(dist)
+    })
+}
+
 /// Get the outer bounding radius (*i.e.* the maximum distance ray). Note that
 /// the polyhedron fits inside a sphere of this radius.
 #[inline]
 pub fn bounding_outer_radius(distances: ArrayView1<f32>) -> f32 {
     distances.iter().fold(0.0_f32, |acc, v| v.max(acc))
+}
+
+/// TODO
+#[inline]
+pub fn bounding_outer_radius_iso(
+    distances: ArrayView1<f32>,
+    gs_vertices: ArrayView2<f64>,
+    anisotropy: [f32; 3],
+) -> f32 {
+    let radius = (0..distances.len()).fold(0.0_f32, |acc, i| {
+        let dist = distances[i];
+        let z = anisotropy[0] * dist * gs_vertices[[i, 0]] as f32;
+        let y = anisotropy[1] * dist * gs_vertices[[i, 1]] as f32;
+        let x = anisotropy[2] * dist * gs_vertices[[i, 2]] as f32;
+        acc.max(z * z + y * y + x * x)
+    });
+    radius.sqrt()
 }
 
 /// Compute the axis-aligned bounding box of a polyhedron.
@@ -191,6 +258,7 @@ pub fn polyhedron_bbox(
 /// # Returns
 ///
 /// * `f32`: The volume of the polyhedron.
+#[inline]
 pub fn polyhedron_volume(
     distances: ArrayView1<f32>,
     gs_vertices: ArrayView2<f64>,
