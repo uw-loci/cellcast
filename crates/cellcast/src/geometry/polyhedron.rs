@@ -82,7 +82,6 @@ pub fn golden_spiral(
 /// * `center`: The center of the bounding box.
 /// * `gs_vertices`: The "Golden Spiral" unit sphere vertices with shape
 ///   `(n_points, 3)`.
-/// * `n_rays`: The number of ray angles.
 ///
 /// # Returns
 ///
@@ -93,7 +92,6 @@ pub fn polyhedron_bbox(
     distances: ArrayView1<f32>,
     center: ArrayView1<usize>,
     gs_vertices: ArrayView2<f64>,
-    n_rays: usize,
 ) -> [usize; 6] {
     let mut z1 = usize::MAX;
     let mut y1 = usize::MAX;
@@ -101,7 +99,7 @@ pub fn polyhedron_bbox(
     let mut z2 = usize::MIN;
     let mut y2 = usize::MIN;
     let mut x2 = usize::MIN;
-    (0..n_rays).for_each(|i| {
+    (0..distances.len()).for_each(|i| {
         let z = (center[0] as f32 + distances[i] * gs_vertices[[i, 0]] as f32).round() as usize;
         let y = (center[1] as f32 + distances[i] * gs_vertices[[i, 1]] as f32).round() as usize;
         let x = (center[2] as f32 + distances[i] * gs_vertices[[i, 2]] as f32).round() as usize;
