@@ -6,7 +6,7 @@ use imgal::spatial::geometry::tetrahedron_volume;
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, stack};
 
 /// Create a golden spiral unit sphere. The unit sphere is used to determine
-/// which directions a ray points.
+/// which direction a ray points.
 ///
 /// # Arguments
 ///
@@ -39,6 +39,49 @@ pub fn golden_spiral(
     let norms = verts.map_axis(ax, |r| r.dot(&r).sqrt());
     verts /= &norms.insert_axis(ax);
     Ok((verts, faces))
+}
+
+/// TODO
+///
+/// # Description
+///
+/// todo
+///
+/// # Arguments
+///
+/// * `distances`:
+/// * `center`:
+/// * `gs_vertices`:
+/// * `n_rays`:
+///
+/// # Returns
+///
+/// * `[usize; 6]`:
+#[inline]
+pub fn polyhedron_bbox(
+    distances: ArrayView1<f32>,
+    center: ArrayView1<usize>,
+    gs_vertices: ArrayView2<f64>,
+    n_rays: usize,
+) -> [usize; 6] {
+    let mut z1 = usize::MAX;
+    let mut y1 = usize::MAX;
+    let mut x1 = usize::MAX;
+    let mut z2 = usize::MIN;
+    let mut y2 = usize::MIN;
+    let mut x2 = usize::MIN;
+    (0..n_rays).for_each(|i| {
+        let z = (center[0] as f32 + distances[i] * gs_vertices[[i, 0]] as f32).round() as usize;
+        let y = (center[1] as f32 + distances[i] * gs_vertices[[i, 1]] as f32).round() as usize;
+        let x = (center[2] as f32 + distances[i] * gs_vertices[[i, 2]] as f32).round() as usize;
+        z1 = z1.min(z);
+        y1 = y1.min(y);
+        x1 = x1.min(x);
+        z2 = z2.max(z);
+        y2 = y2.max(y);
+        x2 = x2.max(x);
+    });
+    [z1, z2, y1, y2, x1, x2]
 }
 
 /// Compute the volume of a polyhedron.

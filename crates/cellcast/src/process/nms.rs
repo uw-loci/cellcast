@@ -3,7 +3,7 @@ use imgal::spatial::KDTree;
 use ndarray::{ArrayView1, ArrayView2};
 
 use crate::geometry::polygon;
-use crate::geometry::polyhedron::{golden_spiral, polyhedron_volume};
+use crate::geometry::polyhedron::{golden_spiral, polyhedron_bbox, polyhedron_volume};
 
 /// Perform Non-Maximum Suppression (NMS) on 2-dimensional polygons.
 ///
@@ -110,15 +110,16 @@ pub fn polyhedron_nms(
 ) -> Result<Vec<bool>, ImgalError> {
     let gs = golden_spiral(n_rays, None)?;
     let mut suppressed: Vec<bool> = vec![false; n_polys];
-    let mut bboxes: Vec<[i32; 6]> = vec![[0; 6]; n_polys];
-    let mut volumes: Vec<f32> = Vec::with_capacity(n_polys);
-    (0..n_polys).for_each(|i| {
-        let cur_dist = polyhedron_dist.row(i);
-        let cur_pnt = polyhedron_pnts.row(i);
-        let cur_bbox = bboxes[i];
-        volumes.push(polyhedron_volume(cur_dist, gs.0.view(), gs.1.view()));
-    });
-    dbg!(volumes);
+    let (bboxes, vols): (Vec<[usize; 6]>, Vec<f32>) = (0..n_polys)
+        .map(|i| {
+            let cur_dist = polyhedron_dist.row(i);
+            let cur_pnt = polyhedron_pnts.row(i);
+            let vol = polyhedron_volume(cur_dist, gs.0.view(), gs.1.view());
+            let bbox = polyhedron_bbox(cur_dist, cur_pnt, gs.0.view(), n_rays);
+            (bbox, vol)
+        })
+        .collect();
+    let aniso = estimate_anisotropy(&bboxes.as_slice(), n_polys);
     todo!();
 }
 
@@ -136,4 +137,32 @@ pub fn polyhedron_nms(
 #[inline]
 fn bbox_intersect_2d(a: &(f32, f32, f32, f32), b: &(f32, f32, f32, f32)) -> bool {
     b.0 <= a.1 && a.0 <= b.1 && b.2 <= a.3 && a.2 <= b.3
+}
+
+/// TODO
+///
+/// # Arguments
+///
+/// * `bboxes`:
+/// * `n_polys`:
+///
+/// # Returns
+///
+/// * `[f32; 3]`:
+#[inline]
+fn estimate_anisotropy(bboxes: &[[usize; 6]], n_polys: usize) -> [f32; 3] {
+    let eps = 1e-10;
+    let avg_aniso: [f32; 3] = (0..n_polys).fold([0.0_f32; 3], |mut acc, i| {
+        let n = n_polys as f32;
+        acc[0] += (bboxes[i][1] - bboxes[i][0]) as f32 / n;
+        acc[1] += (bboxes[i][3] - bboxes[i][2]) as f32 / n;
+        acc[2] += (bboxes[i][5] - bboxes[i][4]) as f32 / n;
+        acc
+    });
+    let tmp = avg_aniso[0].max(avg_aniso[1]).max(avg_aniso[2]);
+    [
+        tmp / avg_aniso[0].max(eps),
+        tmp / avg_aniso[1].max(eps),
+        tmp / avg_aniso[2].max(eps),
+    ]
 }
