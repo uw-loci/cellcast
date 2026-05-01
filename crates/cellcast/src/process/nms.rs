@@ -42,7 +42,7 @@ pub fn polygon_nms(
     // create 2D polygons vector and perform NMS
     let mut suppressed: Vec<bool> = vec![false; n_polys];
     let polygons =
-        polygon::build_polygons_2d(polygon_dist.view(), polygon_pos.view(), n_polys, n_rays);
+        polygon::build_polygons(polygon_dist.view(), polygon_pos.view(), n_polys, n_rays);
     let kdtree = KDTree::build(polygon_pos.view());
     let max_dist = polygons.iter().map(|p| p.dist).fold(0.0, f32::max);
     // iterate through each polygon and skip already suppressed polygons
@@ -68,7 +68,7 @@ pub fn polygon_nms(
                 continue;
             }
             let poly_area_inter =
-                polygon::area_intersection_2d(&polygons[p].vertices, &polygons[n].vertices);
+                polygon::area_intersection(&polygons[p].vertices, &polygons[n].vertices);
             let min_area = polygons[p].area.min(polygons[n].area) + 1e-10;
             let overlap = poly_area_inter / min_area;
             if overlap > threshold {

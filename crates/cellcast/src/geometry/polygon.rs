@@ -37,7 +37,7 @@ pub struct Polygon2D {
 ///
 /// * `f32`: The intersection area of polygons `a` and `b`.
 #[inline]
-pub fn area_intersection_2d(vertices_a: &[(f32, f32)], vertices_b: &[(f32, f32)]) -> f32 {
+pub fn area_intersection(vertices_a: &[(f32, f32)], vertices_b: &[(f32, f32)]) -> f32 {
     // convert vertices to geo types
     let line_a: LineString<f32> = vertices_a.to_vec().into();
     let line_b: LineString<f32> = vertices_b.to_vec().into();
@@ -67,7 +67,7 @@ pub fn area_intersection_2d(vertices_a: &[(f32, f32)], vertices_b: &[(f32, f32)]
 ///
 /// * `Vec<Polygon2D>`: A vector of NMS polygons to be used for geo-spatial
 ///   compute.
-pub fn build_polygons_2d(
+pub fn build_polygons(
     dist: ArrayView2<f32>,
     pos: ArrayView2<usize>,
     n_polys: usize,
@@ -106,7 +106,7 @@ pub fn build_polygons_2d(
                 max_radius = max_radius.max(d);
             });
             // compute the polygon area and create a new 2D NMS polygon
-            let area = polygon_area_2d(&vertices, n_rays);
+            let area = polygon_area(&vertices, n_rays);
             Polygon2D {
                 bbox: (y_min, y_max, x_min, x_max),
                 area,
@@ -125,7 +125,7 @@ pub fn build_polygons_2d(
 ///
 /// <https://en.wikipedia.org/wiki/Shoelace_formula>
 #[inline]
-fn polygon_area_2d(vertices: &[(f32, f32)], n_rays: usize) -> f32 {
+fn polygon_area(vertices: &[(f32, f32)], n_rays: usize) -> f32 {
     let area = (0..n_rays).fold(0.0, |acc, i| {
         let j = (i + 1) % n_rays;
         acc + (vertices[i].0 * vertices[j].1) - (vertices[i].1 * vertices[j].0)
