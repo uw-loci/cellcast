@@ -5,6 +5,30 @@ use imgal::spatial::convex_hull::quickhull_3d;
 use imgal::spatial::geometry::tetrahedron_volume;
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, stack};
 
+/// Compute the intersection volume of two axis-aligned 3D bounding boxes.
+///
+/// # Arguments
+///
+/// * `bbox_a`: The coordinates of bounding box `a`.
+/// * `bbox_b`: The coordinates of bounding box `b`.
+///
+/// # Returns
+///
+/// * `f32`: The intersection volume of bounding box `a` and `b`.
+#[inline]
+pub fn bbox_intersect_volume(bbox_a: &[usize; 6], bbox_b: &[usize; 6]) -> f32 {
+    let wz = (bbox_a[1]
+        .min(bbox_b[1])
+        .saturating_sub(bbox_a[0].max(bbox_b[0]))) as f32;
+    let wy = (bbox_a[3]
+        .min(bbox_b[3])
+        .saturating_sub(bbox_a[2].max(bbox_b[2]))) as f32;
+    let wx = (bbox_a[5]
+        .min(bbox_b[5])
+        .saturating_sub(bbox_a[4].max(bbox_b[4]))) as f32;
+    wz * wy * wx
+}
+
 /// Estimate the average anisotropy of a slice of polyhedra bounding boxes.
 ///
 /// # Arguments
@@ -335,4 +359,47 @@ pub fn polyhedron_volume(
         let v = tetrahedron_volume(&a, &b, &c, &origin) as f32;
         acc + v
     })
+}
+
+/// Compute the intersection volume of two spheres with isotropic distance. If
+/// the two spheres do not intersect the returned volume is `0.0`.
+///
+/// # Arguments
+///
+/// * `center_a`: The center coordinates for sphere `a`.
+/// * `center_b`: The center coordinates for sphere `b`.
+/// * `radius_a`: The radius for sphere `a`.
+/// * `radius_b`: The radius for sphere `b`.
+/// * `anisotropy`: The estimated average anisotropy.
+///
+/// # Returns
+///
+/// * `f32`: The intersection volume between spheres `a` and `b`.
+#[inline]
+pub fn sphere_intersect_volume_iso(
+    center_a: ArrayView1<usize>,
+    center_b: ArrayView1<usize>,
+    radius_a: f32,
+    radius_b: f32,
+    anisotropy: &[f32; 3],
+) -> f32 {
+    let dz = anisotropy[0] * (center_a[0] as f32 - center_b[0] as f32);
+    let dy = anisotropy[1] * (center_a[1] as f32 - center_b[1] as f32);
+    let dx = anisotropy[2] * (center_a[2] as f32 - center_b[2] as f32);
+    let dist_iso = (dz * dz + dy * dy + dx * dx).sqrt();
+    let rad_min = radius_a.min(radius_b);
+    let rad_max = radius_a.max(radius_b);
+    let pi = PI as f32;
+    if dist_iso > radius_a + radius_b {
+        return 0.0;
+    }
+    if rad_max >= dist_iso + rad_min - 1e-10 {
+        return pi * 4.0 / 3.0 * rad_min * rad_min * rad_min;
+    }
+    let t = (radius_a + radius_b - dist_iso) / (2.0 * dist_iso);
+    let h1 = (radius_b - radius_a + dist_iso) * t;
+    let h2 = (radius_a - radius_b + dist_iso) * t;
+    let vol_a = pi / 3.0 * h1 * h1 * (3.0 * radius_a - h1);
+    let vol_b = pi / 3.0 * h2 * h2 * (3.0 * radius_b - h2);
+    (vol_a + vol_b) / (anisotropy[0] * anisotropy[1] * anisotropy[2])
 }

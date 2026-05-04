@@ -1,12 +1,14 @@
 use imgal::error::ImgalError;
 use imgal::spatial::KDTree;
+use imgal::statistics::max;
+
 use ndarray::{Array2, ArrayView1, ArrayView2};
 
 use crate::geometry::polygon;
 use crate::geometry::polyhedron::{
-    bounding_inner_radius, bounding_inner_radius_iso, bounding_outer_radius,
+    bbox_intersect_volume, bounding_inner_radius, bounding_inner_radius_iso, bounding_outer_radius,
     bounding_outer_radius_iso, estimate_anisotropy, golden_spiral, polyhedron_bbox,
-    polyhedron_vertices, polyhedron_volume,
+    polyhedron_vertices, polyhedron_volume, sphere_intersect_volume_iso,
 };
 
 /// Perform Non-Maximum Suppression (NMS) on 2-dimensional polygons.
@@ -115,7 +117,6 @@ pub fn polyhedron_nms(
     let gs = golden_spiral(n_rays, None)?;
     let verts = gs.0.view();
     let faces = gs.1.view();
-    let mut suppressed: Vec<bool> = vec![false; n_polys];
     let (bboxes, vols, rad_in, rad_out): (Vec<[usize; 6]>, Vec<f32>, Vec<f32>, Vec<f32>) = (0
         ..n_polys)
         .map(|i| {
@@ -137,24 +138,39 @@ pub fn polyhedron_nms(
             (rii, roi)
         })
         .collect();
+    let max_dist = max(&rad_out, false)?;
     let kdtree = KDTree::build(&polyhedron_pnts);
-    // we might not need all of these variables as some can probably be made/used
-    // in closures
     // note that this implementation is avoiding external buffers with the hope
     // of making parallization easier
-    (0..n_polys.saturating_sub(1)).for_each(|i| {
-        if suppressed[i] {
-            return;
+    let suppressed = (0..n_polys.saturating_sub(1)).try_fold(vec![false; n_polys], |acc, i| {
+        if acc[i] {
+            return Ok(acc);
         }
         let cur_dist = polyhedron_dist.row(i);
         let cur_pnt = polyhedron_pnts.row(i);
         let cur_bbox = bboxes[i];
-        let cur_poly_verts = polyhedron_vertices(cur_dist, cur_pnt, verts);
+        let cur_poly_verts = polyhedron_vertices(cur_dist, cur_pnt.view(), verts);
+        let search_rad = ((max_dist + rad_out[i]) * (max_dist + rad_out[i])) as f64;
+        let neighbors = kdtree.search_for_indices(&cur_pnt, search_rad)?;
+        neighbors.iter().filter(|&&v| !acc[v]).for_each(|&v| {
+            let ngh_pnt = polyhedron_pnts.row(v);
+            let vol_min = vols[i].min(vols[v]);
+            let sphere_intersect_vol = sphere_intersect_volume_iso(
+                cur_pnt,
+                ngh_pnt,
+                rad_out_iso[i],
+                rad_out_iso[v],
+                &aniso,
+            );
+            let bbox_intersect_vol = bbox_intersect_volume(&cur_bbox, &bboxes[v]);
+            dbg!(sphere_intersect_vol.min(bbox_intersect_vol));
+        });
         // these coordinates come later
         let nz = cur_bbox[1] - cur_bbox[0] + 1;
         let ny = cur_bbox[3] - cur_bbox[2] + 1;
         let nx = cur_bbox[5] - cur_bbox[4] + 1;
-    });
+        Ok(acc)
+    })?;
     todo!();
 }
 
