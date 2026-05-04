@@ -226,10 +226,10 @@ pub fn polyhedron_bbox(
     let mut z2 = usize::MIN;
     let mut y2 = usize::MIN;
     let mut x2 = usize::MIN;
-    (0..distances.len()).for_each(|i| {
-        let z = (center[0] as f32 + distances[i] * gs_vertices[[i, 0]] as f32).round() as usize;
-        let y = (center[1] as f32 + distances[i] * gs_vertices[[i, 1]] as f32).round() as usize;
-        let x = (center[2] as f32 + distances[i] * gs_vertices[[i, 2]] as f32).round() as usize;
+    distances.iter().enumerate().for_each(|(i, &d)| {
+        let z = (center[0] as f32 + d * gs_vertices[[i, 0]] as f32).round() as usize;
+        let y = (center[1] as f32 + d * gs_vertices[[i, 1]] as f32).round() as usize;
+        let x = (center[2] as f32 + d * gs_vertices[[i, 2]] as f32).round() as usize;
         z1 = z1.min(z);
         y1 = y1.min(y);
         x1 = x1.min(x);
