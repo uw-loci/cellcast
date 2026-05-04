@@ -1,11 +1,12 @@
 use imgal::error::ImgalError;
 use imgal::spatial::KDTree;
-use ndarray::{ArrayView1, ArrayView2};
+use ndarray::{Array2, ArrayView1, ArrayView2};
 
 use crate::geometry::polygon;
 use crate::geometry::polyhedron::{
-    bounding_inner_radius, bounding_inner_radius_iso, bounding_outer_radius, bounding_outer_radius_iso, estimate_anisotropy,
-    golden_spiral, polyhedron_bbox, polyhedron_volume,
+    bounding_inner_radius, bounding_inner_radius_iso, bounding_outer_radius,
+    bounding_outer_radius_iso, estimate_anisotropy, golden_spiral, polyhedron_bbox,
+    polyhedron_vertices, polyhedron_volume,
 };
 
 /// Perform Non-Maximum Suppression (NMS) on 2-dimensional polygons.
@@ -136,12 +137,24 @@ pub fn polyhedron_nms(
             (rii, roi)
         })
         .collect();
-    dbg!(&bboxes[..10]);
-    dbg!(&vols[..10]);
-    dbg!(&rad_in[..10]);
-    dbg!(&rad_out[..10]);
-    dbg!(&rad_in_iso[..10]);
-    dbg!(&rad_out_iso[..10]);
+    let kdtree = KDTree::build(&polyhedron_pnts);
+    // we might not need all of these variables as some can probably be made/used
+    // in closures
+    // note that this implementation is avoiding external buffers with the hope
+    // of making parallization easier
+    (0..n_polys.saturating_sub(1)).for_each(|i| {
+        if suppressed[i] {
+            return;
+        }
+        let cur_dist = polyhedron_dist.row(i);
+        let cur_pnt = polyhedron_pnts.row(i);
+        let cur_bbox = bboxes[i];
+        let cur_poly_verts = polyhedron_vertices(cur_dist, cur_pnt, verts);
+        // these coordinates come later
+        let nz = cur_bbox[1] - cur_bbox[0] + 1;
+        let ny = cur_bbox[3] - cur_bbox[2] + 1;
+        let nx = cur_bbox[5] - cur_bbox[4] + 1;
+    });
     todo!();
 }
 

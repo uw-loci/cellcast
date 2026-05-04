@@ -240,6 +240,43 @@ pub fn polyhedron_bbox(
     [z1, z2, y1, y2, x1, x2]
 }
 
+/// Compute the scaled 3D vertices of a polyhedron.
+///
+/// # Description
+///
+/// Computes the 3D vertices of a polyhedron by scaling a unit direction vector
+/// (from a "Golden Spiral" unit sphere) with its corresponding ray distance and
+/// translating by the center point.
+///
+/// # Arguments
+///
+/// * `distances`: The polyhedron distances.
+/// * `center`: The center of the bounding box.
+/// * `gs_vertices`: The "Golden Spiral" unit sphere vertices with shape
+///   `(n_points, 3)`.
+///
+/// # Returns
+///
+/// * `Array2<f32>`: A 2D array of shape `(n_rays, 3)` containing the polyhedron
+///   scaled vertices.
+#[inline]
+pub fn polyhedron_vertices(
+    distances: ArrayView1<f32>,
+    center: ArrayView1<usize>,
+    gs_vertices: ArrayView2<f64>,
+) -> Array2<f32> {
+    let n_rays = distances.len();
+    distances
+        .iter()
+        .enumerate()
+        .fold(Array2::<f32>::zeros((n_rays, 3)), |mut acc, (i, &d)| {
+            acc[[i, 0]] = center[0] as f32 + d * gs_vertices[[i, 0]] as f32;
+            acc[[i, 1]] = center[1] as f32 + d * gs_vertices[[i, 1]] as f32;
+            acc[[i, 2]] = center[2] as f32 + d * gs_vertices[[i, 2]] as f32;
+            acc
+        })
+}
+
 /// Compute the volume of a polyhedron.
 ///
 /// # Description
