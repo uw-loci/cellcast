@@ -143,54 +143,65 @@ pub fn polyhedron_nms(
     let kdtree = KDTree::build(&polyhedron_pnts);
     // note that this implementation is avoiding external buffers with the hope
     // of making parallization easier
-    let suppressed = (0..n_polys.saturating_sub(1)).try_fold(vec![false; n_polys], |mut sup, i| {
-        if sup[i] {
-            return Ok(sup);
-        }
-        let cur_dist = polyhedron_dist.row(i);
-        let cur_pnt = polyhedron_pnts.row(i);
-        let cur_bbox = bboxes[i];
-        let cur_poly_verts = polyhedron_vertices(cur_dist, cur_pnt, verts);
-        let search_rad = ((max_dist + rad_out[i]) * (max_dist + rad_out[i])) as f64;
-        let neighbors = kdtree.search_for_indices(&cur_pnt, search_rad)?;
-        let sup_inds: Vec<usize> = neighbors.iter().filter(|&&v| !sup[v]).fold(Vec::new(), |mut si, &v| {
-            let mut iou: f32 = 0.0;
-            let ngh_dist = polyhedron_dist.row(v);
-            let ngh_pnt = polyhedron_pnts.row(v);
-            let vol_min = vols[i].min(vols[v]);
-            // this checks the upper bound of intersection and IoU
-            let upper_inter_vol = sphere_intersect_volume_iso(
-                cur_pnt,
-                ngh_pnt,
-                rad_out_iso[i],
-                rad_out_iso[v],
-                &aniso,
-            );
-            let bbox_inter_vol = bbox_intersect_volume(&cur_bbox, &bboxes[v]);
-            let upper_inter_vol = upper_inter_vol.min(bbox_inter_vol);
-            iou = (upper_inter_vol / (vol_min + eps)).min(1.0);
-            if upper_inter_vol < eps || iou <= threshold {
-                return si;
+    let suppressed =
+        (0..n_polys.saturating_sub(1)).try_fold(vec![false; n_polys], |mut sup, i| {
+            if sup[i] {
+                return Ok(sup);
             }
-            // this checks the lower bound of intersection and IoU
-            let lower_inter_vol = sphere_intersect_volume_iso(cur_pnt, ngh_pnt, rad_in_iso[i], rad_in_iso[v], &aniso);
-            iou = (lower_inter_vol / (vol_min + eps)).max(0.0);
-            if iou > threshold {
-                si.push(v);
-                return si;
-            }
-            // this computes the kernel intersection of the lower bound
-            let ngh_poly_verts = polyhedron_vertices(ngh_dist, ngh_pnt, verts);
-            si
-        });
-        // TODO use the suppressed indices to update date the sup accumulator and
-        // return it -- this is parallel friendly
-        // these coordinates come later
-        let nz = cur_bbox[1] - cur_bbox[0] + 1;
-        let ny = cur_bbox[3] - cur_bbox[2] + 1;
-        let nx = cur_bbox[5] - cur_bbox[4] + 1;
-        Ok(sup)
-    })?;
+            let cur_dist = polyhedron_dist.row(i);
+            let cur_pnt = polyhedron_pnts.row(i);
+            let cur_bbox = bboxes[i];
+            let cur_poly_verts = polyhedron_vertices(cur_dist, cur_pnt, verts);
+            let search_rad = ((max_dist + rad_out[i]) * (max_dist + rad_out[i])) as f64;
+            let neighbors = kdtree.search_for_indices(&cur_pnt, search_rad)?;
+            let sup_inds: Vec<usize> =
+                neighbors
+                    .iter()
+                    .filter(|&&v| !sup[v])
+                    .fold(Vec::new(), |mut si, &v| {
+                        let mut iou: f32 = 0.0;
+                        let ngh_dist = polyhedron_dist.row(v);
+                        let ngh_pnt = polyhedron_pnts.row(v);
+                        let vol_min = vols[i].min(vols[v]);
+                        // this checks the upper bound of intersection and IoU
+                        let upper_inter_vol = sphere_intersect_volume_iso(
+                            cur_pnt,
+                            ngh_pnt,
+                            rad_out_iso[i],
+                            rad_out_iso[v],
+                            &aniso,
+                        );
+                        let bbox_inter_vol = bbox_intersect_volume(&cur_bbox, &bboxes[v]);
+                        let upper_inter_vol = upper_inter_vol.min(bbox_inter_vol);
+                        iou = (upper_inter_vol / (vol_min + eps)).min(1.0);
+                        if upper_inter_vol < eps || iou <= threshold {
+                            return si;
+                        }
+                        // this checks the lower bound of intersection and IoU
+                        let lower_inter_vol = sphere_intersect_volume_iso(
+                            cur_pnt,
+                            ngh_pnt,
+                            rad_in_iso[i],
+                            rad_in_iso[v],
+                            &aniso,
+                        );
+                        iou = (lower_inter_vol / (vol_min + eps)).max(0.0);
+                        if iou > threshold {
+                            si.push(v);
+                            return si;
+                        }
+                        // this computes the kernel intersection of the lower bound
+                        let ngh_poly_verts = polyhedron_vertices(ngh_dist, ngh_pnt, verts);
+                        si
+                    });
+            // TODO use the suppressed indices to update date the sup accumulator and
+            // return it -- this is parallel friendly
+            // these coordinates come later
+            let nz = cur_bbox[1] - cur_bbox[0] + 1;
+            let ny = cur_bbox[3] - cur_bbox[2] + 1;
+            let nx = cur_bbox[5] - cur_bbox[4] + 1;
+            Ok(sup)
+        })?;
     todo!();
 }
 
