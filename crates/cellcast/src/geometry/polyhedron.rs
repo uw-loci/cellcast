@@ -29,70 +29,6 @@ pub fn bbox_intersect_volume(bbox_a: &[usize; 6], bbox_b: &[usize; 6]) -> f32 {
     wz * wy * wx
 }
 
-/// Estimate the average anisotropy of a slice of polyhedra bounding boxes.
-///
-/// # Arguments
-///
-/// * `bboxes`: The slice of bounding boxes.
-/// * `n_polys`: The number of polyhedra.
-///
-/// # Returns
-///
-/// * `[f32; 3]`: The estimated average anisotropy.
-#[inline]
-pub fn estimate_anisotropy(bboxes: &[[usize; 6]], n_polys: usize) -> [f32; 3] {
-    let eps = 1e-10;
-    let avg_aniso: [f32; 3] = (0..n_polys).fold([0.0_f32; 3], |mut acc, i| {
-        let n = n_polys as f32;
-        acc[0] += (bboxes[i][1] - bboxes[i][0]) as f32 / n;
-        acc[1] += (bboxes[i][3] - bboxes[i][2]) as f32 / n;
-        acc[2] += (bboxes[i][5] - bboxes[i][4]) as f32 / n;
-        acc
-    });
-    let tmp = avg_aniso[0].max(avg_aniso[1]).max(avg_aniso[2]);
-    [
-        tmp / avg_aniso[0].max(eps),
-        tmp / avg_aniso[1].max(eps),
-        tmp / avg_aniso[2].max(eps),
-    ]
-}
-
-/// Create a golden spiral unit sphere. The unit sphere is used to determine
-/// which direction a ray points.
-///
-/// # Arguments
-///
-/// * `n_points`: The number of points (*i.e.* rays) for the golden spiral
-///   sphere.
-/// * `anisotropy`: The 1D anisotropy array. If `None` then
-///   `anisotropy = [1.0_f64; 3]`.
-///
-/// # Returns
-///
-/// * `Ok((Array2<f64>, Array2<usize>))`: The golden spiral 3D convex hull
-///   vertices and triangular face indices.
-#[inline]
-pub fn golden_spiral(
-    n_points: usize,
-    anisotropy: Option<[f64; 3]>,
-) -> Result<(Array2<f64>, Array2<usize>), ImgalError> {
-    let anisotropy = Array1::from_iter(anisotropy.unwrap_or([1.0_f64; 3]));
-    let golden_angle = (3.0 - 5.0_f64.sqrt()) * PI;
-    let phi = Array1::from_iter(0..n_points).mapv(|v| v as f64 * golden_angle);
-    let z = Array1::linspace(-1.0, 1.0, n_points);
-    let rho = z.mapv(|v| (1.0_f64 - v * v).sqrt());
-    let a = &rho * phi.mapv(|v| v.sin());
-    let b = &rho * phi.mapv(|v| v.cos());
-    let ax = Axis(1);
-    let points = stack(ax, &[z.view(), a.view(), b.view()])
-        .expect("Failed to create Golden spiral point cloud.");
-    let points = points / anisotropy;
-    let (mut verts, faces) = quickhull_3d(&points, false)?;
-    let norms = verts.map_axis(ax, |r| r.dot(&r).sqrt());
-    verts /= &norms.insert_axis(ax);
-    Ok((verts, faces))
-}
-
 /// Get the inner bounding radius (*i.e* the shortest perpendicular distance
 /// to any face plane). Note that this radius represents the largest sphere that
 /// can fit inside the polyhedron.
@@ -218,6 +154,70 @@ pub fn bounding_outer_radius_iso(
         acc.max(z * z + y * y + x * x)
     });
     radius.sqrt()
+}
+
+/// Estimate the average anisotropy of a slice of polyhedra bounding boxes.
+///
+/// # Arguments
+///
+/// * `bboxes`: The slice of bounding boxes.
+/// * `n_polys`: The number of polyhedra.
+///
+/// # Returns
+///
+/// * `[f32; 3]`: The estimated average anisotropy.
+#[inline]
+pub fn estimate_anisotropy(bboxes: &[[usize; 6]], n_polys: usize) -> [f32; 3] {
+    let eps = 1e-10;
+    let avg_aniso: [f32; 3] = (0..n_polys).fold([0.0_f32; 3], |mut acc, i| {
+        let n = n_polys as f32;
+        acc[0] += (bboxes[i][1] - bboxes[i][0]) as f32 / n;
+        acc[1] += (bboxes[i][3] - bboxes[i][2]) as f32 / n;
+        acc[2] += (bboxes[i][5] - bboxes[i][4]) as f32 / n;
+        acc
+    });
+    let tmp = avg_aniso[0].max(avg_aniso[1]).max(avg_aniso[2]);
+    [
+        tmp / avg_aniso[0].max(eps),
+        tmp / avg_aniso[1].max(eps),
+        tmp / avg_aniso[2].max(eps),
+    ]
+}
+
+/// Create a golden spiral unit sphere. The unit sphere is used to determine
+/// which direction a ray points.
+///
+/// # Arguments
+///
+/// * `n_points`: The number of points (*i.e.* rays) for the golden spiral
+///   sphere.
+/// * `anisotropy`: The 1D anisotropy array. If `None` then
+///   `anisotropy = [1.0_f64; 3]`.
+///
+/// # Returns
+///
+/// * `Ok((Array2<f64>, Array2<usize>))`: The golden spiral 3D convex hull
+///   vertices and triangular face indices.
+#[inline]
+pub fn golden_spiral(
+    n_points: usize,
+    anisotropy: Option<[f64; 3]>,
+) -> Result<(Array2<f64>, Array2<usize>), ImgalError> {
+    let anisotropy = Array1::from_iter(anisotropy.unwrap_or([1.0_f64; 3]));
+    let golden_angle = (3.0 - 5.0_f64.sqrt()) * PI;
+    let phi = Array1::from_iter(0..n_points).mapv(|v| v as f64 * golden_angle);
+    let z = Array1::linspace(-1.0, 1.0, n_points);
+    let rho = z.mapv(|v| (1.0_f64 - v * v).sqrt());
+    let a = &rho * phi.mapv(|v| v.sin());
+    let b = &rho * phi.mapv(|v| v.cos());
+    let ax = Axis(1);
+    let points = stack(ax, &[z.view(), a.view(), b.view()])
+        .expect("Failed to create Golden spiral point cloud.");
+    let points = points / anisotropy;
+    let (mut verts, faces) = quickhull_3d(&points, false)?;
+    let norms = verts.map_axis(ax, |r| r.dot(&r).sqrt());
+    verts /= &norms.insert_axis(ax);
+    Ok((verts, faces))
 }
 
 /// Compute the axis-aligned bounding box of a polyhedron.
