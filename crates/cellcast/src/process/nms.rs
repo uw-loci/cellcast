@@ -2,9 +2,9 @@ use std::array;
 
 use imgal::error::ImgalError;
 use imgal::spatial::KDTree;
-use imgal::spatial::halfspace::{face_to_halfspace};
+use imgal::spatial::halfspace::{face_to_halfspace, halfspace_intersection};
 use imgal::statistics::max;
-use ndarray::{Array1, ArrayView1, ArrayView2};
+use ndarray::{Array1, ArrayView1, ArrayView2, Axis, stack};
 
 use crate::geometry::polygon::{area_intersection, build_polygons, check_bbox_intersect};
 use crate::geometry::polyhedron::{
@@ -192,13 +192,14 @@ pub fn polyhedron_nms(
                         }
                         // this computes the kernel intersection of the lower bound
                         let ngh_poly_verts = polyhedron_vertices(ngh_dist, ngh_pnt, verts);
-                        let x = hull_overlap_kernel(
+                        let x = hull_overlap_volume(
                             cur_poly_verts.view(),
                             ngh_poly_verts.view(),
                             cur_pnt,
                             ngh_pnt,
                             faces,
-                        );
+                        ).unwrap();
+                        dbg!(x);
                         si
                     });
             // TODO use the suppressed indices to update date the sup accumulator and
@@ -212,7 +213,8 @@ pub fn polyhedron_nms(
     todo!();
 }
 
-/// TODO
+/// Computes the overlap volume of two convex hulls by intersecting their face
+/// halfspaces and summing the volume of the result intersection hull.
 ///
 /// # Arguments
 ///
@@ -227,15 +229,15 @@ pub fn polyhedron_nms(
 /// * `Ok()`:
 /// * `Err()`:
 #[inline]
-fn hull_overlap_kernel(
+fn hull_overlap_volume(
     vertices_a: ArrayView2<f32>,
     vertices_b: ArrayView2<f32>,
     center_a: ArrayView1<usize>,
     center_b: ArrayView1<usize>,
     gs_faces: ArrayView2<usize>,
-) -> Result<Vec<Array1<f64>>, ImgalError> {
-    let n_f = gs_faces.dim().0;
-    let hs: Vec<Array1<f64>> = (0..n_f).try_fold(Vec::with_capacity(n_f * 4), |mut acc, i| {
+) -> Result<f64, ImgalError> {
+    let n_gsf = gs_faces.dim().0;
+    let hs: Vec<Array1<f64>> = (0..n_gsf).try_fold(Vec::with_capacity(n_gsf * 2), |mut acc, i| {
         let [a_idx, b_idx, c_idx] = array::from_fn(|j| gs_faces[[i, j]]);
         acc.push(face_to_halfspace(
             vertices_a.row(a_idx),
@@ -249,5 +251,26 @@ fn hull_overlap_kernel(
         )?);
         Ok(acc)
     })?;
-    Ok(hs)
+    let in_pnt: [f64; 3] =
+        array::from_fn(|i| 0.5 * (center_a[i] + center_b[i]) as f64);
+    let hs = stack(
+        Axis(0),
+        &hs.iter()
+            .map(|v| v.view())
+            .collect::<Vec<ArrayView1<f64>>>(),
+    )
+    .expect("Failed to stack halfspaces into array.");
+    let (inter_verts, inter_faces) = halfspace_intersection(&hs, &in_pnt)?;
+    let n_if = inter_faces.dim().0;
+    Ok((0..n_if).fold(0.0_f64, |_, i| {
+        let [a_idx, b_idx, c_idx] = array::from_fn(|j| inter_faces[[i, j]]);
+        let [az, ay, ax] = array::from_fn(|j| inter_verts[[a_idx, j]] - in_pnt[j] as f64);
+        let [bz, by, bx] = array::from_fn(|j| inter_verts[[b_idx, j]] - in_pnt[j] as f64);
+        let [cz, cy, cx] = array::from_fn(|j| inter_verts[[c_idx, j]] - in_pnt[j] as f64);
+        let cross_z = bx * cy - by * cx;
+        let cross_y = bz * cx - bx * cz;
+        let cross_x = by * cz - bz * cy;
+        let temp = az * cross_z + ay * cross_y + ax * cross_x;
+        (temp / 6.0).abs()
+    }))
 }

@@ -327,39 +327,40 @@ pub fn polyhedron_volume(
 ) -> f32 {
     let origin = [0.0_f32; 3];
     let n_faces = gs_faces.dim().0;
-    (0..n_faces).fold(0.0_f32, |acc, f| {
-        let tri = gs_faces.row(f);
-        let a: [f32; 3] = {
-            let i = tri[0];
-            let di = distances[i];
-            [
-                di * gs_vertices[[i, 0]] as f32,
-                di * gs_vertices[[i, 1]] as f32,
-                di * gs_vertices[[i, 2]] as f32,
-            ]
-        };
-        let b: [f32; 3] = {
-            let i = tri[1];
-            let di = distances[i];
-            [
-                di * gs_vertices[[i, 0]] as f32,
-                di * gs_vertices[[i, 1]] as f32,
-                di * gs_vertices[[i, 2]] as f32,
-            ]
-        };
-        let c: [f32; 3] = {
-            let i = tri[2];
-            let di = distances[i];
-            [
-                di * gs_vertices[[i, 0]] as f32,
-                di * gs_vertices[[i, 1]] as f32,
-                di * gs_vertices[[i, 2]] as f32,
-            ]
-        };
-        let v = tetrahedron_volume(&a, &b, &c, &origin) as f32;
-        acc + v
-    })
-    .abs()
+    (0..n_faces)
+        .fold(0.0_f32, |acc, f| {
+            let tri = gs_faces.row(f);
+            let a: [f32; 3] = {
+                let i = tri[0];
+                let di = distances[i];
+                [
+                    di * gs_vertices[[i, 0]] as f32,
+                    di * gs_vertices[[i, 1]] as f32,
+                    di * gs_vertices[[i, 2]] as f32,
+                ]
+            };
+            let b: [f32; 3] = {
+                let i = tri[1];
+                let di = distances[i];
+                [
+                    di * gs_vertices[[i, 0]] as f32,
+                    di * gs_vertices[[i, 1]] as f32,
+                    di * gs_vertices[[i, 2]] as f32,
+                ]
+            };
+            let c: [f32; 3] = {
+                let i = tri[2];
+                let di = distances[i];
+                [
+                    di * gs_vertices[[i, 0]] as f32,
+                    di * gs_vertices[[i, 1]] as f32,
+                    di * gs_vertices[[i, 2]] as f32,
+                ]
+            };
+            let v = tetrahedron_volume(&a, &b, &c, &origin) as f32;
+            acc + v
+        })
+        .abs()
 }
 
 /// Compute the intersection volume of two spheres with isotropic distance. If
