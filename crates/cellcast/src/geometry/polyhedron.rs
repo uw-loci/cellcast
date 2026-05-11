@@ -40,7 +40,7 @@ pub fn bounding_inner_radius(
 ) -> f32 {
     let eps = 1e-10;
     let n_faces = gs_faces.dim().0;
-    (0..n_faces).fold(0.0_f32, |acc, f| {
+    (0..n_faces).fold(f32::MAX, |acc, f| {
         let tri = gs_faces.row(f);
         let a: [f32; 3] = {
             let i = tri[0];
@@ -78,7 +78,7 @@ pub fn bounding_inner_radius(
         let norm = 1.0 / (nz * nz + ny * ny + nx * nx).sqrt().max(eps);
         let (nz, ny, nx) = (nz * norm, ny * norm, nx * norm);
         let dist = a[0] * nz + a[1] * ny + a[2] * nx;
-        acc.min(dist)
+        acc.min(dist.abs())
     })
 }
 
@@ -91,7 +91,7 @@ pub fn bounding_inner_radius_iso(
     anisotropy: [f32; 3],
 ) -> f32 {
     let eps = 1e-10;
-    (0..gs_faces.dim().0).fold(0.0_f32, |acc, i| {
+    (0..gs_faces.dim().0).fold(f32::MAX, |acc, i| {
         let i_a = gs_faces[[i, 0]];
         let i_b = gs_faces[[i, 1]];
         let i_c = gs_faces[[i, 2]];
@@ -128,7 +128,7 @@ pub fn bounding_inner_radius_iso(
         let norm = 1.0 / (nz * nz + ny * ny + nx * nx).sqrt().max(eps);
         let (nz, ny, nx) = (nz * norm, ny * norm, nx * norm);
         let dist = a[0] * nz + a[1] * ny + a[2] * nx;
-        acc.min(dist)
+        acc.min(dist.abs())
     })
 }
 
