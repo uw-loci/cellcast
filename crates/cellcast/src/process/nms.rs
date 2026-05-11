@@ -2,9 +2,7 @@ use imgal::error::ImgalError;
 use imgal::spatial::KDTree;
 use imgal::statistics::max;
 
-use ndarray::{Array2, ArrayView1, ArrayView2};
-
-use crate::geometry::polygon;
+use crate::geometry::polygon::{area_intersection, build_polygons, check_bbox_intersect};
 use crate::geometry::polyhedron::{
     bbox_intersect_volume, bounding_inner_radius, bounding_inner_radius_iso, bounding_outer_radius,
     bounding_outer_radius_iso, estimate_anisotropy, golden_spiral, polyhedron_bbox,
@@ -47,8 +45,7 @@ pub fn polygon_nms(
 ) -> Vec<bool> {
     // create 2D polygons vector and perform NMS
     let mut suppressed: Vec<bool> = vec![false; n_polys];
-    let polygons =
-        polygon::build_polygons(polygon_dist.view(), polygon_pos.view(), n_polys, n_rays);
+    let polygons = build_polygons(polygon_dist.view(), polygon_pos.view(), n_polys, n_rays);
     let kdtree = KDTree::build(polygon_pos.view());
     let max_dist = polygons.iter().map(|p| p.dist).fold(0.0, f32::max);
     // iterate through each polygon and skip already suppressed polygons
@@ -70,11 +67,10 @@ pub fn polygon_nms(
                 continue;
             }
             // skip bounding boxes that *do not* intersect
-            if !bbox_intersect_2d(&polygons[p].bbox, &polygons[n].bbox) {
+            if !check_bbox_intersect(&polygons[p].bbox, &polygons[n].bbox) {
                 continue;
             }
-            let poly_area_inter =
-                polygon::area_intersection(&polygons[p].vertices, &polygons[n].vertices);
+            let poly_area_inter = area_intersection(&polygons[p].vertices, &polygons[n].vertices);
             let min_area = polygons[p].area.min(polygons[n].area) + 1e-10;
             let overlap = poly_area_inter / min_area;
             if overlap > threshold {

@@ -119,6 +119,22 @@ pub fn build_polygons(
     polygons
 }
 
+/// Determine if two bounding boxes intersect.
+///
+/// # Arguments
+///
+/// * `a`: Bounding box `a` as `(y_min, y_max, x_min, x_max)`.
+/// * `b`: Bounding box `b` as `(y_min, y_max, x_min, x_max)`.
+///
+/// # Returns
+///
+/// * `bool`: Returns `true` if the bounding boxes overlap, `false` if they do
+///   not.
+#[inline]
+pub fn check_bbox_intersect(a: &(f32, f32, f32, f32), b: &(f32, f32, f32, f32)) -> bool {
+    b.0 <= a.1 && a.0 <= b.1 && b.2 <= a.3 && a.2 <= b.3
+}
+
 /// Compute the area of a polygon using the Shoelace forumla.
 ///
 /// # Reference
