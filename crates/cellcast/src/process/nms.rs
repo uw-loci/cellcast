@@ -1,6 +1,10 @@
+use std::array;
+
 use imgal::error::ImgalError;
 use imgal::spatial::KDTree;
+use imgal::spatial::halfspace::{face_to_halfspace};
 use imgal::statistics::max;
+use ndarray::{Array1, ArrayView1, ArrayView2};
 
 use crate::geometry::polygon::{area_intersection, build_polygons, check_bbox_intersect};
 use crate::geometry::polyhedron::{
@@ -188,6 +192,13 @@ pub fn polyhedron_nms(
                         }
                         // this computes the kernel intersection of the lower bound
                         let ngh_poly_verts = polyhedron_vertices(ngh_dist, ngh_pnt, verts);
+                        let x = hull_overlap_kernel(
+                            cur_poly_verts.view(),
+                            ngh_poly_verts.view(),
+                            cur_pnt,
+                            ngh_pnt,
+                            faces,
+                        );
                         si
                     });
             // TODO use the suppressed indices to update date the sup accumulator and
@@ -201,18 +212,42 @@ pub fn polyhedron_nms(
     todo!();
 }
 
-/// Determine if two bounding boxes intersect.
+/// TODO
 ///
 /// # Arguments
 ///
-/// * `a`: Bounding box `a` as `(y_min, y_max, x_min, x_max)`.
-/// * `b`: Bounding box `b` as `(y_min, y_max, x_min, x_max)`.
+/// * `vertices_a`:
+/// * `vertices_b`:
+/// * `center_a`:
+/// * `center_b`:
+/// * `gs_faces`:
 ///
-/// # Returns
+/// # Retruns
 ///
-/// * `bool`: Returns `true` if the bounding boxes overlap, `false` if they do
-///   not.
+/// * `Ok()`:
+/// * `Err()`:
 #[inline]
-fn bbox_intersect_2d(a: &(f32, f32, f32, f32), b: &(f32, f32, f32, f32)) -> bool {
-    b.0 <= a.1 && a.0 <= b.1 && b.2 <= a.3 && a.2 <= b.3
+fn hull_overlap_kernel(
+    vertices_a: ArrayView2<f32>,
+    vertices_b: ArrayView2<f32>,
+    center_a: ArrayView1<usize>,
+    center_b: ArrayView1<usize>,
+    gs_faces: ArrayView2<usize>,
+) -> Result<Vec<Array1<f64>>, ImgalError> {
+    let n_f = gs_faces.dim().0;
+    let hs: Vec<Array1<f64>> = (0..n_f).try_fold(Vec::with_capacity(n_f * 4), |mut acc, i| {
+        let [a_idx, b_idx, c_idx] = array::from_fn(|j| gs_faces[[i, j]]);
+        acc.push(face_to_halfspace(
+            vertices_a.row(a_idx),
+            vertices_a.row(b_idx),
+            vertices_a.row(c_idx),
+        )?);
+        acc.push(face_to_halfspace(
+            vertices_b.row(a_idx),
+            vertices_b.row(b_idx),
+            vertices_b.row(c_idx),
+        )?);
+        Ok(acc)
+    })?;
+    Ok(hs)
 }
