@@ -359,6 +359,7 @@ pub fn polyhedron_volume(
         let v = tetrahedron_volume(&a, &b, &c, &origin) as f32;
         acc + v
     })
+    .abs()
 }
 
 /// Compute the intersection volume of two spheres with isotropic distance. If
