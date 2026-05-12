@@ -18,7 +18,7 @@ use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, stack};
 ///
 /// * `f32`: The intersection volume of bounding box `a` and `b`.
 #[inline]
-pub fn bbox_intersect_volume(bbox_a: &[usize; 6], bbox_b: &[usize; 6]) -> f32 {
+pub fn bbox_intersect_vol(bbox_a: &[usize; 6], bbox_b: &[usize; 6]) -> f32 {
     let wz = (bbox_a[1]
         .min(bbox_b[1])
         .saturating_sub(bbox_a[0].max(bbox_b[0]))) as f32;
@@ -352,7 +352,7 @@ pub fn polyhedron_bbox(
 /// * `Array2<f32>`: A 2D array of shape `(n_rays, 3)` containing the polyhedron
 ///   scaled vertices.
 #[inline]
-pub fn polyhedron_vertices(
+pub fn polyhedron_verts(
     distances: ArrayView1<f32>,
     center: ArrayView1<usize>,
     gs_vertices: ArrayView2<f64>,
@@ -388,7 +388,7 @@ pub fn polyhedron_vertices(
 ///
 /// * `f32`: The volume of the polyhedron.
 #[inline]
-pub fn polyhedron_volume(
+pub fn polyhedron_vol(
     distances: ArrayView1<f32>,
     gs_vertices: ArrayView2<f64>,
     gs_faces: ArrayView2<usize>,

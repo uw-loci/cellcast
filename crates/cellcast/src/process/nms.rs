@@ -7,9 +7,9 @@ use ndarray::{Array1, ArrayView1, ArrayView2, Axis, stack};
 
 use crate::geometry::polygon::{area_intersection, build_polygons, check_bbox_intersect};
 use crate::geometry::polyhedron::{
-    bbox_intersect_volume, bounding_inner_radius, bounding_inner_radius_iso, bounding_outer_radius,
+    bbox_intersect_vol, bounding_inner_radius, bounding_inner_radius_iso, bounding_outer_radius,
     bounding_outer_radius_iso, estimate_anisotropy, golden_spiral, polyhedron_bbox,
-    polyhedron_vertices, polyhedron_volume, sphere_intersect_volume_iso, golden_spiral_intersection_vol,
+    polyhedron_verts, polyhedron_vol, sphere_intersect_volume_iso, golden_spiral_intersection_vol,
 };
 
 /// Perform Non-Maximum Suppression (NMS) on 2-dimensional polygons.
@@ -123,7 +123,7 @@ pub fn polyhedron_nms(
             let cur_dist = polyhedron_dist.row(i);
             let cur_pnt = polyhedron_pnts.row(i);
             let bbox = polyhedron_bbox(cur_dist, cur_pnt, verts);
-            let vol = polyhedron_volume(cur_dist, verts, faces);
+            let vol = polyhedron_vol(cur_dist, verts, faces);
             let ri = bounding_inner_radius(cur_dist, verts, faces);
             let ro = bounding_outer_radius(cur_dist);
             (bbox, vol, ri, ro)
@@ -150,7 +150,7 @@ pub fn polyhedron_nms(
             let cur_dist = polyhedron_dist.row(i);
             let cur_pnt = polyhedron_pnts.row(i);
             let cur_bbox = bboxes[i];
-            let cur_poly_verts = polyhedron_vertices(cur_dist, cur_pnt, verts);
+            let cur_poly_verts = polyhedron_verts(cur_dist, cur_pnt, verts);
             let search_rad = ((max_dist + rad_out[i]) * (max_dist + rad_out[i])) as f64;
             let neighbors = kdtree.search_for_indices(&cur_pnt, search_rad)?;
             // TODO use the suppressed indices to update date the sup accumulator and
@@ -172,7 +172,7 @@ pub fn polyhedron_nms(
                             rad_out_iso[j],
                             &aniso,
                         );
-                        let bbox_inter_vol = bbox_intersect_volume(&cur_bbox, &bboxes[j]);
+                        let bbox_inter_vol = bbox_intersect_vol(&cur_bbox, &bboxes[j]);
                         let upper_inter_vol = upper_inter_vol.min(bbox_inter_vol);
                         iou = (upper_inter_vol / (vol_min + eps)).min(1.0);
                         if upper_inter_vol < eps || iou <= threshold {
@@ -192,8 +192,8 @@ pub fn polyhedron_nms(
                             return Ok(si);
                         }
                         // this computes the polyhedron intersection of the lower bound
-                        let ngh_poly_verts = polyhedron_vertices(ngh_dist, ngh_pnt, verts);
-                        let poly_inter_vol = golden_spiral_hull_overlap_vol(
+                        let ngh_poly_verts = polyhedron_verts(ngh_dist, ngh_pnt, verts);
+                        let poly_inter_vol = golden_spiral_intersection_vol(
                             cur_poly_verts.view(),
                             ngh_poly_verts.view(),
                             cur_pnt,
