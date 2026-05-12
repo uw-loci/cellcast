@@ -218,16 +218,18 @@ pub fn polyhedron_nms(
 ///
 /// # Arguments
 ///
-/// * `vertices_a`:
-/// * `vertices_b`:
-/// * `center_a`:
-/// * `center_b`:
-/// * `gs_faces`:
+/// * `vertices_a`: Vertices of polyhedron `a`.
+/// * `vertices_b`: Vertices of polyhedron `b`.
+/// * `center_a`: The center point of polyhedron `a`.
+/// * `center_b`: The center point of polyhedron `b`.
+/// * `gs_faces`: The "Golden Spiral" unit sphere face indices with shape
+///   `(n_triangles, 3)`.
 ///
 /// # Retruns
 ///
-/// * `Ok()`:
-/// * `Err()`:
+/// * `Ok(f64)`: The intersection volume of polyhedron `a` and `b`.
+/// * `Err(ImgalError)`: If intersection halfspaces is `< 4`. If the halfspace
+///   intersection interior point is not 3D.
 #[inline]
 fn hull_overlap_volume(
     vertices_a: ArrayView2<f32>,
