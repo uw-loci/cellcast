@@ -2,7 +2,6 @@ use std::array;
 
 use imgal::error::ImgalError;
 use imgal::spatial::KDTree;
-use imgal::spatial::halfspace::{face_to_halfspace, halfspace_intersection};
 use imgal::statistics::max;
 use ndarray::{Array1, ArrayView1, ArrayView2, Axis, stack};
 
@@ -10,7 +9,7 @@ use crate::geometry::polygon::{area_intersection, build_polygons, check_bbox_int
 use crate::geometry::polyhedron::{
     bbox_intersect_volume, bounding_inner_radius, bounding_inner_radius_iso, bounding_outer_radius,
     bounding_outer_radius_iso, estimate_anisotropy, golden_spiral, polyhedron_bbox,
-    polyhedron_vertices, polyhedron_volume, sphere_intersect_volume_iso,
+    polyhedron_vertices, polyhedron_volume, sphere_intersect_volume_iso, golden_spiral_intersection_vol,
 };
 
 /// Perform Non-Maximum Suppression (NMS) on 2-dimensional polygons.
@@ -154,56 +153,60 @@ pub fn polyhedron_nms(
             let cur_poly_verts = polyhedron_vertices(cur_dist, cur_pnt, verts);
             let search_rad = ((max_dist + rad_out[i]) * (max_dist + rad_out[i])) as f64;
             let neighbors = kdtree.search_for_indices(&cur_pnt, search_rad)?;
+            // TODO use the suppressed indices to update date the sup accumulator and
+            // return it -- this is parallel friendly
             let sup_inds: Vec<usize> =
                 neighbors
                     .iter()
-                    .filter(|&&v| !sup[v])
-                    .fold(Vec::new(), |mut si, &v| {
+                    .filter(|&&j| !sup[j])
+                    .try_fold(Vec::new(), |mut si, &j| {
                         let mut iou: f32 = 0.0;
-                        let ngh_dist = polyhedron_dist.row(v);
-                        let ngh_pnt = polyhedron_pnts.row(v);
-                        let vol_min = vols[i].min(vols[v]);
+                        let ngh_dist = polyhedron_dist.row(j);
+                        let ngh_pnt = polyhedron_pnts.row(j);
+                        let vol_min = vols[i].min(vols[j]);
                         // this checks the upper bound of intersection and IoU
                         let upper_inter_vol = sphere_intersect_volume_iso(
                             cur_pnt,
                             ngh_pnt,
                             rad_out_iso[i],
-                            rad_out_iso[v],
+                            rad_out_iso[j],
                             &aniso,
                         );
-                        let bbox_inter_vol = bbox_intersect_volume(&cur_bbox, &bboxes[v]);
+                        let bbox_inter_vol = bbox_intersect_volume(&cur_bbox, &bboxes[j]);
                         let upper_inter_vol = upper_inter_vol.min(bbox_inter_vol);
                         iou = (upper_inter_vol / (vol_min + eps)).min(1.0);
                         if upper_inter_vol < eps || iou <= threshold {
-                            return si;
+                            return Ok(si);
                         }
                         // this checks the lower bound of intersection and IoU
                         let lower_inter_vol = sphere_intersect_volume_iso(
                             cur_pnt,
                             ngh_pnt,
                             rad_in_iso[i],
-                            rad_in_iso[v],
+                            rad_in_iso[j],
                             &aniso,
                         );
                         iou = (lower_inter_vol / (vol_min + eps)).max(0.0);
                         if iou > threshold {
-                            si.push(v);
-                            return si;
+                            si.push(j);
+                            return Ok(si);
                         }
-                        // this computes the kernel intersection of the lower bound
+                        // this computes the polyhedron intersection of the lower bound
                         let ngh_poly_verts = polyhedron_vertices(ngh_dist, ngh_pnt, verts);
-                        let x = hull_overlap_volume(
+                        let poly_inter_vol = golden_spiral_hull_overlap_vol(
                             cur_poly_verts.view(),
                             ngh_poly_verts.view(),
                             cur_pnt,
                             ngh_pnt,
                             faces,
-                        ).unwrap();
-                        dbg!(x);
-                        si
-                    });
-            // TODO use the suppressed indices to update date the sup accumulator and
-            // return it -- this is parallel friendly
+                        )? as f32;
+                        iou = poly_inter_vol / (vol_min + eps);
+                        if iou > threshold {
+                            si.push(j);
+                            return Ok(si);
+                        }
+                        Ok(si)
+                    })?;
             // these coordinates come later
             let nz = cur_bbox[1] - cur_bbox[0] + 1;
             let ny = cur_bbox[3] - cur_bbox[2] + 1;
@@ -213,66 +216,3 @@ pub fn polyhedron_nms(
     todo!();
 }
 
-/// Computes the overlap volume of two convex hulls by intersecting their face
-/// halfspaces and summing the volume of the result intersection hull.
-///
-/// # Arguments
-///
-/// * `vertices_a`: Vertices of polyhedron `a`.
-/// * `vertices_b`: Vertices of polyhedron `b`.
-/// * `center_a`: The center point of polyhedron `a`.
-/// * `center_b`: The center point of polyhedron `b`.
-/// * `gs_faces`: The "Golden Spiral" unit sphere face indices with shape
-///   `(n_triangles, 3)`.
-///
-/// # Retruns
-///
-/// * `Ok(f64)`: The intersection volume of polyhedron `a` and `b`.
-/// * `Err(ImgalError)`: If intersection halfspaces is `< 4`. If the halfspace
-///   intersection interior point is not 3D.
-#[inline]
-fn hull_overlap_volume(
-    vertices_a: ArrayView2<f32>,
-    vertices_b: ArrayView2<f32>,
-    center_a: ArrayView1<usize>,
-    center_b: ArrayView1<usize>,
-    gs_faces: ArrayView2<usize>,
-) -> Result<f64, ImgalError> {
-    let n_gsf = gs_faces.dim().0;
-    let hs: Vec<Array1<f64>> = (0..n_gsf).try_fold(Vec::with_capacity(n_gsf * 2), |mut acc, i| {
-        let [a_idx, b_idx, c_idx] = array::from_fn(|j| gs_faces[[i, j]]);
-        acc.push(face_to_halfspace(
-            vertices_a.row(a_idx),
-            vertices_a.row(b_idx),
-            vertices_a.row(c_idx),
-        )?);
-        acc.push(face_to_halfspace(
-            vertices_b.row(a_idx),
-            vertices_b.row(b_idx),
-            vertices_b.row(c_idx),
-        )?);
-        Ok(acc)
-    })?;
-    let in_pnt: [f64; 3] =
-        array::from_fn(|i| 0.5 * (center_a[i] + center_b[i]) as f64);
-    let hs = stack(
-        Axis(0),
-        &hs.iter()
-            .map(|v| v.view())
-            .collect::<Vec<ArrayView1<f64>>>(),
-    )
-    .expect("Failed to stack halfspaces into array.");
-    let (inter_verts, inter_faces) = halfspace_intersection(&hs, &in_pnt)?;
-    let n_if = inter_faces.dim().0;
-    Ok((0..n_if).fold(0.0_f64, |_, i| {
-        let [a_idx, b_idx, c_idx] = array::from_fn(|j| inter_faces[[i, j]]);
-        let [az, ay, ax] = array::from_fn(|j| inter_verts[[a_idx, j]] - in_pnt[j] as f64);
-        let [bz, by, bx] = array::from_fn(|j| inter_verts[[b_idx, j]] - in_pnt[j] as f64);
-        let [cz, cy, cx] = array::from_fn(|j| inter_verts[[c_idx, j]] - in_pnt[j] as f64);
-        let cross_z = bx * cy - by * cx;
-        let cross_y = bz * cx - bx * cz;
-        let cross_x = by * cz - bz * cy;
-        let temp = az * cross_z + ay * cross_y + ax * cross_x;
-        (temp / 6.0).abs()
-    }))
-}
