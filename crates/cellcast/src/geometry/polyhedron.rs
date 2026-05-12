@@ -3,7 +3,7 @@ use std::f64::consts::PI;
 
 use imgal::error::ImgalError;
 use imgal::spatial::convex_hull::quickhull_3d;
-use imgal::spatial::halfspace::{face_to_halfspace, halfspace_intersection};
+use imgal::spatial::halfspace::{face_to_halfspace, halfspace_intersection, hull_to_halfspace};
 use imgal::spatial::geometry::tetrahedron_volume;
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, stack};
 
@@ -156,6 +156,21 @@ pub fn bounding_outer_radius_iso(
         acc.max(z * z + y * y + x * x)
     });
     radius.sqrt()
+}
+
+/// TODO
+#[inline]
+pub fn convex_hull_intersection_vol(
+    vertices_a: ArrayView2<f32>,
+    vertices_b: ArrayView2<f32>,
+    center_a: ArrayView1<usize>,
+    center_b: ArrayView1<usize>,
+) -> Result<f64, ImgalError> {
+    let (hull_verts_a, hull_faces_a) = quickhull_3d(vertices_a, false)?;
+    let (hull_verts_b, hull_faces_b) = quickhull_3d(vertices_b, false)?;
+    let hs_a = hull_to_halfspace(&hull_verts_a, &hull_faces_a);
+    let hs_b = hull_to_halfspace(&hull_verts_b, &hull_faces_b);
+    Ok(0.0)
 }
 
 /// Estimate the average anisotropy of a slice of polyhedra bounding boxes.
