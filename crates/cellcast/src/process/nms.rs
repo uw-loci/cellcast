@@ -5,7 +5,10 @@ use ndarray::{ArrayView1, ArrayView2};
 
 use crate::geometry::polygon::{area_intersection, build_polygons, check_bbox_intersect};
 use crate::geometry::polyhedron::{
-    bbox_intersect_vol, bounding_inner_radius, bounding_inner_radius_iso, bounding_outer_radius, bounding_outer_radius_iso, convex_hull_intersection_vol, estimate_anisotropy, golden_spiral, golden_spiral_intersection_vol, polyhedron_bbox, polyhedron_verts, polyhedron_vol, sphere_intersect_volume_iso
+    bbox_intersect_vol, bounding_inner_radius, bounding_inner_radius_iso, bounding_outer_radius,
+    bounding_outer_radius_iso, convex_hull_intersection_vol, estimate_anisotropy, golden_spiral,
+    golden_spiral_intersection_vol, polyhedron_bbox, polyhedron_verts, polyhedron_vol,
+    render_polyhedron, sphere_intersect_volume_iso,
 };
 
 /// Perform Non-Maximum Suppression (NMS) on 2-dimensional polygons.
@@ -149,10 +152,14 @@ pub fn polyhedron_nms(
             let cur_pnt = polyhedron_pnts.row(i);
             let cur_bbox = bboxes[i];
             let cur_poly_verts = polyhedron_verts(cur_dist, cur_pnt, verts);
+            let mut cur_poly_render: Option<Vec<bool>> = None;
             let search_rad = ((max_dist + rad_out[i]) * (max_dist + rad_out[i])) as f64;
             let neighbors = kdtree.search_for_indices(&cur_pnt, search_rad)?;
             // TODO use the suppressed indices to update date the sup accumulator and
             // return it -- this is parallel friendly
+            let nz = cur_bbox[1] - cur_bbox[0] + 1;
+            let ny = cur_bbox[3] - cur_bbox[2] + 1;
+            let nx = cur_bbox[5] - cur_bbox[4] + 1;
             let sup_inds: Vec<usize> =
                 neighbors
                     .iter()
@@ -203,22 +210,25 @@ pub fn polyhedron_nms(
                             si.push(j);
                             return Ok(si);
                         }
-                        let conv_inter_vol = convex_hull_intersection_vol(cur_poly_verts.view(), ngh_poly_verts.view(), cur_pnt, ngh_pnt)? as f32;
-                        iou = conv_inter_vol  / (vol_min + eps);
+                        let conv_inter_vol = convex_hull_intersection_vol(
+                            cur_poly_verts.view(),
+                            ngh_poly_verts.view(),
+                            cur_pnt,
+                            ngh_pnt,
+                        )? as f32;
+                        iou = conv_inter_vol / (vol_min + eps);
                         if iou <= threshold {
                             return Ok(si);
                         }
+                        // if cur_poly_render.is_none() {
+                        //     cur_poly_render = Some(render_polyhedron(&cur_bbox, nz, ny, nx));
+                        // }
                         Ok(si)
                     })?;
-            // these coordinates come later
             if !sup_inds.is_empty() {
                 dbg!(sup_inds);
             }
-            let nz = cur_bbox[1] - cur_bbox[0] + 1;
-            let ny = cur_bbox[3] - cur_bbox[2] + 1;
-            let nx = cur_bbox[5] - cur_bbox[4] + 1;
             Ok(sup)
         })?;
     todo!();
 }
-

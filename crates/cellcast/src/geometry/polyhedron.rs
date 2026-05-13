@@ -3,9 +3,9 @@ use std::f64::consts::PI;
 
 use imgal::error::ImgalError;
 use imgal::spatial::convex_hull::quickhull_3d;
+use imgal::spatial::geometry::{orient_pred_2d, orient_pred_3d, tetrahedron_volume};
 use imgal::spatial::halfspace::{face_to_halfspace, halfspace_intersection, hull_to_halfspace};
-use imgal::spatial::geometry::tetrahedron_volume;
-use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, concatenate,stack};
+use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, concatenate, stack};
 
 /// Compute the intersection volume of two axis-aligned 3D bounding boxes.
 ///
@@ -160,6 +160,29 @@ pub fn bounding_outer_radius_iso(
 
 /// TODO
 #[inline]
+pub fn check_inside_polyhedron(
+    vertices: ArrayView2<f32>,
+    faces: ArrayView2<usize>,
+    center: ArrayView1<usize>,
+    bbox: [usize; 6],
+) -> Result<bool, ImgalError> {
+    let center = center.mapv(|v| v as f32);
+    for i in 0..faces.dim().0 {
+        let [a_idx, b_idx, c_idx] = array::from_fn(|j| faces[[i, j]]);
+        let a = vertices.row(a_idx);
+        let b = vertices.row(b_idx);
+        let c = vertices.row(c_idx);
+        // TODO this isn't quite right, the orient_pred 3d is actually the inside_halfspace
+        // fn in stardist cpp files
+        if orient_pred_3d(a, b, c, center.view())?.is_sign_negative() {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+/// TODO
+#[inline]
 pub fn convex_hull_intersection_vol(
     vertices_a: ArrayView2<f32>,
     vertices_b: ArrayView2<f32>,
@@ -170,7 +193,8 @@ pub fn convex_hull_intersection_vol(
     let (hull_verts_b, hull_faces_b) = quickhull_3d(vertices_b, false)?;
     let hs_a = hull_to_halfspace(&hull_verts_a, &hull_faces_a)?;
     let hs_b = hull_to_halfspace(&hull_verts_b, &hull_faces_b)?;
-    let hs = concatenate(Axis(0), &[hs_a.view(), hs_b.view()]).expect("Failed to stack halfspaces into array.");
+    let hs = concatenate(Axis(0), &[hs_a.view(), hs_b.view()])
+        .expect("Failed to stack halfspaces into array.");
     let in_pnt: [f64; 3] = array::from_fn(|i| 0.5 * (center_a[i] + center_b[i]) as f64);
     let (inter_verts, inter_faces) = halfspace_intersection(&hs, &in_pnt)?;
     let n_if = inter_faces.dim().0;
@@ -279,22 +303,22 @@ pub fn golden_spiral_intersection_vol(
     gs_faces: ArrayView2<usize>,
 ) -> Result<f64, ImgalError> {
     let n_gsf = gs_faces.dim().0;
-    let hs: Vec<Array1<f64>> = (0..n_gsf).try_fold(Vec::with_capacity(n_gsf * 2), |mut acc, i| {
-        let [a_idx, b_idx, c_idx] = array::from_fn(|j| gs_faces[[i, j]]);
-        acc.push(face_to_halfspace(
-            vertices_a.row(a_idx),
-            vertices_a.row(b_idx),
-            vertices_a.row(c_idx),
-        )?);
-        acc.push(face_to_halfspace(
-            vertices_b.row(a_idx),
-            vertices_b.row(b_idx),
-            vertices_b.row(c_idx),
-        )?);
-        Ok(acc)
-    })?;
-    let in_pnt: [f64; 3] =
-        array::from_fn(|i| 0.5 * (center_a[i] + center_b[i]) as f64);
+    let hs: Vec<Array1<f64>> =
+        (0..n_gsf).try_fold(Vec::with_capacity(n_gsf * 2), |mut acc, i| {
+            let [a_idx, b_idx, c_idx] = array::from_fn(|j| gs_faces[[i, j]]);
+            acc.push(face_to_halfspace(
+                vertices_a.row(a_idx),
+                vertices_a.row(b_idx),
+                vertices_a.row(c_idx),
+            )?);
+            acc.push(face_to_halfspace(
+                vertices_b.row(a_idx),
+                vertices_b.row(b_idx),
+                vertices_b.row(c_idx),
+            )?);
+            Ok(acc)
+        })?;
+    let in_pnt: [f64; 3] = array::from_fn(|i| 0.5 * (center_a[i] + center_b[i]) as f64);
     let hs = stack(
         Axis(0),
         &hs.iter()
@@ -458,6 +482,43 @@ pub fn polyhedron_vol(
             Ok(acc + v)
         })?
         .abs())
+}
+
+/// TODO
+///
+/// # Arguments
+///
+/// * `bbox`: The bounding box.
+/// * `nz`: The Z-axis bounding box size (*i.e.* depth).
+/// * `ny`: The Y-axis bounding box size (*i.e.* height).
+/// * `nx`: The X-axis bounding box size (*i.e.* width).
+///
+/// # Returns
+///
+/// * `bool`:
+#[inline]
+pub fn render_polyhedron(
+    vertices: ArrayView2<f32>,
+    gs_faces: ArrayView2<usize>,
+    center: ArrayView1<usize>,
+    bbox: [usize; 6],
+    nz: usize,
+    ny: usize,
+    nx: usize,
+) -> Result<Vec<bool>, ImgalError> {
+    let mut render = vec![false; nz * ny * nx];
+    (0..nz).try_for_each(|z| {
+        (0..ny).try_for_each(|y| {
+            (0..nx).try_for_each(|x| {
+                render[x + y * nx + z * nx * ny] =
+                    check_inside_polyhedron(vertices, gs_faces, center, bbox)?;
+                Ok(())
+            })?;
+            Ok(())
+        })?;
+        Ok(())
+    })?;
+    Ok(render)
 }
 
 /// Compute the intersection volume of two spheres with isotropic distance. If
