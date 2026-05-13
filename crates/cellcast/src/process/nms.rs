@@ -1,15 +1,11 @@
-use std::array;
-
 use imgal::error::ImgalError;
 use imgal::spatial::KDTree;
 use imgal::statistics::max;
-use ndarray::{Array1, ArrayView1, ArrayView2, Axis, stack};
+use ndarray::{ArrayView1, ArrayView2};
 
 use crate::geometry::polygon::{area_intersection, build_polygons, check_bbox_intersect};
 use crate::geometry::polyhedron::{
-    bbox_intersect_vol, bounding_inner_radius, bounding_inner_radius_iso, bounding_outer_radius,
-    bounding_outer_radius_iso, estimate_anisotropy, golden_spiral, polyhedron_bbox,
-    polyhedron_verts, polyhedron_vol, sphere_intersect_volume_iso, golden_spiral_intersection_vol,
+    bbox_intersect_vol, bounding_inner_radius, bounding_inner_radius_iso, bounding_outer_radius, bounding_outer_radius_iso, convex_hull_intersection_vol, estimate_anisotropy, golden_spiral, golden_spiral_intersection_vol, polyhedron_bbox, polyhedron_verts, polyhedron_vol, sphere_intersect_volume_iso
 };
 
 /// Perform Non-Maximum Suppression (NMS) on 2-dimensional polygons.
@@ -123,7 +119,9 @@ pub fn polyhedron_nms(
             let cur_dist = polyhedron_dist.row(i);
             let cur_pnt = polyhedron_pnts.row(i);
             let bbox = polyhedron_bbox(cur_dist, cur_pnt, verts);
-            let vol = polyhedron_vol(cur_dist, verts, faces);
+            // SAFE: this unwrap is safe because we know that the parameters are
+            // valid lengths here
+            let vol = polyhedron_vol(cur_dist, verts, faces).unwrap();
             let ri = bounding_inner_radius(cur_dist, verts, faces);
             let ro = bounding_outer_radius(cur_dist);
             (bbox, vol, ri, ro)
@@ -205,9 +203,17 @@ pub fn polyhedron_nms(
                             si.push(j);
                             return Ok(si);
                         }
+                        let conv_inter_vol = convex_hull_intersection_vol(cur_poly_verts.view(), ngh_poly_verts.view(), cur_pnt, ngh_pnt)? as f32;
+                        iou = conv_inter_vol  / (vol_min + eps);
+                        if iou <= threshold {
+                            return Ok(si);
+                        }
                         Ok(si)
                     })?;
             // these coordinates come later
+            if !sup_inds.is_empty() {
+                dbg!(sup_inds);
+            }
             let nz = cur_bbox[1] - cur_bbox[0] + 1;
             let ny = cur_bbox[3] - cur_bbox[2] + 1;
             let nx = cur_bbox[5] - cur_bbox[4] + 1;

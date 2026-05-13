@@ -5,7 +5,7 @@ use imgal::error::ImgalError;
 use imgal::spatial::convex_hull::quickhull_3d;
 use imgal::spatial::halfspace::{face_to_halfspace, halfspace_intersection, hull_to_halfspace};
 use imgal::spatial::geometry::tetrahedron_volume;
-use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, stack};
+use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, concatenate,stack};
 
 /// Compute the intersection volume of two axis-aligned 3D bounding boxes.
 ///
@@ -168,9 +168,23 @@ pub fn convex_hull_intersection_vol(
 ) -> Result<f64, ImgalError> {
     let (hull_verts_a, hull_faces_a) = quickhull_3d(vertices_a, false)?;
     let (hull_verts_b, hull_faces_b) = quickhull_3d(vertices_b, false)?;
-    let hs_a = hull_to_halfspace(&hull_verts_a, &hull_faces_a);
-    let hs_b = hull_to_halfspace(&hull_verts_b, &hull_faces_b);
-    Ok(0.0)
+    let hs_a = hull_to_halfspace(&hull_verts_a, &hull_faces_a)?;
+    let hs_b = hull_to_halfspace(&hull_verts_b, &hull_faces_b)?;
+    let hs = concatenate(Axis(0), &[hs_a.view(), hs_b.view()]).expect("Failed to stack halfspaces into array.");
+    let in_pnt: [f64; 3] = array::from_fn(|i| 0.5 * (center_a[i] + center_b[i]) as f64);
+    let (inter_verts, inter_faces) = halfspace_intersection(&hs, &in_pnt)?;
+    let n_if = inter_faces.dim().0;
+    Ok((0..n_if).fold(0.0_f64, |_, i| {
+        let [a_idx, b_idx, c_idx] = array::from_fn(|j| inter_faces[[i, j]]);
+        let [az, ay, ax] = array::from_fn(|j| inter_verts[[a_idx, j]] - in_pnt[j] as f64);
+        let [bz, by, bx] = array::from_fn(|j| inter_verts[[b_idx, j]] - in_pnt[j] as f64);
+        let [cz, cy, cx] = array::from_fn(|j| inter_verts[[c_idx, j]] - in_pnt[j] as f64);
+        let cross_z = bx * cy - by * cx;
+        let cross_y = bz * cx - bx * cz;
+        let cross_x = by * cz - bz * cy;
+        let temp = az * cross_z + ay * cross_y + ax * cross_x;
+        (temp / 6.0).abs()
+    }))
 }
 
 /// Estimate the average anisotropy of a slice of polyhedra bounding boxes.
