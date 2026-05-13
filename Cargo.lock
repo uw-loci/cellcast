@@ -2394,7 +2394,7 @@ dependencies = [
 [[package]]
 name = "imgal"
 version = "0.2.1"
-source = "git+https://github.com/imgal-sc/imgal?branch=main#3af0cf8b6dfbd8e22dee326989a30402ed58785c"
+source = "git+https://github.com/imgal-sc/imgal?branch=main#609151f337683fda0835c5ee80e9b572e05436fb"
 dependencies = [
  "ndarray",
  "rayon",

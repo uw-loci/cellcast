@@ -421,11 +421,11 @@ pub fn polyhedron_vol(
     distances: ArrayView1<f32>,
     gs_vertices: ArrayView2<f64>,
     gs_faces: ArrayView2<usize>,
-) -> f32 {
+) -> Result<f32, ImgalError> {
     let origin = [0.0_f32; 3];
     let n_faces = gs_faces.dim().0;
-    (0..n_faces)
-        .fold(0.0_f32, |acc, f| {
+    Ok((0..n_faces)
+        .try_fold(0.0_f32, |acc, f| {
             let tri = gs_faces.row(f);
             let a: [f32; 3] = {
                 let i = tri[0];
@@ -454,10 +454,10 @@ pub fn polyhedron_vol(
                     di * gs_vertices[[i, 2]] as f32,
                 ]
             };
-            let v = tetrahedron_volume(&a, &b, &c, &origin) as f32;
-            acc + v
-        })
-        .abs()
+            let v = tetrahedron_volume(&a, &b, &c, &origin)? as f32;
+            Ok(acc + v)
+        })?
+        .abs())
 }
 
 /// Compute the intersection volume of two spheres with isotropic distance. If
