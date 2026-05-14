@@ -3,9 +3,9 @@ use std::f64::consts::PI;
 
 use imgal::error::ImgalError;
 use imgal::spatial::convex_hull::quickhull_3d;
-use imgal::spatial::geometry::{inside_polyhedron, orient_pred_2d, orient_pred_3d, tetrahedron_volume};
+use imgal::spatial::geometry::{inside_polyhedron, tetrahedron_volume};
 use imgal::spatial::halfspace::{face_to_halfspace, halfspace_intersection, hull_to_halfspace};
-use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, concatenate, stack};
+use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, arr1, concatenate, stack};
 
 /// Compute the intersection volume of two axis-aligned 3D bounding boxes.
 ///
@@ -316,6 +316,47 @@ pub fn golden_spiral_intersection_vol(
         let temp = az * cross_z + ay * cross_y + ax * cross_x;
         (temp / 6.0).abs()
     }))
+}
+
+/// TODO
+#[inline]
+pub fn overlap_polyhedron_mask(
+    vertices: ArrayView2<f32>,
+    faces: ArrayView2<usize>,
+    center: ArrayView1<usize>,
+    mask: &[bool],
+    bbox: [usize; 6],
+    nz: usize,
+    ny: usize,
+    nx: usize,
+    overlap_threshold: f32,
+) -> Result<i32, ImgalError> {
+    let mut count = 0;
+    let center = center.mapv(|v| v as f32);
+    let nx_ny = nx * ny;
+    for z in 0..nz {
+        let z_nx_ny = z * nx_ny;
+        let qz = (z + bbox[0]) as f32;
+        for y in 0..ny {
+            let y_nx = y * nx;
+            let qy = (y + bbox[2]) as f32;
+            for x in 0..nx {
+                let idx = x + y_nx + z_nx_ny;
+                if !mask[idx] {
+                    continue;
+                }
+                let qx = (x + bbox[4]) as f32;
+                let query = arr1(&[qz, qy, qx]);
+                if inside_polyhedron(vertices, faces, center.view(), query.view())? {
+                    count += 1;
+                    if (count as f32) > overlap_threshold {
+                        return Ok(count);
+                    }
+                }
+            }
+        }
+    }
+    Ok(count)
 }
 
 /// Compute the axis-aligned bounding box of a polyhedron.
