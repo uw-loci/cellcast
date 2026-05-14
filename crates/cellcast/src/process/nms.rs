@@ -153,7 +153,7 @@ pub fn polyhedron_nms(
             let cur_bbox = bboxes[i];
             let cur_poly_verts = polyhedron_verts(cur_dist, cur_pnt, verts);
             let mut cur_poly_render: Option<Vec<bool>> = None;
-            let search_rad = ((max_dist + rad_out[i]) * (max_dist + rad_out[i])) as f64;
+            let search_rad = (max_dist + rad_out[i]) as f64;
             let neighbors = kdtree.search_for_indices(&cur_pnt, search_rad)?;
             // TODO use the suppressed indices to update date the sup accumulator and
             // return it -- this is parallel friendly
