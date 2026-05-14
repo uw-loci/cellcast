@@ -191,6 +191,7 @@ fn prob_dist_to_labels_3d(
         n_polys,
         N_RAYS,
         nms_threshold,
-    );
+    )
+    .unwrap();
     (prob_arr, dist_arr)
 }
