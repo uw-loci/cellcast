@@ -3,7 +3,7 @@ use std::f64::consts::PI;
 
 use imgal::error::ImgalError;
 use imgal::spatial::convex_hull::quickhull_3d;
-use imgal::spatial::geometry::{orient_pred_2d, orient_pred_3d, tetrahedron_volume};
+use imgal::spatial::geometry::{inside_polyhedron, orient_pred_2d, orient_pred_3d, tetrahedron_volume};
 use imgal::spatial::halfspace::{face_to_halfspace, halfspace_intersection, hull_to_halfspace};
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, concatenate, stack};
 
@@ -156,29 +156,6 @@ pub fn bounding_outer_radius_iso(
         acc.max(z * z + y * y + x * x)
     });
     radius.sqrt()
-}
-
-/// TODO
-#[inline]
-pub fn check_inside_polyhedron(
-    vertices: ArrayView2<f32>,
-    faces: ArrayView2<usize>,
-    center: ArrayView1<usize>,
-    bbox: [usize; 6],
-) -> Result<bool, ImgalError> {
-    let center = center.mapv(|v| v as f32);
-    for i in 0..faces.dim().0 {
-        let [a_idx, b_idx, c_idx] = array::from_fn(|j| faces[[i, j]]);
-        let a = vertices.row(a_idx);
-        let b = vertices.row(b_idx);
-        let c = vertices.row(c_idx);
-        // TODO this isn't quite right, the orient_pred 3d is actually the inside_halfspace
-        // fn in stardist cpp files
-        if orient_pred_3d(a, b, c, center.view())?.is_sign_negative() {
-            return Ok(true);
-        }
-    }
-    Ok(false)
 }
 
 /// TODO
@@ -495,7 +472,7 @@ pub fn polyhedron_vol(
 ///
 /// # Returns
 ///
-/// * `bool`:
+/// * `Vec<bool>`:
 #[inline]
 pub fn render_polyhedron(
     vertices: ArrayView2<f32>,
@@ -507,11 +484,13 @@ pub fn render_polyhedron(
     nx: usize,
 ) -> Result<Vec<bool>, ImgalError> {
     let mut render = vec![false; nz * ny * nx];
+    let center = center.mapv(|v| v as f32);
+    let bbox: Array1<f32> = bbox.iter().map(|&v| v as f32).collect();
     (0..nz).try_for_each(|z| {
         (0..ny).try_for_each(|y| {
             (0..nx).try_for_each(|x| {
                 render[x + y * nx + z * nx * ny] =
-                    check_inside_polyhedron(vertices, gs_faces, center, bbox)?;
+                    inside_polyhedron(vertices, gs_faces, center.view(), bbox.view())?;
                 Ok(())
             })?;
             Ok(())

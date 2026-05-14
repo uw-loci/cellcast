@@ -217,17 +217,16 @@ pub fn polyhedron_nms(
                             ngh_pnt,
                         )? as f32;
                         iou = conv_inter_vol / (vol_min + eps);
+                        dbg!(iou);
                         if iou <= threshold {
                             return Ok(si);
                         }
                         // if cur_poly_render.is_none() {
-                        //     cur_poly_render = Some(render_polyhedron(&cur_bbox, nz, ny, nx));
+                            // cur_poly_render = Some(render_polyhedron(cur_poly_verts.view(), faces, cur_pnt, cur_bbox, nz, ny, nx)?);
                         // }
+                        // dbg!(&cur_poly_render);
                         Ok(si)
                     })?;
-            if !sup_inds.is_empty() {
-                dbg!(sup_inds);
-            }
             Ok(sup)
         })?;
     todo!();
