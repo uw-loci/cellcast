@@ -163,7 +163,7 @@ pub fn polyhedron_nms(
             let sup_inds: Vec<usize> =
                 neighbors
                     .iter()
-                    .filter(|&&j| !sup[j])
+                    .filter(|&&j| j > i && !sup[j])
                     .try_fold(Vec::new(), |mut si, &j| {
                         let mut iou: f32 = 0.0;
                         let ngh_dist = polyhedron_dist.row(j);
