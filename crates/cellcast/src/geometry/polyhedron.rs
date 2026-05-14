@@ -515,7 +515,7 @@ pub fn polyhedron_vol(
 ///
 /// * `Vec<bool>`:
 #[inline]
-pub fn render_polyhedron(
+pub fn polyhedron_to_mask(
     vertices: ArrayView2<f32>,
     gs_faces: ArrayView2<usize>,
     center: ArrayView1<usize>,
@@ -526,12 +526,16 @@ pub fn render_polyhedron(
 ) -> Result<Vec<bool>, ImgalError> {
     let mut render = vec![false; nz * ny * nx];
     let center = center.mapv(|v| v as f32);
-    let bbox: Array1<f32> = bbox.iter().map(|&v| v as f32).collect();
     (0..nz).try_for_each(|z| {
         (0..ny).try_for_each(|y| {
             (0..nx).try_for_each(|x| {
+                let query = Array1::from_iter([
+                    (z + bbox[0]) as f32,
+                    (y + bbox[2]) as f32,
+                    (x + bbox[4]) as f32,
+                ]);
                 render[x + y * nx + z * nx * ny] =
-                    inside_polyhedron(vertices, gs_faces, center.view(), bbox.view())?;
+                    inside_polyhedron(vertices, gs_faces, center.view(), query.view())?;
                 Ok(())
             })?;
             Ok(())
