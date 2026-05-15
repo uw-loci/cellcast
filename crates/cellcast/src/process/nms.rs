@@ -162,7 +162,7 @@ pub fn polyhedron_nms(
             let sup_inds: Vec<usize> = neighbors.iter().filter(|&&j| j > i && !sup[j]).try_fold(
                 Vec::new(),
                 |mut si, &j| {
-                    let mut iou: f32 = 0.0;
+                    let mut iou: f32;
                     let ngh_dist = polyhedron_dist.row(j);
                     let ngh_pnt = polyhedron_pnts.row(j);
                     let vol_min = vols[i].min(vols[j]);
@@ -219,15 +219,15 @@ pub fn polyhedron_nms(
                     }
                     // this computes a polygon rendering check, the final check
                     let cur_poly_mask = polyhedron_to_mask(
-                            cur_poly_verts.view(),
-                            faces,
-                            cur_pnt,
-                            cur_bbox,
-                            nz,
-                            ny,
-                            nx,
-                        )?;
-                    let x = overlap_polyhedron_mask(
+                        cur_poly_verts.view(),
+                        faces,
+                        cur_pnt,
+                        cur_bbox,
+                        nz,
+                        ny,
+                        nx,
+                    )?;
+                    let overlap_count = overlap_polyhedron_mask(
                         cur_poly_verts.view(),
                         faces,
                         ngh_pnt,
@@ -236,14 +236,17 @@ pub fn polyhedron_nms(
                         nz,
                         ny,
                         nx,
-                        (vol_min + eps) * threshold
-                    );
-                    dbg!(x);
+                        (vol_min + eps) * threshold,
+                    )? as f32;
+                    iou = overlap_count / (vol_min + eps);
+                    if iou > threshold {
+                        si.push(j)
+                    }
                     Ok(si)
                 },
             )?;
             sup_inds.iter().for_each(|&i| sup[i] = true);
             Ok(sup)
         })?;
-    todo!();
+    Ok(suppressed.iter().map(|&v| !v).collect())
 }
