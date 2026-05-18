@@ -187,18 +187,10 @@ fn prob_dist_to_labels_3d(
     let valid_poly_inds = polyhedron_nms(
         poly_dist.view(),
         poly_pnts.view(),
-        poly_prob.view(),
         n_polys,
         N_RAYS,
         nms_threshold,
     )
     .unwrap();
-    let x: Vec<usize> = valid_poly_inds
-        .iter()
-        .enumerate()
-        .filter(|&(_, &v)| v)
-        .map(|(i, _)| i)
-        .collect();
-    dbg!(&x);
     (prob_arr, dist_arr)
 }

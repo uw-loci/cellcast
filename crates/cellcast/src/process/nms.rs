@@ -1,11 +1,11 @@
 use imgal::ImgalError;
 use imgal::spatial::KDTree;
 use imgal::statistics::max;
-use ndarray::{ArrayView1, ArrayView2};
+use ndarray::ArrayView2;
 
 use crate::geometry::polygon::{area_intersection, build_polygons, check_bbox_intersect};
 use crate::geometry::polyhedron::{
-    bbox_intersect_vol, bounding_inner_radius, bounding_inner_radius_iso, bounding_outer_radius,
+    bbox_intersect_vol, bounding_inner_radius_iso, bounding_outer_radius,
     bounding_outer_radius_iso, convex_hull_intersection_vol, estimate_anisotropy, golden_spiral,
     golden_spiral_intersection_vol, overlap_polyhedron_mask, polyhedron_bbox, polyhedron_to_mask,
     polyhedron_verts, polyhedron_vol, sphere_intersect_volume_iso,
@@ -107,7 +107,6 @@ pub fn polygon_nms(
 pub fn polyhedron_nms(
     polyhedron_dist: ArrayView2<f32>,
     polyhedron_pnts: ArrayView2<usize>,
-    polyhedron_prob: ArrayView1<f32>,
     n_polys: usize,
     n_rays: usize,
     threshold: f32,
@@ -116,7 +115,7 @@ pub fn polyhedron_nms(
     let gs = golden_spiral(n_rays, None)?;
     let verts = gs.0.view();
     let faces = gs.1.view();
-    let (bboxes, vols, rad_in, rad_out): (Vec<[usize; 6]>, Vec<f32>, Vec<f32>, Vec<f32>) = (0
+    let (bboxes, vols, rad_out): (Vec<[usize; 6]>, Vec<f32>, Vec<f32>) = (0
         ..n_polys)
         .map(|i| {
             let cur_dist = polyhedron_dist.row(i);
@@ -125,9 +124,8 @@ pub fn polyhedron_nms(
             // SAFE: this unwrap is safe because we know that the parameters are
             // valid lengths here
             let vol = polyhedron_vol(cur_dist, verts, faces).unwrap();
-            let ri = bounding_inner_radius(cur_dist, verts, faces);
             let ro = bounding_outer_radius(cur_dist);
-            (bbox, vol, ri, ro)
+            (bbox, vol, ro)
         })
         .collect();
     let aniso = estimate_anisotropy(&bboxes.as_slice(), n_polys);

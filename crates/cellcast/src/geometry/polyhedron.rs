@@ -36,6 +36,7 @@ pub fn bbox_intersect_vol(bbox_a: &[usize; 6], bbox_b: &[usize; 6]) -> f32 {
 /// can fit inside the polyhedron.
 #[inline]
 pub fn bounding_inner_radius(
+    // DEBUG: this function doesn't seem to be used. Its slated for removal
     distances: ArrayView1<f32>,
     gs_vertices: ArrayView2<f64>,
     gs_faces: ArrayView2<usize>,
