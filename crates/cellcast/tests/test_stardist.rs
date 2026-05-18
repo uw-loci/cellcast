@@ -1,7 +1,7 @@
 use ndarray::{Ix2, arr2};
 
 use cellcast::models::stardist_2d::predict_versatile_fluo;
-use imgal::error::ImgalError;
+use imgal::ImgalError;
 use imgal::simulation::blob::logistic_metaballs;
 use imgal::simulation::noise::poisson_noise_mut;
 use imgal::spatial::roi::roi_cloud_map;

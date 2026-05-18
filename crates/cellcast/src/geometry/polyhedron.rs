@@ -1,7 +1,7 @@
 use std::array;
 use std::f64::consts::PI;
 
-use imgal::error::ImgalError;
+use imgal::ImgalError;
 use imgal::spatial::convex_hull::quickhull_3d;
 use imgal::spatial::geometry::{inside_polyhedron, tetrahedron_volume};
 use imgal::spatial::halfspace::{face_to_halfspace, halfspace_intersection, hull_to_halfspace};
@@ -168,12 +168,12 @@ pub fn convex_hull_intersection_vol(
 ) -> Result<f64, ImgalError> {
     let (hull_verts_a, hull_faces_a) = quickhull_3d(vertices_a, false)?;
     let (hull_verts_b, hull_faces_b) = quickhull_3d(vertices_b, false)?;
-    let hs_a = hull_to_halfspace(&hull_verts_a, &hull_faces_a)?;
-    let hs_b = hull_to_halfspace(&hull_verts_b, &hull_faces_b)?;
+    let hs_a = hull_to_halfspace(&hull_verts_a, &hull_faces_a, false)?;
+    let hs_b = hull_to_halfspace(&hull_verts_b, &hull_faces_b, false)?;
     let hs = concatenate(Axis(0), &[hs_a.view(), hs_b.view()])
         .expect("Failed to stack halfspaces into array.");
     let in_pnt: [f64; 3] = array::from_fn(|i| 0.5 * (center_a[i] + center_b[i]) as f64);
-    let (inter_verts, inter_faces) = halfspace_intersection(&hs, &in_pnt)?;
+    let (inter_verts, inter_faces) = halfspace_intersection(&hs, &in_pnt, false)?;
     let n_if = inter_faces.dim().0;
     Ok((0..n_if).fold(0.0_f64, |acc, i| {
         let [a_idx, b_idx, c_idx] = array::from_fn(|j| inter_faces[[i, j]]);
@@ -303,7 +303,7 @@ pub fn golden_spiral_intersection_vol(
             .collect::<Vec<ArrayView1<f64>>>(),
     )
     .expect("Failed to stack halfspaces into array.");
-    let (inter_verts, inter_faces) = halfspace_intersection(&hs, &in_pnt)?;
+    let (inter_verts, inter_faces) = halfspace_intersection(&hs, &in_pnt, false)?;
     let n_if = inter_faces.dim().0;
     Ok((0..n_if).fold(0.0_f64, |_, i| {
         let [a_idx, b_idx, c_idx] = array::from_fn(|j| inter_faces[[i, j]]);
@@ -347,7 +347,7 @@ pub fn overlap_polyhedron_mask(
                 }
                 let qx = (x + bbox[4]) as f32;
                 let query = arr1(&[qz, qy, qx]);
-                if inside_polyhedron(vertices, faces, center.view(), query.view())? {
+                if inside_polyhedron(vertices, faces, center.view(), query.view(), false)? {
                     count += 1;
                     if (count as f32) > overlap_threshold {
                         return Ok(count);
@@ -535,7 +535,7 @@ pub fn polyhedron_to_mask(
                     (x + bbox[4]) as f32,
                 ]);
                 render[x + y * nx + z * nx * ny] =
-                    inside_polyhedron(vertices, gs_faces, center.view(), query.view())?;
+                    inside_polyhedron(vertices, gs_faces, center.view(), query.view(), false)?;
                 Ok(())
             })?;
             Ok(())

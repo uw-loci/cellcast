@@ -1,4 +1,4 @@
-use imgal::error::ImgalError;
+use imgal::ImgalError;
 use imgal::spatial::KDTree;
 use imgal::statistics::max;
 use ndarray::{ArrayView1, ArrayView2};

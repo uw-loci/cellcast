@@ -1,8 +1,8 @@
 use burn::prelude::*;
-use imgal::error::ImgalError;
+use imgal::AsNumeric;
+use imgal::ImgalError;
 use imgal::image::percentile_normalize;
 use imgal::threshold::manual::manual_mask;
-use imgal::traits::numeric::AsNumeric;
 use imgal::transform::pad::reflect_pad;
 use ndarray::{Array1, Array2, Array3, ArrayBase, AsArray, Axis, Ix2, Ix3, ViewRepr};
 

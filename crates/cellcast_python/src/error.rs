@@ -1,4 +1,4 @@
-use imgal::error::ImgalError;
+use imgal::ImgalError;
 use pyo3::PyErr;
 use pyo3::exceptions::PyRuntimeError;
 
