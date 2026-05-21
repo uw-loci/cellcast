@@ -225,7 +225,7 @@ pub fn polyhedron_nms(
                         nx,
                     )?;
                     let overlap_count = overlap_polyhedron_mask(
-                        cur_poly_verts.view(),
+                        ngh_poly_verts.view(),
                         faces,
                         ngh_pnt,
                         &cur_poly_mask,
