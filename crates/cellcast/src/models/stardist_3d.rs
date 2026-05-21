@@ -48,10 +48,10 @@ where
     let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
     let norm = percentile_normalize(&data, pmin, pmax, false, None, None, false)?;
     let norm = norm.mapv(|v| v as f32);
-    let (src_row, src_col) = {
+    let [src_row, src_col] = {
         let mut shape = data.shape().to_vec();
         shape.remove(axis);
-        (shape[0], shape[1])
+        [shape[0], shape[1]]
     };
     // this pattern determines how many pixels to pad in each axis to be
     // divisible by 16 as expected by the network, except for the planes (z)
@@ -96,14 +96,14 @@ where
         prob = p.into_data().into_vec().unwrap();
         dist = d.into_data().into_vec().unwrap();
     }
-    Ok(prob_dist_to_labels_3d(
+    prob_dist_to_labels_3d(
         prob,
         dist,
         prob_threshold,
         nms_threshold,
         pad_shape,
-        (plns, src_row, src_col),
-    ))
+        [plns, src_row, src_col],
+    )
 }
 
 fn prob_dist_to_labels_3d(
@@ -112,14 +112,14 @@ fn prob_dist_to_labels_3d(
     prob_threshold: f32,
     nms_threshold: f32,
     pad_shape: Vec<usize>,
-    src_shape: (usize, usize, usize),
-) -> (Array3<f32>, Array4<f32>) {
+    src_shape: [usize; 3],
+) -> Result<Array3<u64>, ImgalError> {
     // create arrays from the flat StarDist network output
     let res_row: usize = pad_shape[0] / 2;
     let res_col: usize = pad_shape[1] / 2;
-    let prob_arr = Array3::from_shape_vec((src_shape.0, res_row, res_col), prob)
+    let prob_arr = Array3::from_shape_vec((src_shape[0], res_row, res_col), prob)
         .expect("StarDist 3D object probabilites reshape failed.");
-    let dist_arr = Array4::from_shape_vec((N_RAYS, src_shape.0, res_row, res_col), dist)
+    let dist_arr = Array4::from_shape_vec((N_RAYS, src_shape[0], res_row, res_col), dist)
         .expect("StarDist 3D radial distances reshape failed.");
     // ensure all values in the dist array are at least 1e-3, prevents negative and/or zero
     // distances
@@ -163,7 +163,7 @@ fn prob_dist_to_labels_3d(
         .axis_iter(poly_ax)
         .enumerate()
         .filter_map(|(i, v)| {
-            if v[0] < src_shape.0 || v[1] < src_shape.1 || v[2] < src_shape.2 {
+            if v[0] < src_shape[0] || v[1] < src_shape[1] || v[2] < src_shape[2] {
                 Some(i)
             } else {
                 None
