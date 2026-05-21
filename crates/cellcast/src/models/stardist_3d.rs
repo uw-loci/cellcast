@@ -7,6 +7,7 @@ use imgal::transform::pad::reflect_pad;
 use ndarray::{Array1, Array2, Array3, Array4, ArrayBase, AsArray, Axis, Ix3, ViewRepr};
 
 use crate::config::backend::{CpuBackend, GpuBackend};
+use crate::labeling::distance_polyhedron_to_label;
 use crate::networks::stardist::demo_3d;
 use crate::process::nms::polyhedron_nms;
 use crate::utils::{axes, border};
@@ -29,7 +30,7 @@ pub fn predict_demo<'a, T, A>(
     nms_threshold: Option<f64>,
     axis: Option<usize>,
     gpu: bool,
-) -> Result<(Array3<f32>, Array4<f32>), ImgalError>
+) -> Result<Array3<u64>, ImgalError>
 where
     A: AsArray<'a, T, Ix3>,
     T: 'a + AsNumeric,
@@ -192,5 +193,22 @@ fn prob_dist_to_labels_3d(
         nms_threshold,
     )
     .unwrap();
-    (prob_arr, dist_arr)
+    dbg!(&valid_poly_inds.len());
+    // here we select the valid polyhedrons and construct the 3D labels
+    let valid_poly_inds: Vec<usize> = valid_poly_inds
+        .iter()
+        .enumerate()
+        .filter(|&(_, &v)| v)
+        .map(|(i, _)| i)
+        .collect();
+    let poly_dist = poly_dist.select(poly_ax, &valid_poly_inds);
+    let poly_pnts = poly_pnts.select(poly_ax, &valid_poly_inds);
+    let poly_prob = poly_prob.select(poly_ax, &valid_poly_inds);
+    distance_polyhedron_to_label(
+        poly_dist.view(),
+        poly_pnts.view(),
+        poly_prob.view(),
+        prob_threshold,
+        src_shape,
+    )
 }

@@ -115,8 +115,7 @@ pub fn polyhedron_nms(
     let gs = golden_spiral(n_rays, None)?;
     let verts = gs.0.view();
     let faces = gs.1.view();
-    let (bboxes, vols, rad_out): (Vec<[usize; 6]>, Vec<f32>, Vec<f32>) = (0
-        ..n_polys)
+    let (bboxes, vols, rad_out): (Vec<[usize; 6]>, Vec<f32>, Vec<f32>) = (0..n_polys)
         .map(|i| {
             let cur_dist = polyhedron_dist.row(i);
             let cur_pnt = polyhedron_pnts.row(i);

@@ -1,4 +1,4 @@
-use numpy::{IntoPyArray, PyArray2, PyArray3, PyArray4, PyReadonlyArray2, PyReadonlyArray3};
+use numpy::{IntoPyArray, PyArray2, PyArray3, PyReadonlyArray2, PyReadonlyArray3};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 
@@ -221,7 +221,7 @@ pub fn stardist_3d_predict_demo<'py>(
     nms_threshold: Option<f64>,
     axis: Option<usize>,
     gpu: Option<bool>,
-) -> PyResult<(Bound<'py, PyArray3<f32>>, Bound<'py, PyArray4<f32>>)> {
+) -> PyResult<Bound<'py, PyArray3<u64>>> {
     let gpu = gpu.unwrap_or(true);
     if let Ok(arr) = data.extract::<PyReadonlyArray3<u8>>() {
         predict_demo(
@@ -233,7 +233,7 @@ pub fn stardist_3d_predict_demo<'py>(
             axis,
             gpu,
         )
-        .map(|output| (output.0.into_pyarray(py), output.1.into_pyarray(py)))
+        .map(|output| output.into_pyarray(py))
         .map_err(imgal_error_to_pyerr)
     } else if let Ok(arr) = data.extract::<PyReadonlyArray3<u16>>() {
         predict_demo(
@@ -245,7 +245,7 @@ pub fn stardist_3d_predict_demo<'py>(
             axis,
             gpu,
         )
-        .map(|output| (output.0.into_pyarray(py), output.1.into_pyarray(py)))
+        .map(|output| output.into_pyarray(py))
         .map_err(imgal_error_to_pyerr)
     } else if let Ok(arr) = data.extract::<PyReadonlyArray3<u64>>() {
         predict_demo(
@@ -257,7 +257,7 @@ pub fn stardist_3d_predict_demo<'py>(
             axis,
             gpu,
         )
-        .map(|output| (output.0.into_pyarray(py), output.1.into_pyarray(py)))
+        .map(|output| output.into_pyarray(py))
         .map_err(imgal_error_to_pyerr)
     } else if let Ok(arr) = data.extract::<PyReadonlyArray3<f32>>() {
         predict_demo(
@@ -269,7 +269,7 @@ pub fn stardist_3d_predict_demo<'py>(
             axis,
             gpu,
         )
-        .map(|output| (output.0.into_pyarray(py), output.1.into_pyarray(py)))
+        .map(|output| output.into_pyarray(py))
         .map_err(imgal_error_to_pyerr)
     } else if let Ok(arr) = data.extract::<PyReadonlyArray3<f64>>() {
         predict_demo(
@@ -281,7 +281,7 @@ pub fn stardist_3d_predict_demo<'py>(
             axis,
             gpu,
         )
-        .map(|output| (output.0.into_pyarray(py), output.1.into_pyarray(py)))
+        .map(|output| output.into_pyarray(py))
         .map_err(imgal_error_to_pyerr)
     } else {
         Err(PyErr::new::<PyTypeError, _>(
