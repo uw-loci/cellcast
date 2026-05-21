@@ -306,7 +306,7 @@ pub fn golden_spiral_intersection_vol(
     .expect("Failed to stack halfspaces into array.");
     let (inter_verts, inter_faces) = halfspace_intersection(&hs, &in_pnt, false)?;
     let n_if = inter_faces.dim().0;
-    Ok((0..n_if).fold(0.0_f64, |_, i| {
+    Ok((0..n_if).fold(0.0_f64, |acc, i| {
         let [a_idx, b_idx, c_idx] = array::from_fn(|j| inter_faces[[i, j]]);
         let [az, ay, ax] = array::from_fn(|j| inter_verts[[a_idx, j]] - in_pnt[j] as f64);
         let [bz, by, bx] = array::from_fn(|j| inter_verts[[b_idx, j]] - in_pnt[j] as f64);
@@ -315,7 +315,7 @@ pub fn golden_spiral_intersection_vol(
         let cross_y = bz * cx - bx * cz;
         let cross_x = by * cz - bz * cy;
         let temp = az * cross_z + ay * cross_y + ax * cross_x;
-        (temp / 6.0).abs()
+        acc + (temp / 6.0).abs()
     }))
 }
 
