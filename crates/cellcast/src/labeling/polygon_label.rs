@@ -6,7 +6,7 @@ use std::f32::consts::TAU;
 
 use ndarray::{Array2, Array3, ArrayView1, ArrayView2, Axis};
 
-/// Convert radial polygon representation into a 2-dimensional label image.
+/// Convert distance polygon representation into a 2D label image.
 ///
 /// # Description
 ///
@@ -32,7 +32,7 @@ use ndarray::{Array2, Array3, ArrayView1, ArrayView2, Axis};
 ///
 /// * `Array2<u64>`: The 2-dimensional label image where the background pixels
 ///   are labeled as `0` and polygons labeled with range `(1..n_polys)`.
-pub fn radial_polygon_to_label_2d(
+pub fn distance_polygon_to_label(
     polygon_dist: ArrayView2<f32>,
     polygon_prob: ArrayView1<f32>,
     polygon_pos: ArrayView2<usize>,

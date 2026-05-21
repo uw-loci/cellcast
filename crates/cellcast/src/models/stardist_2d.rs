@@ -332,7 +332,7 @@ fn prob_dist_to_labels_2d(
     let poly_prob = poly_prob.select(poly_ax, &valid_prob_inds);
     let poly_pos = poly_pos.select(poly_ax, &valid_prob_inds);
     // convert radial distances and polygons to labels
-    labeling::radial_polygon_to_label_2d(
+    labeling::distance_polygon_to_label(
         poly_dist.view(),
         poly_prob.view(),
         poly_pos.view(),
