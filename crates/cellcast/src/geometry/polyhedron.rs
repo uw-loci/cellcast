@@ -384,9 +384,9 @@ pub fn polyhedron_bbox(
     let mut y2 = i32::MIN;
     let mut x2 = i32::MIN;
     distances.iter().enumerate().for_each(|(i, &d)| {
-        let z = (center[0] + d * gs_vertices[[i, 0]] as f32).round() as i32;
-        let y = (center[1] + d * gs_vertices[[i, 1]] as f32).round() as i32;
-        let x = (center[2] + d * gs_vertices[[i, 2]] as f32).round() as i32;
+        let z = (center[0] + d * gs_vertices[[i, 0]] as f32).round_ties_even() as i32;
+        let y = (center[1] + d * gs_vertices[[i, 1]] as f32).round_ties_even() as i32;
+        let x = (center[2] + d * gs_vertices[[i, 2]] as f32).round_ties_even() as i32;
         z1 = z1.min(z);
         y1 = y1.min(y);
         x1 = x1.min(x);
