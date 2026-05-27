@@ -107,12 +107,13 @@ pub fn polygon_nms(
 pub fn polyhedron_nms(
     polyhedron_dist: ArrayView2<f32>,
     polyhedron_pnts: ArrayView2<f32>,
+    anisotropy: [f64; 3],
     n_polys: usize,
     n_rays: usize,
     threshold: f32,
 ) -> Result<Vec<bool>, ImgalError> {
     let eps = 1e-10;
-    let gs = golden_spiral(n_rays, None)?;
+    let gs = golden_spiral(n_rays, Some(anisotropy))?;
     let verts = gs.0.view();
     let faces = gs.1.view();
     let (bboxes, vols, rad_out): (Vec<[i32; 6]>, Vec<f32>, Vec<f32>) = (0..n_polys)
@@ -198,7 +199,8 @@ pub fn polyhedron_nms(
                         cur_pnt,
                         ngh_pnt,
                         faces,
-                    ).unwrap_or(0.0) as f32;
+                    )
+                    .unwrap_or(0.0) as f32;
                     iou = poly_inter_vol / (vol_min + eps);
                     if iou > threshold {
                         si.push(j);
@@ -209,7 +211,8 @@ pub fn polyhedron_nms(
                         ngh_poly_verts.view(),
                         cur_pnt,
                         ngh_pnt,
-                    ).unwrap_or(1e10) as f32;
+                    )
+                    .unwrap_or(1e10) as f32;
                     iou = conv_inter_vol / (vol_min + eps);
                     if iou <= threshold {
                         return Ok(si);

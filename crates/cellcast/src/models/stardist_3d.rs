@@ -48,6 +48,7 @@ where
     let prob_threshold = prob_threshold.unwrap_or(PROB_THRESHOLD) as f32;
     let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
     let norm = percentile_normalize(&data, pmin, pmax, false, None, None, false)?;
+    let anisotropy: [f64; 3] = [2.0, 1.0, 1.0];
     let norm = norm.mapv(|v| v as f32);
     let [src_row, src_col] = {
         let mut shape = data.shape().to_vec();
@@ -102,6 +103,7 @@ where
         dist,
         prob_threshold,
         nms_threshold,
+        anisotropy,
         pad_shape,
         [plns, src_row, src_col],
     )
@@ -112,6 +114,7 @@ fn prob_dist_to_labels_3d(
     dist: Vec<f32>,
     prob_threshold: f32,
     nms_threshold: f32,
+    anisotropy: [f64; 3],
     pad_shape: Vec<usize>,
     src_shape: [usize; 3],
 ) -> Result<Array3<u64>, ImgalError> {
@@ -189,6 +192,7 @@ fn prob_dist_to_labels_3d(
     let valid_poly_inds = polyhedron_nms(
         poly_dist.view(),
         poly_pnts.view(),
+        anisotropy,
         n_polys,
         N_RAYS,
         nms_threshold,
