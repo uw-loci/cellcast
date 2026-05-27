@@ -198,7 +198,7 @@ pub fn polyhedron_nms(
                         cur_pnt,
                         ngh_pnt,
                         faces,
-                    )? as f32;
+                    ).unwrap_or(0.0) as f32;
                     iou = poly_inter_vol / (vol_min + eps);
                     if iou > threshold {
                         si.push(j);
@@ -209,7 +209,7 @@ pub fn polyhedron_nms(
                         ngh_poly_verts.view(),
                         cur_pnt,
                         ngh_pnt,
-                    )? as f32;
+                    ).unwrap_or(1e10) as f32;
                     iou = conv_inter_vol / (vol_min + eps);
                     if iou <= threshold {
                         return Ok(si);
