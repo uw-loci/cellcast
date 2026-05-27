@@ -19,9 +19,9 @@ use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, arr1, concatenate, s
 /// * `f32`: The intersection volume of bounding box `a` and `b`.
 #[inline]
 pub fn bbox_intersect_vol(bbox_a: &[i32; 6], bbox_b: &[i32; 6]) -> f32 {
-    let wz = (bbox_a[1].min(bbox_b[1]) - bbox_a[0].max(bbox_b[0])) as f32;
-    let wy = (bbox_a[3].min(bbox_b[3]) - bbox_a[2].max(bbox_b[2])) as f32;
-    let wx = (bbox_a[5].min(bbox_b[5]) - bbox_a[4].max(bbox_b[4])) as f32;
+    let wz = (bbox_a[1].min(bbox_b[1]) - bbox_a[0].max(bbox_b[0])).max(0) as f32;
+    let wy = (bbox_a[3].min(bbox_b[3]) - bbox_a[2].max(bbox_b[2])).max(0) as f32;
+    let wx = (bbox_a[5].min(bbox_b[5]) - bbox_a[4].max(bbox_b[4])).max(0) as f32;
     wz * wy * wx
 }
 
