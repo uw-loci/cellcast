@@ -106,7 +106,7 @@ pub fn polygon_nms(
 /// * `Err(ImgalError)`:
 pub fn polyhedron_nms(
     polyhedron_dist: ArrayView2<f32>,
-    polyhedron_pnts: ArrayView2<usize>,
+    polyhedron_pnts: ArrayView2<f32>,
     n_polys: usize,
     n_rays: usize,
     threshold: f32,
@@ -115,7 +115,7 @@ pub fn polyhedron_nms(
     let gs = golden_spiral(n_rays, None)?;
     let verts = gs.0.view();
     let faces = gs.1.view();
-    let (bboxes, vols, rad_out): (Vec<[usize; 6]>, Vec<f32>, Vec<f32>) = (0..n_polys)
+    let (bboxes, vols, rad_out): (Vec<[i32; 6]>, Vec<f32>, Vec<f32>) = (0..n_polys)
         .map(|i| {
             let cur_dist = polyhedron_dist.row(i);
             let cur_pnt = polyhedron_pnts.row(i);
@@ -153,9 +153,9 @@ pub fn polyhedron_nms(
             let neighbors = kdtree.search_for_indices(&cur_pnt, search_rad)?;
             // TODO use the suppressed indices to update date the sup accumulator and
             // return it -- this is parallel friendly
-            let nz = cur_bbox[1] - cur_bbox[0] + 1;
-            let ny = cur_bbox[3] - cur_bbox[2] + 1;
-            let nx = cur_bbox[5] - cur_bbox[4] + 1;
+            let nz = (cur_bbox[1] - cur_bbox[0] + 1) as usize;
+            let ny = (cur_bbox[3] - cur_bbox[2] + 1) as usize;
+            let nx = (cur_bbox[5] - cur_bbox[4] + 1) as usize;
             let sup_inds: Vec<usize> = neighbors.iter().filter(|&&j| j > i && !sup[j]).try_fold(
                 Vec::new(),
                 |mut si, &j| {

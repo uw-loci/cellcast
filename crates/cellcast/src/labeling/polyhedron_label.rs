@@ -1,3 +1,5 @@
+use std::array;
+
 use imgal::ImgalError;
 use imgal::spatial::convex_hull::quickhull_3d;
 use imgal::spatial::geometry::inside_polyhedron;
@@ -9,7 +11,7 @@ use crate::geometry::polyhedron::{golden_spiral, polyhedron_bbox, polyhedron_ver
 /// TODO
 pub fn distance_polyhedron_to_label(
     polyhedron_dist: ArrayView2<f32>,
-    polyhedron_pnts: ArrayView2<usize>,
+    polyhedron_pnts: ArrayView2<f32>,
     polyhedron_prob: ArrayView1<f32>,
     prob_threshold: f32,
     shape: [usize; 3],
@@ -41,8 +43,8 @@ pub fn distance_polyhedron_to_label(
     (0..n_polys).try_for_each(|i| -> Result<(), ImgalError> {
         let cur_dist = dist.row(i);
         let cur_pnt = pnts.row(i);
-        let [z_min, z_max, y_min, y_max, x_min, x_max] =
-            polyhedron_bbox(cur_dist, cur_pnt, gs_verts.view());
+        let bbox = polyhedron_bbox(cur_dist, cur_pnt, gs_verts.view());
+        let [z_min, z_max, y_min, y_max, x_min, x_max] = array::from_fn(|i| bbox[i] as usize);
         let cur_poly_verts = polyhedron_verts(cur_dist, cur_pnt, gs_verts.view());
         let cur_convex = quickhull_3d(&cur_poly_verts, false)?;
         let hs_convex = hull_to_halfspace(&cur_convex.0, &cur_convex.1, false)?;

@@ -185,6 +185,7 @@ fn prob_dist_to_labels_3d(
     let poly_dist = valid_dist.select(poly_ax, &sorted_poly_inds);
     let poly_pnts = valid_pnts.select(poly_ax, &sorted_poly_inds);
     let poly_prob = valid_prob.select(poly_ax, &sorted_poly_inds);
+    let poly_pnts = poly_pnts.mapv(|v| v as f32);
     let valid_poly_inds = polyhedron_nms(
         poly_dist.view(),
         poly_pnts.view(),
@@ -193,7 +194,6 @@ fn prob_dist_to_labels_3d(
         nms_threshold,
     )
     .unwrap();
-    dbg!(&valid_poly_inds.len());
     // here we select the valid polyhedrons and construct the 3D labels
     let valid_poly_inds: Vec<usize> = valid_poly_inds
         .iter()
@@ -201,6 +201,7 @@ fn prob_dist_to_labels_3d(
         .filter(|&(_, &v)| v)
         .map(|(i, _)| i)
         .collect();
+    dbg!(&valid_poly_inds);
     let poly_dist = poly_dist.select(poly_ax, &valid_poly_inds);
     let poly_pnts = poly_pnts.select(poly_ax, &valid_poly_inds);
     let poly_prob = poly_prob.select(poly_ax, &valid_poly_inds);
