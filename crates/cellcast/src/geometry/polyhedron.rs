@@ -75,7 +75,7 @@ pub fn bounding_inner_radius(
         let norm = 1.0 / (nz * nz + ny * ny + nx * nx).sqrt().max(eps);
         let (nz, ny, nx) = (nz * norm, ny * norm, nx * norm);
         let dist = a[0] * nz + a[1] * ny + a[2] * nx;
-        acc.min(dist.abs())
+        acc.min(dist)
     })
 }
 
@@ -125,7 +125,7 @@ pub fn bounding_inner_radius_iso(
         let norm = 1.0 / (nz * nz + ny * ny + nx * nx).sqrt().max(eps);
         let (nz, ny, nx) = (nz * norm, ny * norm, nx * norm);
         let dist = a[0] * nz + a[1] * ny + a[2] * nx;
-        acc.min(dist.abs())
+        acc.min(dist)
     })
 }
 
