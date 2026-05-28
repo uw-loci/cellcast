@@ -205,7 +205,6 @@ fn prob_dist_to_labels_3d(
         .filter(|&(_, &v)| v)
         .map(|(i, _)| i)
         .collect();
-    dbg!(&valid_poly_inds);
     let poly_dist = poly_dist.select(poly_ax, &valid_poly_inds);
     let poly_pnts = poly_pnts.select(poly_ax, &valid_poly_inds);
     let poly_prob = poly_prob.select(poly_ax, &valid_poly_inds);
@@ -214,6 +213,7 @@ fn prob_dist_to_labels_3d(
         poly_pnts.view(),
         poly_prob.view(),
         prob_threshold,
+        anisotropy,
         src_shape,
     )
 }
