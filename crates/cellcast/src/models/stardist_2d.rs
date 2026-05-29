@@ -1,6 +1,8 @@
+use std::sync::LazyLock;
+
 use burn::prelude::*;
-use imgal::prelude::*;
 use imgal::image::percentile_normalize;
+use imgal::prelude::*;
 use imgal::threshold::manual::manual_mask;
 use imgal::transform::pad::reflect_pad;
 use ndarray::{Array1, Array2, Array3, ArrayBase, AsArray, Axis, Ix2, Ix3, ViewRepr};
@@ -21,6 +23,15 @@ const NMS_THRESHOLD: f64 = 0.3;
 
 type CpuConfigBackend = CpuBackend<f32, i32>;
 type GpuConfigBackend = GpuBackend<f32, i32>;
+
+static FLUO_CPU_MODEL: LazyLock<versatile_fluo_2d::Model<CpuConfigBackend>> =
+    LazyLock::new(|| versatile_fluo_2d::Model::<CpuConfigBackend>::default());
+static FLUO_GPU_MODEL: LazyLock<versatile_fluo_2d::Model<GpuConfigBackend>> =
+    LazyLock::new(|| versatile_fluo_2d::Model::<GpuConfigBackend>::default());
+static HE_CPU_MODEL: LazyLock<versatile_he_2d::Model<CpuConfigBackend>> =
+    LazyLock::new(|| versatile_he_2d::Model::<CpuConfigBackend>::default());
+static HE_GPU_MODEL: LazyLock<versatile_he_2d::Model<GpuConfigBackend>> =
+    LazyLock::new(|| versatile_he_2d::Model::<GpuConfigBackend>::default());
 
 /// Predict instance segmentation labels with the StarDist2D versatile fluo
 /// model.
@@ -91,16 +102,14 @@ where
     let dist: Vec<f32>;
     if gpu {
         let device = Default::default();
-        let stardist_net = versatile_fluo_2d::Model::<GpuConfigBackend>::default();
         let tensor = Tensor::<GpuConfigBackend, 4>::from_data(td, &device);
-        let (p, d) = stardist_net.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
+        let (p, d) = FLUO_GPU_MODEL.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
         prob = p.into_data().into_vec().unwrap();
         dist = d.into_data().into_vec().unwrap();
     } else {
         let device = Default::default();
-        let stardist_net = versatile_fluo_2d::Model::<CpuConfigBackend>::default();
         let tensor = Tensor::<CpuConfigBackend, 4>::from_data(td, &device);
-        let (p, d) = stardist_net.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
+        let (p, d) = FLUO_CPU_MODEL.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
         prob = p.into_data().into_vec().unwrap();
         dist = d.into_data().into_vec().unwrap();
     }
@@ -199,16 +208,14 @@ where
     let dist: Vec<f32>;
     if gpu {
         let device = Default::default();
-        let stardist_net = versatile_he_2d::Model::<GpuConfigBackend>::default();
         let tensor = Tensor::<GpuConfigBackend, 4>::from_data(td, &device);
-        let (p, d) = stardist_net.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
+        let (p, d) = HE_GPU_MODEL.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
         prob = p.into_data().into_vec().unwrap();
         dist = d.into_data().into_vec().unwrap();
     } else {
         let device = Default::default();
-        let stardist_net = versatile_he_2d::Model::<CpuConfigBackend>::default();
         let tensor = Tensor::<CpuConfigBackend, 4>::from_data(td, &device);
-        let (p, d) = stardist_net.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
+        let (p, d) = HE_CPU_MODEL.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
         prob = p.into_data().into_vec().unwrap();
         dist = d.into_data().into_vec().unwrap();
     }
