@@ -1,6 +1,5 @@
 use burn::prelude::*;
-use imgal::AsNumeric;
-use imgal::ImgalError;
+use imgal::prelude::*;
 use imgal::image::percentile_normalize;
 use imgal::threshold::manual::manual_mask;
 use imgal::transform::pad::reflect_pad;
@@ -30,7 +29,7 @@ pub fn predict_demo<'a, T, A>(
     nms_threshold: Option<f64>,
     axis: Option<usize>,
     gpu: bool,
-) -> Result<Array3<u64>, ImgalError>
+) -> ImgalResult<Array3<u64>>
 where
     A: AsArray<'a, T, Ix3>,
     T: 'a + AsNumeric,
@@ -47,7 +46,7 @@ where
     let pmax = pmax.unwrap_or(PMAX);
     let prob_threshold = prob_threshold.unwrap_or(PROB_THRESHOLD) as f32;
     let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
-    let norm = percentile_normalize(&data, pmin, pmax, false, None, None, false)?;
+    let norm = percentile_normalize(&data, pmin, pmax, false, None, None, None)?;
     let anisotropy: [f64; 3] = [2.0, 1.0, 1.0];
     let norm = norm.mapv(|v| v as f32);
     let [src_row, src_col] = {
@@ -70,7 +69,7 @@ where
             }
         })
         .collect();
-    let norm_pad = reflect_pad(&norm, &pad_config, Some(0), false)?;
+    let norm_pad = reflect_pad(&norm, &pad_config, Some(0), None)?;
     let mut pad_shape = norm_pad.shape().to_vec();
     let plns = pad_shape.remove(axis);
     let (raw_data, _) = norm_pad.into_raw_vec_and_offset();
@@ -117,7 +116,7 @@ fn prob_dist_to_labels_3d(
     anisotropy: [f64; 3],
     pad_shape: Vec<usize>,
     src_shape: [usize; 3],
-) -> Result<Array3<u64>, ImgalError> {
+) -> ImgalResult<Array3<u64>> {
     // create arrays from the flat StarDist network output
     let res_row: usize = pad_shape[0] / 2;
     let res_col: usize = pad_shape[1] / 2;
@@ -128,7 +127,7 @@ fn prob_dist_to_labels_3d(
     // ensure all values in the dist array are at least 1e-3, prevents negative and/or zero
     // distances
     let dist_arr = dist_arr.mapv(|v| v.max(1e-3));
-    let mut valid_mask = manual_mask(&prob_arr, prob_threshold, false);
+    let mut valid_mask = manual_mask(&prob_arr, prob_threshold, None);
     border::clip_mask_border(&mut valid_mask.view_mut().into_dyn(), 2);
     let valid_mask = valid_mask.into_dimensionality::<Ix3>().unwrap();
     // collect all valid (pln, row, col) positions to avoid iterating the mask

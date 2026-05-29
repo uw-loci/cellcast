@@ -1,7 +1,7 @@
 use std::array;
 use std::f64::consts::PI;
 
-use imgal::ImgalError;
+use imgal::prelude::*;
 use imgal::spatial::convex_hull::quickhull_3d;
 use imgal::spatial::geometry::{inside_polyhedron, tetrahedron_volume};
 use imgal::spatial::halfspace::{face_to_halfspace, halfspace_intersection, hull_to_halfspace};
@@ -160,7 +160,7 @@ pub fn convex_hull_intersection_vol(
     vertices_b: ArrayView2<f32>,
     center_a: ArrayView1<f32>,
     center_b: ArrayView1<f32>,
-) -> Result<f64, ImgalError> {
+) -> ImgalResult<f64> {
     let (hull_verts_a, hull_faces_a) = quickhull_3d(vertices_a, false)?;
     let (hull_verts_b, hull_faces_b) = quickhull_3d(vertices_b, false)?;
     let hs_a = hull_to_halfspace(&hull_verts_a, &hull_faces_a, false)?;
@@ -229,7 +229,7 @@ pub fn estimate_anisotropy(bboxes: &[[i32; 6]], n_polys: usize) -> [f32; 3] {
 pub fn golden_spiral(
     n_points: usize,
     anisotropy: Option<[f64; 3]>,
-) -> Result<(Array2<f64>, Array2<usize>), ImgalError> {
+) -> ImgalResult<(Array2<f64>, Array2<usize>)> {
     let anisotropy = Array1::from_iter(anisotropy.unwrap_or([1.0_f64; 3]));
     let golden_angle = (3.0 - 5.0_f64.sqrt()) * PI;
     let phi = Array1::from_iter(0..n_points).mapv(|v| v as f64 * golden_angle);
@@ -273,7 +273,7 @@ pub fn golden_spiral_intersection_vol(
     center_a: ArrayView1<f32>,
     center_b: ArrayView1<f32>,
     gs_faces: ArrayView2<usize>,
-) -> Result<f64, ImgalError> {
+) -> ImgalResult<f64> {
     let n_gsf = gs_faces.dim().0;
     let hs: Vec<Array1<f64>> =
         (0..n_gsf).try_fold(Vec::with_capacity(n_gsf * 2), |mut acc, i| {
@@ -325,7 +325,7 @@ pub fn overlap_polyhedron_mask(
     ny: usize,
     nx: usize,
     overlap_threshold: f32,
-) -> Result<i32, ImgalError> {
+) -> ImgalResult<i32> {
     let mut count = 0;
     let nx_ny = nx * ny;
     for z in 0..nz {
@@ -457,7 +457,7 @@ pub fn polyhedron_vol(
     distances: ArrayView1<f32>,
     gs_vertices: ArrayView2<f64>,
     gs_faces: ArrayView2<usize>,
-) -> Result<f32, ImgalError> {
+) -> ImgalResult<f32> {
     let origin = [0.0_f32; 3];
     let n_faces = gs_faces.dim().0;
     Ok((0..n_faces)
@@ -517,7 +517,7 @@ pub fn polyhedron_to_mask(
     nz: usize,
     ny: usize,
     nx: usize,
-) -> Result<Vec<bool>, ImgalError> {
+) -> ImgalResult<Vec<bool>> {
     let mut render = vec![false; nz * ny * nx];
     let center = center.mapv(|v| v as f32);
     (0..nz).try_for_each(|z| {

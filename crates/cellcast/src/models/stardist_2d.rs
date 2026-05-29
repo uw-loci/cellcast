@@ -1,6 +1,5 @@
 use burn::prelude::*;
-use imgal::AsNumeric;
-use imgal::ImgalError;
+use imgal::prelude::*;
 use imgal::image::percentile_normalize;
 use imgal::threshold::manual::manual_mask;
 use imgal::transform::pad::reflect_pad;
@@ -62,7 +61,7 @@ pub fn predict_versatile_fluo<'a, T, A>(
     prob_threshold: Option<f64>,
     nms_threshold: Option<f64>,
     gpu: bool,
-) -> Result<Array2<u64>, ImgalError>
+) -> ImgalResult<Array2<u64>>
 where
     A: AsArray<'a, T, Ix2>,
     T: 'a + AsNumeric,
@@ -73,7 +72,7 @@ where
     let prob_threshold = prob_threshold.unwrap_or(FLUO_PROB_THRESHOLD) as f32;
     let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
     let (src_row, src_col) = data.dim();
-    let norm = percentile_normalize(&data, pmin, pmax, false, None, None, false)?;
+    let norm = percentile_normalize(&data, pmin, pmax, false, None, None, None)?;
     let norm = norm.mapv(|v| v as f32);
     // this pattern determines how many pixels to pad in each axis to be
     // divisible by 16 as expected by the network
@@ -82,7 +81,7 @@ where
         .iter()
         .map(|&v| axes::divisible_pad(v, DIV))
         .collect();
-    let norm_pad = reflect_pad(&norm, &pad_config, Some(0), false)?;
+    let norm_pad = reflect_pad(&norm, &pad_config, Some(0), None)?;
     let pad_shape = norm_pad.shape().to_vec();
     // GPU and CPU computes must be in their own scope, the "device",
     // "stardist_net" and "tensor" types are all connected
@@ -155,7 +154,7 @@ pub fn predict_versatile_he<'a, T, A>(
     nms_threshold: Option<f64>,
     axis: Option<usize>,
     gpu: bool,
-) -> Result<Array2<u64>, ImgalError>
+) -> ImgalResult<Array2<u64>>
 where
     A: AsArray<'a, T, Ix3>,
     T: 'a + AsNumeric,
@@ -165,7 +164,7 @@ where
     let pmax = pmax.unwrap_or(PMAX);
     let prob_threshold = prob_threshold.unwrap_or(HE_PROB_THRESHOLD) as f32;
     let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
-    let norm = percentile_normalize(&data, pmin, pmax, false, axis, None, false)?;
+    let norm = percentile_normalize(&data, pmin, pmax, false, axis, None, None)?;
     let axis = axis.unwrap_or(2);
     if axis >= 3 {
         return Err(ImgalError::InvalidAxis {
@@ -189,7 +188,7 @@ where
             }
         })
         .collect();
-    let norm_pad = reflect_pad(&norm, &pad_config, Some(0), false)?;
+    let norm_pad = reflect_pad(&norm, &pad_config, Some(0), None)?;
     let mut pad_shape = norm_pad.shape().to_vec();
     pad_shape.remove(axis);
     // GPU and CPU computes must be in their own scope, the "device",
@@ -256,7 +255,7 @@ fn prob_dist_to_labels_2d(
     // ensure all values in the dist array are at least 1e-3, prevents negative and/or zero
     // distances
     let dist_arr = dist_arr.mapv(|v| v.max(1e-3));
-    let mut valid_mask = manual_mask(&prob_arr, prob_threshold, false);
+    let mut valid_mask = manual_mask(&prob_arr, prob_threshold, None);
     border::clip_mask_border(&mut valid_mask.view_mut().into_dyn(), 2);
     let valid_mask = valid_mask.into_dimensionality::<Ix2>().unwrap();
     // collect all valid (row, col) positions to avoid iterating the mask

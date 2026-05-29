@@ -1,7 +1,7 @@
 use ndarray::{Ix2, arr2};
 
 use cellcast::models::stardist_2d::predict_versatile_fluo;
-use imgal::ImgalError;
+use imgal::prelude::*;
 use imgal::simulation::blob::logistic_metaballs;
 use imgal::simulation::noise::poisson_noise_mut;
 use imgal::spatial::roi::roi_cloud_map;
@@ -24,7 +24,7 @@ const PARALLEL: bool = false;
 /// simulated dataset of 5 blobs with Poisson noise. This test asserts the
 /// number of blobs found and their size.
 #[test]
-fn stardist_2d_predict_versatile_fluo_expected_results() -> Result<(), ImgalError> {
+fn stardist_2d_predict_versatile_fluo_expected_results() -> ImgalResult<()> {
     let mut data = logistic_metaballs(
         &arr2(&CENTERS),
         &RADII,

@@ -1,4 +1,4 @@
-use imgal::ImgalError;
+use imgal::prelude::*;
 use imgal::spatial::KDTree;
 use imgal::statistics::max;
 use ndarray::ArrayView2;
@@ -111,7 +111,7 @@ pub fn polyhedron_nms(
     n_polys: usize,
     n_rays: usize,
     threshold: f32,
-) -> Result<Vec<bool>, ImgalError> {
+) -> ImgalResult<Vec<bool>> {
     let eps = 1e-10;
     let gs = golden_spiral(n_rays, Some(anisotropy))?;
     let verts = gs.0.view();
@@ -137,7 +137,7 @@ pub fn polyhedron_nms(
             (rii, roi)
         })
         .collect();
-    let max_dist = max(&rad_out, false)?;
+    let max_dist = max(&rad_out, None)?;
     let kdtree = KDTree::build(&polyhedron_pnts);
     // note that this implementation is avoiding external buffers with the hope
     // of making parallization easier
