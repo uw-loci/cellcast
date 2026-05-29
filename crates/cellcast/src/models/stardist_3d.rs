@@ -1,6 +1,6 @@
 use burn::prelude::*;
-use imgal::prelude::*;
 use imgal::image::percentile_normalize;
+use imgal::prelude::*;
 use imgal::threshold::manual::manual_mask;
 use imgal::transform::pad::reflect_pad;
 use ndarray::{Array1, Array2, Array3, Array4, ArrayBase, AsArray, Axis, Ix3, ViewRepr};
