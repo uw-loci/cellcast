@@ -21,7 +21,6 @@ imgal = { git = "https://github.com/imgal-sc/imgal", branch = "main" }
 ndarray = "0.17"
 rayon = "1.11"
 reqwest = { version = "0.13", features = ["blocking"]}
-zip = "=7.2.0"
 
 [lints.clippy]
 too_many_arguments = "allow"
