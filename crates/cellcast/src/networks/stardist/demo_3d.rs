@@ -30,7 +30,8 @@ pub struct Model<B: Backend> {
     conv3d17: Conv3d<B>,
     conv3d18: Conv3d<B>,
     phantom: core::marker::PhantomData<B>,
-    device: burn::module::Ignored<B::Device>,
+    #[module(skip)]
+    device: B::Device,
 }
 
 impl<B: Backend> Default for Model<B> {
@@ -204,7 +205,7 @@ impl<B: Backend> Model<B> {
             conv3d17,
             conv3d18,
             phantom: core::marker::PhantomData,
-            device: burn::module::Ignored(device.clone()),
+            device: device.clone(),
         }
     }
 

@@ -14,9 +14,8 @@ name = "cellcast"
 crate-type = ["rlib"]
 
 [dependencies]
-burn = { version = "0.20", features = ["tui", "train", "wgpu", "ndarray"], default-features = false}
-burn-store = "0.20"
-burn-ndarray = "0.20"
+burn = { version = "0.21", features = ["tui", "train", "wgpu", "flex"], default-features = false}
+burn-store = "0.21"
 geo = "0.32"
 imgal = { git = "https://github.com/imgal-sc/imgal", branch = "main" }
 ndarray = "0.17"
