@@ -3,7 +3,9 @@ use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 
 use crate::error::imgal_error_to_pyerr;
-use cellcast::models::stardist_2d::{predict_versatile_fluo, predict_versatile_he};
+use cellcast::models::stardist_2d::{
+    predict_versatile_fluo, predict_versatile_he, warm_versatile_fluo,
+};
 use cellcast::models::stardist_3d::predict_demo;
 
 /// Predict instance segmentation labels with the StarDist2D versatile fluo
@@ -288,4 +290,12 @@ pub fn stardist_3d_predict_demo<'py>(
             "Unsupported array dtype, supported array dtypes are u8, u16, u64, f32, and f64.",
         ))
     }
+}
+
+#[pyfunction]
+#[pyo3(name = "warm_versatile_fluo")]
+#[pyo3(signature = (gpu=None))]
+pub fn stardist_2d_warm_versatile_fluo(gpu: Option<bool>) {
+    let gpu = gpu.unwrap_or(true);
+    warm_versatile_fluo(gpu);
 }

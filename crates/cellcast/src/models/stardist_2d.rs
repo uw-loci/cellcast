@@ -346,3 +346,9 @@ fn prob_dist_to_labels_2d(
         None,
     )
 }
+
+/// warm up the network
+pub fn warm_versatile_fluo(gpu: bool) {
+    let mock = Array2::<f32>::zeros((64, 64));
+    let _ = predict_versatile_fluo(&mock, None, None, None, None, gpu);
+}
