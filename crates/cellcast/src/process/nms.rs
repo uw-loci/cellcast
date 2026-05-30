@@ -1,7 +1,10 @@
+use std::sync::atomic::{AtomicBool, Ordering};
+
 use imgal::prelude::*;
 use imgal::spatial::KDTree;
 use imgal::statistics::max;
 use ndarray::ArrayView2;
+use rayon::prelude::*;
 
 use crate::geometry::polygon::{area_intersection, build_polygons, check_bbox_intersect};
 use crate::geometry::polyhedron::{
@@ -46,43 +49,39 @@ pub fn polygon_nms(
     threshold: f32,
 ) -> Vec<bool> {
     // create 2D polygons vector and perform NMS
-    let mut suppressed: Vec<bool> = vec![false; n_polys];
+    let suppressed: Vec<AtomicBool> = (0..n_polys).map(|_| AtomicBool::new(false)).collect();
     let polygons = build_polygons(polygon_dist.view(), polygon_pos.view(), n_polys, n_rays);
     let kdtree = KDTree::build(polygon_pos.view());
     let max_dist = polygons.iter().map(|p| p.dist).fold(0.0, f32::max);
     // iterate through each polygon and skip already suppressed polygons
     // the key here is that each polygon's probability is encoded in it's order
     // as it was sorted in descending order (highest prob first)
-    for p in 0..n_polys.saturating_sub(1) {
-        // skip already suppressed polygons
-        if suppressed[p] {
-            continue;
+    (0..n_polys.saturating_sub(1)).for_each(|i| {
+        if suppressed[i].load(Ordering::Relaxed) {
+            return;
         }
-        // find neighboring polygons within the computed search radius
-        let query = [polygon_pos[[p, 0]], polygon_pos[[p, 1]]];
-        let radius = (max_dist + polygons[p].dist) as f64;
+        let query = [polygon_pos[[i, 0]], polygon_pos[[i, 1]]];
+        let radius = (max_dist + polygons[i].dist) as f64;
         let neighbors = kdtree.search_for_indices(&query, radius).unwrap();
-        // skip already suppressed polygons
-        for n in neighbors {
-            // skip already process polygons
-            if n <= p || suppressed[n] {
-                continue;
+        neighbors.par_iter().for_each(|&j| {
+            if j <= i || suppressed[j].load(Ordering::Relaxed) {
+                return;
             }
-            // skip bounding boxes that *do not* intersect
-            if !check_bbox_intersect(&polygons[p].bbox, &polygons[n].bbox) {
-                continue;
+            if !check_bbox_intersect(&polygons[i].bbox, &polygons[j].bbox) {
+                return;
             }
-            let poly_area_inter = area_intersection(&polygons[p].vertices, &polygons[n].vertices);
-            let min_area = polygons[p].area.min(polygons[n].area) + 1e-10;
+            let poly_area_inter = area_intersection(&polygons[i].vertices, &polygons[j].vertices);
+            let min_area = polygons[i].area.min(polygons[j].area) + 1e-10;
             let overlap = poly_area_inter / min_area;
             if overlap > threshold {
-                suppressed[n] = true;
+                suppressed[j].store(true, Ordering::Relaxed);
             }
-        }
-    }
-    // invert the suppressed array, `true` indicates valid or non-suppressed
-    // polygon indices
-    suppressed.iter().map(|&v| !v).collect()
+        });
+    });
+    suppressed
+        .iter()
+        .map(|v| !v.load(Ordering::Relaxed))
+        .collect()
 }
 
 /// TODO
