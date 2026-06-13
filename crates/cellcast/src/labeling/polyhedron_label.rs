@@ -12,7 +12,7 @@ pub fn distance_polyhedron_to_label(
     prob_threshold: f32,
     anisotropy: [f64; 3],
     shape: [usize; 3],
-) -> ImgalResult<Array3<u64>> {
+) -> Result<Array3<u64>, ImgalError> {
     let n_polys = polyhedron_dist.dim().0;
     let n_rays = polyhedron_dist.dim().1;
     let mut labels = Array3::<u64>::zeros(shape);
@@ -40,7 +40,7 @@ pub fn distance_polyhedron_to_label(
     let (gs_verts, gs_faces) = golden_spiral(n_rays, Some(anisotropy))?;
     let n_polys = dist.dim().0;
     let [nz, ny, nx] = shape;
-    (0..n_polys).try_for_each(|i| -> ImgalResult<()> {
+    (0..n_polys).try_for_each(|i| -> Result<(), ImgalError> {
         let cur_dist = dist.row(i);
         let cur_pnt = pnts.row(i);
         let bbox = polyhedron_bbox(cur_dist, cur_pnt, gs_verts.view());
@@ -64,7 +64,7 @@ pub fn distance_polyhedron_to_label(
                         &gs_faces,
                         cur_pnt.view(),
                         ArrayView1::from(&[z as f32, y as f32, x as f32]),
-                        false,
+                        None,
                     )
                     .unwrap()
                     {

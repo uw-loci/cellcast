@@ -110,7 +110,7 @@ pub fn polyhedron_nms(
     n_polys: usize,
     n_rays: usize,
     threshold: f32,
-) -> ImgalResult<Vec<bool>> {
+) -> Result<Vec<bool>, ImgalError> {
     let eps = 1e-10;
     let gs = golden_spiral(n_rays, Some(anisotropy))?;
     let verts = gs.0.view();

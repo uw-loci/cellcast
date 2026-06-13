@@ -160,15 +160,15 @@ pub fn convex_hull_intersection_vol(
     vertices_b: ArrayView2<f32>,
     center_a: ArrayView1<f32>,
     center_b: ArrayView1<f32>,
-) -> ImgalResult<f64> {
-    let (hull_verts_a, hull_faces_a) = quickhull_3d(vertices_a, false)?;
-    let (hull_verts_b, hull_faces_b) = quickhull_3d(vertices_b, false)?;
-    let hs_a = hull_to_halfspace(&hull_verts_a, &hull_faces_a, false)?;
-    let hs_b = hull_to_halfspace(&hull_verts_b, &hull_faces_b, false)?;
+) -> Result<f64, ImgalError> {
+    let (hull_verts_a, hull_faces_a) = quickhull_3d(vertices_a, None)?;
+    let (hull_verts_b, hull_faces_b) = quickhull_3d(vertices_b, None)?;
+    let hs_a = hull_to_halfspace(&hull_verts_a, &hull_faces_a, None)?;
+    let hs_b = hull_to_halfspace(&hull_verts_b, &hull_faces_b, None)?;
     let hs = concatenate(Axis(0), &[hs_a.view(), hs_b.view()])
         .expect("Failed to stack halfspaces into array.");
     let in_pnt: [f64; 3] = array::from_fn(|i| 0.5 * (center_a[i] + center_b[i]) as f64);
-    let (inter_verts, inter_faces) = halfspace_intersection(&hs, &in_pnt, false)?;
+    let (inter_verts, inter_faces) = halfspace_intersection(&hs, &in_pnt, None)?;
     let n_if = inter_faces.dim().0;
     Ok((0..n_if).fold(0.0_f64, |acc, i| {
         let [a_idx, b_idx, c_idx] = array::from_fn(|j| inter_faces[[i, j]]);
@@ -229,7 +229,7 @@ pub fn estimate_anisotropy(bboxes: &[[i32; 6]], n_polys: usize) -> [f32; 3] {
 pub fn golden_spiral(
     n_points: usize,
     anisotropy: Option<[f64; 3]>,
-) -> ImgalResult<(Array2<f64>, Array2<usize>)> {
+) -> Result<(Array2<f64>, Array2<usize>), ImgalError> {
     let anisotropy = Array1::from_iter(anisotropy.unwrap_or([1.0_f64; 3]));
     let golden_angle = (3.0 - 5.0_f64.sqrt()) * PI;
     let phi = Array1::from_iter(0..n_points).mapv(|v| v as f64 * golden_angle);
@@ -241,7 +241,7 @@ pub fn golden_spiral(
     let points = stack(ax, &[z.view(), a.view(), b.view()])
         .expect("Failed to create Golden spiral point cloud.");
     let points = points / anisotropy;
-    let (mut verts, faces) = quickhull_3d(&points, false)?;
+    let (mut verts, faces) = quickhull_3d(&points, None)?;
     let norms = verts.map_axis(ax, |r| r.dot(&r).sqrt());
     verts /= &norms.insert_axis(ax);
     Ok((verts, faces))
@@ -273,7 +273,7 @@ pub fn golden_spiral_intersection_vol(
     center_a: ArrayView1<f32>,
     center_b: ArrayView1<f32>,
     gs_faces: ArrayView2<usize>,
-) -> ImgalResult<f64> {
+) -> Result<f64, ImgalError> {
     let n_gsf = gs_faces.dim().0;
     let hs: Vec<Array1<f64>> =
         (0..n_gsf).try_fold(Vec::with_capacity(n_gsf * 2), |mut acc, i| {
@@ -298,7 +298,7 @@ pub fn golden_spiral_intersection_vol(
             .collect::<Vec<ArrayView1<f64>>>(),
     )
     .expect("Failed to stack halfspaces into array.");
-    let (inter_verts, inter_faces) = halfspace_intersection(&hs, &in_pnt, false)?;
+    let (inter_verts, inter_faces) = halfspace_intersection(&hs, &in_pnt, None)?;
     let n_if = inter_faces.dim().0;
     Ok((0..n_if).fold(0.0_f64, |acc, i| {
         let [a_idx, b_idx, c_idx] = array::from_fn(|j| inter_faces[[i, j]]);
@@ -325,7 +325,7 @@ pub fn overlap_polyhedron_mask(
     ny: usize,
     nx: usize,
     overlap_threshold: f32,
-) -> ImgalResult<i32> {
+) -> Result<i32, ImgalError> {
     let mut count = 0;
     let nx_ny = nx * ny;
     for z in 0..nz {
@@ -341,7 +341,7 @@ pub fn overlap_polyhedron_mask(
                 }
                 let qx = (x as i32 + bbox[4]) as f32;
                 let query = arr1(&[qz, qy, qx]);
-                if inside_polyhedron(vertices, faces, center.view(), query.view(), false)? {
+                if inside_polyhedron(vertices, faces, center.view(), query.view(), None)? {
                     count += 1;
                     if (count as f32) > overlap_threshold {
                         return Ok(count);
@@ -457,7 +457,7 @@ pub fn polyhedron_vol(
     distances: ArrayView1<f32>,
     gs_vertices: ArrayView2<f64>,
     gs_faces: ArrayView2<usize>,
-) -> ImgalResult<f32> {
+) -> Result<f32, ImgalError> {
     let origin = [0.0_f32; 3];
     let n_faces = gs_faces.dim().0;
     Ok((0..n_faces)
@@ -517,7 +517,7 @@ pub fn polyhedron_to_mask(
     nz: usize,
     ny: usize,
     nx: usize,
-) -> ImgalResult<Vec<bool>> {
+) -> Result<Vec<bool>, ImgalError> {
     let mut render = vec![false; nz * ny * nx];
     let center = center.mapv(|v| v as f32);
     (0..nz).try_for_each(|z| {
@@ -529,7 +529,7 @@ pub fn polyhedron_to_mask(
                     (x as i32 + bbox[4]) as f32,
                 ]);
                 render[x + y * nx + z * nx * ny] =
-                    inside_polyhedron(vertices, gs_faces, center.view(), query.view(), false)?;
+                    inside_polyhedron(vertices, gs_faces, center.view(), query.view(), None)?;
                 Ok(())
             })?;
             Ok(())

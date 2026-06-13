@@ -18,13 +18,12 @@ const INTENSITIES: [f64; 5] = [20.0, 22.3, 21.8, 19.3, 24.1];
 const FALLOFFS: [f64; 5] = [3.5; 5];
 const BACKGROUND: f64 = 0.0;
 const SHAPE: [usize; 2] = [256, 256];
-const PARALLEL: bool = false;
 
 /// Tests that `predict_versatile_fluo` returns the expected results for a
 /// simulated dataset of 5 blobs with Poisson noise. This test asserts the
 /// number of blobs found and their size.
 #[test]
-fn stardist_2d_predict_versatile_fluo_expected_results() -> ImgalResult<()> {
+fn stardist_2d_predict_versatile_fluo_expected_results() -> Result<(), ImgalError> {
     let mut data = logistic_metaballs(
         &arr2(&CENTERS),
         &RADII,
@@ -32,12 +31,12 @@ fn stardist_2d_predict_versatile_fluo_expected_results() -> ImgalResult<()> {
         &FALLOFFS,
         BACKGROUND,
         &SHAPE,
-        PARALLEL,
+        None,
     )?;
-    poisson_noise_mut(data.view_mut(), 0.8, None, false);
+    poisson_noise_mut(data.view_mut(), 0.8, None, None);
     let data = data.into_dimensionality::<Ix2>().unwrap();
     let labels = predict_versatile_fluo(&data, None, None, None, None, false)?;
-    let rcm = roi_cloud_map(&labels, false);
+    let rcm = roi_cloud_map(&labels, None);
     assert_eq!(rcm.len(), 5);
     assert_eq!(rcm.get(&1).expect("ROI 1 not foud.").dim().0, 3177);
     assert_eq!(rcm.get(&2).expect("ROI 2 not foud.").dim().0, 5466);

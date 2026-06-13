@@ -29,7 +29,7 @@ pub fn predict_demo<'a, T, A>(
     nms_threshold: Option<f64>,
     axis: Option<usize>,
     gpu: bool,
-) -> ImgalResult<Array3<u64>>
+) -> Result<Array3<u64>, ImgalError>
 where
     A: AsArray<'a, T, Ix3>,
     T: 'a + AsNumeric,
@@ -116,7 +116,7 @@ fn prob_dist_to_labels_3d(
     anisotropy: [f64; 3],
     pad_shape: Vec<usize>,
     src_shape: [usize; 3],
-) -> ImgalResult<Array3<u64>> {
+) -> Result<Array3<u64>, ImgalError> {
     // create arrays from the flat StarDist network output
     let res_row: usize = pad_shape[0] / 2;
     let res_col: usize = pad_shape[1] / 2;

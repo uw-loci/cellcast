@@ -72,7 +72,7 @@ pub fn predict_versatile_fluo<'a, T, A>(
     prob_threshold: Option<f64>,
     nms_threshold: Option<f64>,
     gpu: bool,
-) -> ImgalResult<Array2<u64>>
+) -> Result<Array2<u64>, ImgalError>
 where
     A: AsArray<'a, T, Ix2>,
     T: 'a + AsNumeric,
@@ -163,7 +163,7 @@ pub fn predict_versatile_he<'a, T, A>(
     nms_threshold: Option<f64>,
     axis: Option<usize>,
     gpu: bool,
-) -> ImgalResult<Array2<u64>>
+) -> Result<Array2<u64>, ImgalError>
 where
     A: AsArray<'a, T, Ix3>,
     T: 'a + AsNumeric,
