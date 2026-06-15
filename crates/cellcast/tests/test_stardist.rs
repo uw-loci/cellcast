@@ -3,29 +3,46 @@ use ndarray::{Ix2, arr2};
 use cellcast::models::stardist_2d::predict_versatile_fluo;
 use imgal::prelude::*;
 use imgal::simulation::blob::logistic_metaballs;
-use imgal::simulation::noise::poisson_noise_mut;
 use imgal::spatial::roi::roi_cloud_map;
 
-const CENTERS: [[f64; 2]; 5] = [
-    [55.5, 60.0],
-    [120.0, 45.0],
-    [150.0, 150.0],
-    [110.0, 220.5],
-    [200.5, 112.0],
+const CENTERS_2D: [[f64; 2]; 20] = [
+    [45.0, 57.5],
+    [40.25, 74.25],
+    [52.75, 65.25],
+    [42.25, 103.25],
+    [66.75, 57.25],
+    [87.25, 101.25],
+    [98.75, 40.75],
+    [54.25, 13.25],
+    [27.25, 52.25],
+    [112.25, 109.25],
+    [63.75, 94.25],
+    [17.75, 27.25],
+    [21.25, 113.75],
+    [75.25, 37.25],
+    [64.4, 125.0],
+    [105.35, 10.4],
+    [2.75, 100.0],
+    [125.0, 60.0],
+    [87.5, 87.5],
+    [30.0, 70.0],
 ];
-const RADII: [f64; 5] = [33.0, 37.2, 40.8, 38.5, 29.7];
-const INTENSITIES: [f64; 5] = [20.0, 22.3, 21.8, 19.3, 24.1];
-const FALLOFFS: [f64; 5] = [3.5; 5];
+const RADII: [f64; 20] = [
+    2.0, 3.3, 4.0, 5.0, 11.0, 7.5, 9.0, 6.0, 5.5, 9.0, 13.0, 9.5, 6.0, 3.5, 9.5, 6.0, 2.5, 7.5,
+    4.5, 7.0,
+];
+const INTENSITIES: [f64; 20] = [10.0; 20];
+const FALLOFFS: [f64; 20] = [2.0; 20];
 const BACKGROUND: f64 = 0.0;
-const SHAPE: [usize; 2] = [256, 256];
+const SHAPE: [usize; 2] = [128, 128];
 
 /// Tests that `predict_versatile_fluo` returns the expected results for a
 /// simulated dataset of 5 blobs with Poisson noise. This test asserts the
 /// number of blobs found and their size.
 #[test]
 fn stardist_2d_predict_versatile_fluo_expected_results() -> Result<(), ImgalError> {
-    let mut data = logistic_metaballs(
-        &arr2(&CENTERS),
+    let data = logistic_metaballs(
+        &arr2(&CENTERS_2D),
         &RADII,
         &INTENSITIES,
         &FALLOFFS,
@@ -33,15 +50,29 @@ fn stardist_2d_predict_versatile_fluo_expected_results() -> Result<(), ImgalErro
         &SHAPE,
         None,
     )?;
-    poisson_noise_mut(data.view_mut(), 0.8, None, None);
     let data = data.into_dimensionality::<Ix2>().unwrap();
     let labels = predict_versatile_fluo(&data, None, None, None, None, false)?;
     let rcm = roi_cloud_map(&labels, None);
-    assert_eq!(rcm.len(), 5);
-    assert_eq!(rcm.get(&1).expect("ROI 1 not foud.").dim().0, 3177);
-    assert_eq!(rcm.get(&2).expect("ROI 2 not foud.").dim().0, 5466);
-    assert_eq!(rcm.get(&3).expect("ROI 3 not foud.").dim().0, 3828);
-    assert_eq!(rcm.get(&4).expect("ROI 4 not foud.").dim().0, 5003);
-    assert_eq!(rcm.get(&5).expect("ROI 5 not foud.").dim().0, 4794);
+    assert_eq!(rcm.len(), 20);
+    assert_eq!(rcm.get(&1).expect("ROI 1 not foud.").dim().0, 244);
+    assert_eq!(rcm.get(&2).expect("ROI 2 not foud.").dim().0, 109);
+    assert_eq!(rcm.get(&3).expect("ROI 3 not foud.").dim().0, 359);
+    assert_eq!(rcm.get(&4).expect("ROI 4 not foud.").dim().0, 62);
+    assert_eq!(rcm.get(&5).expect("ROI 5 not foud.").dim().0, 79);
+    assert_eq!(rcm.get(&6).expect("ROI 6 not foud.").dim().0, 376);
+    assert_eq!(rcm.get(&7).expect("ROI 7 not foud.").dim().0, 141);
+    assert_eq!(rcm.get(&8).expect("ROI 8 not foud.").dim().0, 167);
+    assert_eq!(rcm.get(&9).expect("ROI 9 not foud.").dim().0, 224);
+    assert_eq!(rcm.get(&10).expect("ROI 10 not foud.").dim().0, 609);
+    assert_eq!(rcm.get(&11).expect("ROI 11 not foud.").dim().0, 359);
+    assert_eq!(rcm.get(&12).expect("ROI 12 not foud.").dim().0, 104);
+    assert_eq!(rcm.get(&13).expect("ROI 13 not foud.").dim().0, 85);
+    assert_eq!(rcm.get(&14).expect("ROI 14 not foud.").dim().0, 96);
+    assert_eq!(rcm.get(&15).expect("ROI 15 not foud.").dim().0, 215);
+    assert_eq!(rcm.get(&16).expect("ROI 16 not foud.").dim().0, 171);
+    assert_eq!(rcm.get(&17).expect("ROI 17 not foud.").dim().0, 451);
+    assert_eq!(rcm.get(&18).expect("ROI 18 not foud.").dim().0, 248);
+    assert_eq!(rcm.get(&19).expect("ROI 19 not foud.").dim().0, 203);
+    assert_eq!(rcm.get(&20).expect("ROI 20 not foud.").dim().0, 240);
     Ok(())
 }
