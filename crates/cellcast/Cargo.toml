@@ -22,5 +22,13 @@ ndarray = "0.17"
 rayon = "1.11"
 reqwest = { version = "0.13", features = ["blocking"]}
 
+[dev-dependencies]
+criterion = { version = "0.8", features = ["html_reports"] }
+
 [lints.clippy]
 too_many_arguments = "allow"
+
+[[bench]]
+name = "stardist"
+path = "../../benches/bench_stardist.rs"
+harness = false
