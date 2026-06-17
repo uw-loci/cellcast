@@ -1,9 +1,10 @@
 use burn::prelude::*;
 use imgal::image::percentile_normalize;
 use imgal::prelude::*;
+use imgal::simulation::blob::logistic_metaballs;
 use imgal::threshold::manual::manual_mask;
 use imgal::transform::pad::reflect_pad;
-use ndarray::{Array1, Array2, Array3, Array4, ArrayBase, AsArray, Axis, Ix3, ViewRepr};
+use ndarray::{Array1, Array2, Array3, Array4, ArrayBase, AsArray, Axis, Ix3, ViewRepr, arr2};
 
 use crate::config::backend::{CpuBackend, GpuBackend};
 use crate::labeling::distance_polyhedron_to_label;
@@ -219,6 +220,16 @@ fn prob_dist_to_labels_3d(
 
 /// Warm up the demo 3D model.
 pub fn warm_up_demo(gpu: bool) {
-    let mock = Array3::<f32>::zeros((64, 64, 64));
-    let _ = predict_demo(&mock, None, None, None, None, None, gpu);
+    let center = arr2(&[[32.0, 32.0, 32.0]]);
+    let radius = [5.0];
+    let intensity = [10.0];
+    let falloff = [2.0];
+    let background = 0.0;
+    let shape = [64; 3];
+    let sim = logistic_metaballs(
+        &center, &radius, &intensity, &falloff, background, &shape, None,
+    )
+    .unwrap();
+    let sim = sim.into_dimensionality::<Ix3>().unwrap();
+    let _ = predict_demo(&sim, None, None, None, None, None, gpu);
 }
