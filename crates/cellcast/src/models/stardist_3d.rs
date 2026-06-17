@@ -216,3 +216,9 @@ fn prob_dist_to_labels_3d(
         src_shape,
     )
 }
+
+/// Warm up the demo 3D model.
+pub fn warm_up_demo(gpu: bool) {
+    let mock = Array3::<f32>::zeros((64, 64, 64));
+    let _ = predict_demo(&mock, None, None, None, None, None, gpu);
+}

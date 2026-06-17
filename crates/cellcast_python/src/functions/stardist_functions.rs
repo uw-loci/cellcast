@@ -6,7 +6,7 @@ use crate::error::imgal_error_to_pyerr;
 use cellcast::models::stardist_2d::{
     predict_versatile_fluo, predict_versatile_he, warm_up_versatile_fluo,
 };
-use cellcast::models::stardist_3d::predict_demo;
+use cellcast::models::stardist_3d::{predict_demo, warm_up_demo};
 
 /// Predict instance segmentation labels with the StarDist2D versatile fluo
 /// model.
@@ -298,4 +298,12 @@ pub fn stardist_3d_predict_demo<'py>(
 pub fn stardist_2d_warm_up_versatile_fluo(gpu: Option<bool>) {
     let gpu = gpu.unwrap_or(true);
     warm_up_versatile_fluo(gpu);
+}
+
+#[pyfunction]
+#[pyo3(name = "warm_up_demo")]
+#[pyo3(signature = (gpu=None))]
+pub fn stardist_3d_warm_up_demo(gpu: Option<bool>) {
+    let gpu = gpu.unwrap_or(true);
+    warm_up_demo(gpu);
 }

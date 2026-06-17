@@ -27,6 +27,10 @@ pub fn register_models_module(parent_module: &Bound<'_, PyModule>) -> PyResult<(
         stardist_functions::stardist_3d_predict_demo,
         &stardist_3d_module
     )?)?;
+    stardist_3d_module.add_function(wrap_pyfunction!(
+        stardist_functions::stardist_3d_warm_up_demo,
+        &stardist_3d_module
+    )?)?;
     models_module.add_submodule(&stardist_2d_module)?;
     models_module.add_submodule(&stardist_3d_module)?;
     parent_module.add_submodule(&models_module)
