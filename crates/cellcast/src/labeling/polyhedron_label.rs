@@ -1,5 +1,7 @@
 use imgal::prelude::*;
+use imgal::spatial::convex_hull::quickhull_3d;
 use imgal::spatial::geometry::inside_polyhedron;
+use imgal::spatial::halfspace::{hull_to_halfspace, inside_halfspace_interior};
 use ndarray::{Array1, Array3, ArrayView1, ArrayView2, Axis};
 
 use crate::geometry::polyhedron::{golden_spiral, polyhedron_bbox, polyhedron_verts};
@@ -55,24 +57,31 @@ pub fn distance_polyhedron_to_label(
         }
         let cur_poly_verts = polyhedron_verts(cur_dist, cur_pnt, gs_verts.view());
         let cur_pnt = cur_pnt.mapv(|v| v as f32);
-        (z_min as usize..=z_max as usize).for_each(|z| {
-            (y_min as usize..=y_max as usize).for_each(|y| {
-                (x_min as usize..=x_max as usize).for_each(|x| {
+        let hull = quickhull_3d(&cur_poly_verts, None)?;
+        let convex_hs = hull_to_halfspace(&hull.0, &hull.1, None)?;
+        let kernel_hs = hull_to_halfspace(&cur_poly_verts, &gs_faces, None)?;
+        (z_min as usize..=z_max as usize).try_for_each(|z| {
+            (y_min as usize..=y_max as usize).try_for_each(|y| {
+                (x_min as usize..=x_max as usize).try_for_each(|x| -> Result<(), ImgalError> {
                     let pnt = [z, y, x];
-                    if inside_polyhedron(
-                        &cur_poly_verts,
-                        &gs_faces,
-                        cur_pnt.view(),
-                        ArrayView1::from(&[z as f32, y as f32, x as f32]),
-                        None,
-                    )
-                    .unwrap()
+                    let in_kernel = inside_halfspace_interior(&kernel_hs, &pnt, true, None)?;
+                    let in_convex = inside_halfspace_interior(&convex_hs, &pnt, true, None)?;
+                    if in_kernel
+                        || (in_convex
+                            && inside_polyhedron(
+                                &cur_poly_verts,
+                                &gs_faces,
+                                cur_pnt.view(),
+                                ArrayView1::from(&[z as f32, y as f32, x as f32]),
+                                None,
+                            )?)
                     {
                         labels[pnt] = ids[i];
                     }
+                    Ok(())
                 })
             })
-        });
+        })?;
         Ok(())
     })?;
     Ok(labels)
