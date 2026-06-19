@@ -4,8 +4,8 @@ use criterion::{Criterion, criterion_group, criterion_main};
 use imgal::simulation::blob::logistic_metaballs;
 use ndarray::{Ix2, Ix3, arr2};
 
-const SHAPE_2D: [usize; 2] = [64, 64];
-const SHAPE_3D: [usize; 3] = [32, 64, 64];
+const SHAPE_2D: [usize; 2] = [128, 128];
+const SHAPE_3D: [usize; 3] = [64, 128, 128];
 const GPU: bool = true;
 
 fn bench_stardist_2d(c: &mut Criterion) {
@@ -28,12 +28,14 @@ fn bench_stardist_2d(c: &mut Criterion) {
     )
     .unwrap();
     let data = data.into_dimensionality::<Ix2>().unwrap();
+    let mut group = c.benchmark_group("stardist_2d");
     warm_up_versatile_fluo(GPU);
-    c.bench_function("stardist_2d", |b| {
+    group.bench_function("predict_versatile_fluo", |b| {
         b.iter(|| {
             let _ = predict_versatile_fluo(&data, None, None, None, None, GPU).unwrap();
         });
     });
+    group.finish();
 }
 
 fn bench_stardist_3d(c: &mut Criterion) {
@@ -68,12 +70,15 @@ fn bench_stardist_3d(c: &mut Criterion) {
     )
     .unwrap();
     let data = data.into_dimensionality::<Ix3>().unwrap();
+    let mut group = c.benchmark_group("stardist_3d");
+    group.sample_size(10);
     warm_up_demo(GPU);
-    c.bench_function("stardist_3d", |b| {
+    group.bench_function("predict_demo", |b| {
         b.iter(|| {
             let _ = predict_demo(&data, None, None, None, None, None, GPU).unwrap();
         });
     });
+    group.finish();
 }
 
 criterion_group!(benches, bench_stardist_2d, bench_stardist_3d);
