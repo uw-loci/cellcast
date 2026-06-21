@@ -16,7 +16,7 @@ crate-type = ["rlib"]
 [dependencies]
 burn = { version = "0.21", features = ["tui", "train", "wgpu", "flex"], default-features = false}
 burn-store = "0.21"
-geo = "0.32"
+geo = "0.33.1"
 imgal = "0.3.1"
 ndarray = "0.17"
 rayon = "1.11"
