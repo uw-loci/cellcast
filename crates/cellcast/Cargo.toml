@@ -14,16 +14,16 @@ name = "cellcast"
 crate-type = ["rlib"]
 
 [dependencies]
-burn = { version = "0.21", features = ["tui", "train", "wgpu", "flex"], default-features = false}
-burn-store = "0.21"
+burn = { version = "0.21.0", features = ["tui", "train", "wgpu", "flex"], default-features = false}
+burn-store = "0.21.0"
 geo = "0.33.1"
 imgal = "0.3.1"
-ndarray = "0.17"
+ndarray = "0.17.2"
 rayon = "1.12.0"
-reqwest = { version = "0.13", features = ["blocking"]}
+reqwest = { version = "0.13.4", features = ["blocking"]}
 
 [dev-dependencies]
-criterion = { version = "0.8", features = ["html_reports"] }
+criterion = { version = "0.8.2", features = ["html_reports"] }
 
 [lints.clippy]
 too_many_arguments = "allow"
