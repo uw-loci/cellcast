@@ -33,200 +33,213 @@ static HE_CPU_MODEL: LazyLock<versatile_he_2d::Model<CpuConfigBackend>> =
 static HE_GPU_MODEL: LazyLock<versatile_he_2d::Model<GpuConfigBackend>> =
     LazyLock::new(|| versatile_he_2d::Model::<GpuConfigBackend>::default());
 
-/// Predict instance segmentation labels with the StarDist2D versatile fluo
-/// model.
-///
-/// # Description
-///
-/// Performs model inference with the StarDist2D versatile fluo model, returning
-/// instance segmentations of star-convex shapes.
-///
-/// # Arguments
-///
-/// * `data`: The input 2D image.
-/// * `pmin`: The minimum percentage to linear percentile normalize the input
-///   image. If `None`, then `pmin = 1.0`.
-/// * `pmax`: The maximum percentage to linear percentile normalize the input
-///   image. If `None`, then `pmax = 99.8`.
-/// * `prob_threshold`: The object/polygon probability threshold. If `None`,
-///   then `prob_threshold == 0.479071463157368`.
-/// * `nms_threshold`: The non-maximum suppression (NMS) threshold. If `None`,
-///   then `nms_threshold == 0.3`.
-/// * `gpu`: If `true`, GPU computation is used with the `Wgpu` backend. If
-///   `false` CPU computation is used with the `NdArray` backend.
-///
-/// # Returns
-///
-/// * `Ok(Array2<u64>)`: The StarDist2D fluo model instance segmentation label
-///   image.
-/// * `Err(ImgalError)`: If `pmin` and/or `pmax` are outside of range `0.0` to
-///   `1.0.`
-///
-/// # Reference
-///
-/// <https://doi.org/10.48550/arXiv.1806.03535>
-pub fn predict_versatile_fluo<'a, T, A>(
-    data: A,
-    pmin: Option<f64>,
-    pmax: Option<f64>,
-    prob_threshold: Option<f64>,
-    nms_threshold: Option<f64>,
-    gpu: bool,
-) -> Result<Array2<u64>, ImgalError>
-where
-    A: AsArray<'a, T, Ix2>,
-    T: 'a + AsNumeric,
-{
-    let data: ArrayBase<ViewRepr<&'a T>, Ix2> = data.into();
-    let pmin = pmin.unwrap_or(PMIN);
-    let pmax = pmax.unwrap_or(PMAX);
-    let prob_threshold = prob_threshold.unwrap_or(FLUO_PROB_THRESHOLD) as f32;
-    let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
-    let (src_row, src_col) = data.dim();
-    let norm = percentile_normalize(&data, pmin, pmax, false, None, None, None)?;
-    let norm = norm.mapv(|v| v as f32);
-    // this pattern determines how many pixels to pad in each axis to be
-    // divisible by 16 as expected by the network
-    let pad_config: Vec<usize> = data
-        .shape()
-        .iter()
-        .map(|&v| axes::divisible_pad(v, DIV))
-        .collect();
-    let norm_pad = reflect_pad(&norm, &pad_config, Some(0), None)?;
-    let pad_shape = norm_pad.shape().to_vec();
-    // GPU and CPU computes must be in their own scope, the "device",
-    // "stardist_net" and "tensor" types are all connected
-    let (raw_data, _) = norm_pad.into_raw_vec_and_offset();
-    let td = TensorData::new(raw_data, [1, 1, pad_shape[0], pad_shape[1]]);
-    let prob: Vec<f32>;
-    let dist: Vec<f32>;
-    if gpu {
-        let device = Default::default();
-        let tensor = Tensor::<GpuConfigBackend, 4>::from_data(td, &device);
-        let (p, d) = FLUO_GPU_MODEL.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
-        prob = p.into_data().into_vec().unwrap();
-        dist = d.into_data().into_vec().unwrap();
-    } else {
-        let device = Default::default();
-        let tensor = Tensor::<CpuConfigBackend, 4>::from_data(td, &device);
-        let (p, d) = FLUO_CPU_MODEL.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
-        prob = p.into_data().into_vec().unwrap();
-        dist = d.into_data().into_vec().unwrap();
-    }
-    Ok(prob_dist_to_labels_2d(
-        prob,
-        dist,
-        prob_threshold,
-        nms_threshold,
-        pad_shape,
-        (src_row, src_col),
-    ))
+#[derive(Debug)]
+pub struct StarDist2D {
+    pub weights_path: &'static str,
 }
 
-/// Predict instance segmentation labels with the StarDist2D versatile HE model.
-///
-/// # Description
-///
-/// Performs model inference with the StarDist2D versatile HE model, returning
-/// instance segmentations of star-convex shapes.
-///
-/// # Arguments
-///
-/// * `data`: The input 3D image, where the third dimension is the channel axis.
-/// * `pmin`: The minimum percentage to linear percentile normalize the input
-///   image. If `None`, then `pmin = 1.0`.
-/// * `pmax`: The maximum percentage to linear percentile normalize the input
-///   image. If `None`, then `pmax = 99.8`.
-/// * `prob_threshold`: The object/polygon probability threshold. If `None`,
-///   then `prob_threshold == 0.6924782541382084`.
-/// * `nms_threshold`: The non-maximum suppression (NMS) threshold. If `None`,
-///   then `nms_threshold == 0.3`.
-/// * `axis`: The channel axis. If `None` then `axis == 2`.
-/// * `gpu`: If `true`, GPU computation is used with the `Wgpu` backend. If
-///   `false` CPU computation is used with the `NdArray` backend.
-///
-/// # Returns
-///
-/// * `Ok(Array2<u64>)`: The StarDist2D HE model instance segmentation label
-///   image.
-/// * `Err(ImgalError)`: If `pmin` and/or `pmax` are outside of range `0.0` to
-///   `1.0.`
-///
-/// # Reference
-///
-/// <https://doi.org/10.48550/arXiv.1806.03535>
-pub fn predict_versatile_he<'a, T, A>(
-    data: A,
-    pmin: Option<f64>,
-    pmax: Option<f64>,
-    prob_threshold: Option<f64>,
-    nms_threshold: Option<f64>,
-    axis: Option<usize>,
-    gpu: bool,
-) -> Result<Array2<u64>, ImgalError>
-where
-    A: AsArray<'a, T, Ix3>,
-    T: 'a + AsNumeric,
-{
-    let data: ArrayBase<ViewRepr<&'a T>, Ix3> = data.into();
-    let pmin = pmin.unwrap_or(PMIN);
-    let pmax = pmax.unwrap_or(PMAX);
-    let prob_threshold = prob_threshold.unwrap_or(HE_PROB_THRESHOLD) as f32;
-    let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
-    let norm = percentile_normalize(&data, pmin, pmax, false, axis, None, None)?;
-    let axis = axis.unwrap_or(2);
-    if axis >= 3 {
-        return Err(ImgalError::InvalidAxis {
-            axis_idx: axis,
-            dim_len: 3,
-        });
+impl StarDist2D {
+    /// Predict instance segmentation labels with the StarDist2D versatile fluo
+    /// model.
+    ///
+    /// # Description
+    ///
+    /// Performs model inference with the StarDist2D versatile fluo model, returning
+    /// instance segmentations of star-convex shapes.
+    ///
+    /// # Arguments
+    ///
+    /// * `data`: The input 2D image.
+    /// * `pmin`: The minimum percentage to linear percentile normalize the input
+    ///   image. If `None`, then `pmin = 1.0`.
+    /// * `pmax`: The maximum percentage to linear percentile normalize the input
+    ///   image. If `None`, then `pmax = 99.8`.
+    /// * `prob_threshold`: The object/polygon probability threshold. If `None`,
+    ///   then `prob_threshold == 0.479071463157368`.
+    /// * `nms_threshold`: The non-maximum suppression (NMS) threshold. If `None`,
+    ///   then `nms_threshold == 0.3`.
+    /// * `gpu`: If `true`, GPU computation is used with the `Wgpu` backend. If
+    ///   `false` CPU computation is used with the `NdArray` backend.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(Array2<u64>)`: The StarDist2D fluo model instance segmentation label
+    ///   image.
+    /// * `Err(ImgalError)`: If `pmin` and/or `pmax` are outside of range `0.0` to
+    ///   `1.0.`
+    ///
+    /// # Reference
+    ///
+    /// <https://doi.org/10.48550/arXiv.1806.03535>
+    pub fn predict_versatile_fluo<'a, T, A>(
+        data: A,
+        pmin: Option<f64>,
+        pmax: Option<f64>,
+        prob_threshold: Option<f64>,
+        nms_threshold: Option<f64>,
+        gpu: bool,
+    ) -> Result<Array2<u64>, ImgalError>
+    where
+        A: AsArray<'a, T, Ix2>,
+        T: 'a + AsNumeric,
+    {
+        let data: ArrayBase<ViewRepr<&'a T>, Ix2> = data.into();
+        let pmin = pmin.unwrap_or(PMIN);
+        let pmax = pmax.unwrap_or(PMAX);
+        let prob_threshold = prob_threshold.unwrap_or(FLUO_PROB_THRESHOLD) as f32;
+        let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
+        let (src_row, src_col) = data.dim();
+        let norm = percentile_normalize(&data, pmin, pmax, false, None, None, None)?;
+        let norm = norm.mapv(|v| v as f32);
+        // this pattern determines how many pixels to pad in each axis to be
+        // divisible by 16 as expected by the network
+        let pad_config: Vec<usize> = data
+            .shape()
+            .iter()
+            .map(|&v| axes::divisible_pad(v, DIV))
+            .collect();
+        let norm_pad = reflect_pad(&norm, &pad_config, Some(0), None)?;
+        let pad_shape = norm_pad.shape().to_vec();
+        // GPU and CPU computes must be in their own scope, the "device",
+        // "stardist_net" and "tensor" types are all connected
+        let (raw_data, _) = norm_pad.into_raw_vec_and_offset();
+        let td = TensorData::new(raw_data, [1, 1, pad_shape[0], pad_shape[1]]);
+        let prob: Vec<f32>;
+        let dist: Vec<f32>;
+        if gpu {
+            let device = Default::default();
+            let tensor = Tensor::<GpuConfigBackend, 4>::from_data(td, &device);
+            let (p, d) = FLUO_GPU_MODEL.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
+            prob = p.into_data().into_vec().unwrap();
+            dist = d.into_data().into_vec().unwrap();
+        } else {
+            let device = Default::default();
+            let tensor = Tensor::<CpuConfigBackend, 4>::from_data(td, &device);
+            let (p, d) = FLUO_CPU_MODEL.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
+            prob = p.into_data().into_vec().unwrap();
+            dist = d.into_data().into_vec().unwrap();
+        }
+        Ok(prob_dist_to_labels_2d(
+            prob,
+            dist,
+            prob_threshold,
+            nms_threshold,
+            pad_shape,
+            (src_row, src_col),
+        ))
     }
-    let (src_row, src_col, _) = data.dim();
-    let norm = norm.mapv(|v| v as f32);
-    // this iterator determines how many pixels to pad in each axis (except the
-    // channel axis) to be divisible by 16 as expected by the network
-    let pad_config: Vec<usize> = data
-        .shape()
-        .iter()
-        .enumerate()
-        .map(|(i, &v)| {
-            if i == axis {
-                0
-            } else {
-                axes::divisible_pad(v, DIV)
-            }
-        })
-        .collect();
-    let norm_pad = reflect_pad(&norm, &pad_config, Some(0), None)?;
-    let mut pad_shape = norm_pad.shape().to_vec();
-    pad_shape.remove(axis);
-    // GPU and CPU computes must be in their own scope, the "device",
-    // "stardist_net" and "tensor" types are all connected
-    let (raw_data, _) = norm_pad.into_raw_vec_and_offset();
-    let td = TensorData::new(raw_data, [1, pad_shape[0], pad_shape[1], 3]);
-    let prob: Vec<f32>;
-    let dist: Vec<f32>;
-    if gpu {
-        let device = Default::default();
-        let tensor = Tensor::<GpuConfigBackend, 4>::from_data(td, &device);
-        let (p, d) = HE_GPU_MODEL.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
-        prob = p.into_data().into_vec().unwrap();
-        dist = d.into_data().into_vec().unwrap();
-    } else {
-        let device = Default::default();
-        let tensor = Tensor::<CpuConfigBackend, 4>::from_data(td, &device);
-        let (p, d) = HE_CPU_MODEL.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
-        prob = p.into_data().into_vec().unwrap();
-        dist = d.into_data().into_vec().unwrap();
+
+    /// Predict instance segmentation labels with the StarDist2D versatile HE model.
+    ///
+    /// # Description
+    ///
+    /// Performs model inference with the StarDist2D versatile HE model, returning
+    /// instance segmentations of star-convex shapes.
+    ///
+    /// # Arguments
+    ///
+    /// * `data`: The input 3D image, where the third dimension is the channel axis.
+    /// * `pmin`: The minimum percentage to linear percentile normalize the input
+    ///   image. If `None`, then `pmin = 1.0`.
+    /// * `pmax`: The maximum percentage to linear percentile normalize the input
+    ///   image. If `None`, then `pmax = 99.8`.
+    /// * `prob_threshold`: The object/polygon probability threshold. If `None`,
+    ///   then `prob_threshold == 0.6924782541382084`.
+    /// * `nms_threshold`: The non-maximum suppression (NMS) threshold. If `None`,
+    ///   then `nms_threshold == 0.3`.
+    /// * `axis`: The channel axis. If `None` then `axis == 2`.
+    /// * `gpu`: If `true`, GPU computation is used with the `Wgpu` backend. If
+    ///   `false` CPU computation is used with the `NdArray` backend.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(Array2<u64>)`: The StarDist2D HE model instance segmentation label
+    ///   image.
+    /// * `Err(ImgalError)`: If `pmin` and/or `pmax` are outside of range `0.0` to
+    ///   `1.0.`
+    ///
+    /// # Reference
+    ///
+    /// <https://doi.org/10.48550/arXiv.1806.03535>
+    pub fn predict_versatile_he<'a, T, A>(
+        data: A,
+        pmin: Option<f64>,
+        pmax: Option<f64>,
+        prob_threshold: Option<f64>,
+        nms_threshold: Option<f64>,
+        axis: Option<usize>,
+        gpu: bool,
+    ) -> Result<Array2<u64>, ImgalError>
+    where
+        A: AsArray<'a, T, Ix3>,
+        T: 'a + AsNumeric,
+    {
+        let data: ArrayBase<ViewRepr<&'a T>, Ix3> = data.into();
+        let pmin = pmin.unwrap_or(PMIN);
+        let pmax = pmax.unwrap_or(PMAX);
+        let prob_threshold = prob_threshold.unwrap_or(HE_PROB_THRESHOLD) as f32;
+        let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
+        let norm = percentile_normalize(&data, pmin, pmax, false, axis, None, None)?;
+        let axis = axis.unwrap_or(2);
+        if axis >= 3 {
+            return Err(ImgalError::InvalidAxis {
+                axis_idx: axis,
+                dim_len: 3,
+            });
+        }
+        let (src_row, src_col, _) = data.dim();
+        let norm = norm.mapv(|v| v as f32);
+        // this iterator determines how many pixels to pad in each axis (except the
+        // channel axis) to be divisible by 16 as expected by the network
+        let pad_config: Vec<usize> = data
+            .shape()
+            .iter()
+            .enumerate()
+            .map(|(i, &v)| {
+                if i == axis {
+                    0
+                } else {
+                    axes::divisible_pad(v, DIV)
+                }
+            })
+            .collect();
+        let norm_pad = reflect_pad(&norm, &pad_config, Some(0), None)?;
+        let mut pad_shape = norm_pad.shape().to_vec();
+        pad_shape.remove(axis);
+        // GPU and CPU computes must be in their own scope, the "device",
+        // "stardist_net" and "tensor" types are all connected
+        let (raw_data, _) = norm_pad.into_raw_vec_and_offset();
+        let td = TensorData::new(raw_data, [1, pad_shape[0], pad_shape[1], 3]);
+        let prob: Vec<f32>;
+        let dist: Vec<f32>;
+        if gpu {
+            let device = Default::default();
+            let tensor = Tensor::<GpuConfigBackend, 4>::from_data(td, &device);
+            let (p, d) = HE_GPU_MODEL.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
+            prob = p.into_data().into_vec().unwrap();
+            dist = d.into_data().into_vec().unwrap();
+        } else {
+            let device = Default::default();
+            let tensor = Tensor::<CpuConfigBackend, 4>::from_data(td, &device);
+            let (p, d) = HE_CPU_MODEL.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
+            prob = p.into_data().into_vec().unwrap();
+            dist = d.into_data().into_vec().unwrap();
+        }
+        Ok(prob_dist_to_labels_2d(
+            prob,
+            dist,
+            prob_threshold,
+            nms_threshold,
+            pad_shape,
+            (src_row, src_col),
+        ))
     }
-    Ok(prob_dist_to_labels_2d(
-        prob,
-        dist,
-        prob_threshold,
-        nms_threshold,
-        pad_shape,
-        (src_row, src_col),
-    ))
+
+    /// Warm up the versatile fluo model.
+    pub fn warm_up_versatile_fluo(gpu: bool) {
+        let mock = Array2::<f32>::zeros((64, 64));
+        let _ = Self::predict_versatile_fluo(&mock, None, None, None, None, gpu);
+    }
 }
 
 /// Process StarDist2D object probabilities and ray distance arrays into
@@ -345,10 +358,4 @@ fn prob_dist_to_labels_2d(
         (src_shape.0, src_shape.1),
         None,
     )
-}
-
-/// Warm up the versatile fluo model.
-pub fn warm_up_versatile_fluo(gpu: bool) {
-    let mock = Array2::<f32>::zeros((64, 64));
-    let _ = predict_versatile_fluo(&mock, None, None, None, None, gpu);
 }
