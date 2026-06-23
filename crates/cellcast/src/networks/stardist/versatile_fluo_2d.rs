@@ -53,6 +53,7 @@ impl<B: Backend> Default for Model<B> {
 }
 
 impl<B: Backend> Model<B> {
+    /// TODO
     pub fn init(device: &B::Device, weights_path: Option<PathBuf>) -> Self {
         match weights_path {
             Some(wp) => Self::from_file(wp.to_str().unwrap(), device),
@@ -66,7 +67,7 @@ impl<B: Backend> Model<B> {
         let mut store = BurnpackStore::from_file(file);
         model
             .load_from(&mut store)
-            .expect("Failed to load the StarDist2D model weights burnpack file.");
+            .expect("Failed to load the StarDist2D Fluo model weights burnpack file.");
         model
     }
 }

@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-use std::sync::LazyLock;
 
 use burn::prelude::*;
 use imgal::image::percentile_normalize;
@@ -25,17 +24,6 @@ const NMS_THRESHOLD: f64 = 0.3;
 type CpuConfigBackend = CpuBackend<f32, i32>;
 type GpuConfigBackend = GpuBackend<f32, i32>;
 
-// TODO: these lazy lock things need to move to init() where we papss flu and weights
-// options down to the network itself. This should be what I want!
-static FLUO_CPU_MODEL: LazyLock<versatile_fluo_2d::Model<CpuConfigBackend>> =
-    LazyLock::new(|| versatile_fluo_2d::Model::<CpuConfigBackend>::default());
-static FLUO_GPU_MODEL: LazyLock<versatile_fluo_2d::Model<GpuConfigBackend>> =
-    LazyLock::new(|| versatile_fluo_2d::Model::<GpuConfigBackend>::default());
-static HE_CPU_MODEL: LazyLock<versatile_he_2d::Model<CpuConfigBackend>> =
-    LazyLock::new(|| versatile_he_2d::Model::<CpuConfigBackend>::default());
-static HE_GPU_MODEL: LazyLock<versatile_he_2d::Model<GpuConfigBackend>> =
-    LazyLock::new(|| versatile_he_2d::Model::<GpuConfigBackend>::default());
-
 #[derive(Debug)]
 enum StarDist2DModels {
     FluoCpu(versatile_fluo_2d::Model<CpuConfigBackend>),
@@ -60,7 +48,8 @@ impl StarDist2D {
     /// # Arguments
     ///
     /// * `weights_path`:
-    /// * `gpu`:
+    /// * `gpu`: If `true`, GPU computation is used with the `Wgpu` backend. If
+    ///   `false` CPU computation is used with the `Flex` backend.
     ///
     /// # Returns
     ///
@@ -88,6 +77,43 @@ impl StarDist2D {
                         weights_path.clone(),
                     ),
                 ),
+            }
+        }
+    }
+
+    /// TODO
+    ///
+    /// # Description
+    ///
+    /// todo
+    ///
+    /// # Arguments
+    ///
+    /// * `weights_path`:
+    /// * `gpu`:
+    ///
+    /// # Returns
+    ///
+    /// * `StarDist2D`:
+    pub fn init_he(weights_path: Option<&str>, gpu: bool) -> Self {
+        let weights_path = weights_path.map(PathBuf::from);
+        if gpu {
+            let device = Default::default();
+            Self {
+                gpu,
+                model: StarDist2DModels::HeGpu(versatile_he_2d::Model::<GpuConfigBackend>::init(
+                    &device,
+                    weights_path.clone(),
+                )),
+            }
+        } else {
+            let device = Default::default();
+            Self {
+                gpu,
+                model: StarDist2DModels::HeCpu(versatile_he_2d::Model::<CpuConfigBackend>::init(
+                    &device,
+                    weights_path.clone(),
+                )),
             }
         }
     }
@@ -170,7 +196,7 @@ impl StarDist2D {
                     prob = Vec::new();
                     dist = Vec::new();
                     ImgalError::InvalidGeneric {
-                        msg: "No initialized StarDist2D fluo model found.",
+                        msg: "No initialized StarDist2D Fluo model found.",
                     };
                 }
             }
@@ -187,7 +213,7 @@ impl StarDist2D {
                     prob = Vec::new();
                     dist = Vec::new();
                     ImgalError::InvalidGeneric {
-                        msg: "No initialized StarDist2D fluo CPU model found.",
+                        msg: "No initialized StarDist2D Fluo CPU model found.",
                     };
                 }
             }
@@ -221,8 +247,6 @@ impl StarDist2D {
     /// * `nms_threshold`: The non-maximum suppression (NMS) threshold. If `None`,
     ///   then `nms_threshold == 0.3`.
     /// * `axis`: The channel axis. If `None` then `axis == 2`.
-    /// * `gpu`: If `true`, GPU computation is used with the `Wgpu` backend. If
-    ///   `false` CPU computation is used with the `NdArray` backend.
     ///
     /// # Returns
     ///
@@ -235,13 +259,13 @@ impl StarDist2D {
     ///
     /// <https://doi.org/10.48550/arXiv.1806.03535>
     pub fn predict_he<'a, T, A>(
+        self,
         data: A,
         pmin: Option<f64>,
         pmax: Option<f64>,
         prob_threshold: Option<f64>,
         nms_threshold: Option<f64>,
         axis: Option<usize>,
-        gpu: bool,
     ) -> Result<Array2<u64>, ImgalError>
     where
         A: AsArray<'a, T, Ix3>,
@@ -285,18 +309,40 @@ impl StarDist2D {
         let td = TensorData::new(raw_data, [1, pad_shape[0], pad_shape[1], 3]);
         let prob: Vec<f32>;
         let dist: Vec<f32>;
-        if gpu {
-            let device = Default::default();
-            let tensor = Tensor::<GpuConfigBackend, 4>::from_data(td, &device);
-            let (p, d) = HE_GPU_MODEL.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
-            prob = p.into_data().into_vec().unwrap();
-            dist = d.into_data().into_vec().unwrap();
+        if self.gpu {
+            match self.model {
+                StarDist2DModels::HeGpu(m) => {
+                    let device = Default::default();
+                    let tensor = Tensor::<GpuConfigBackend, 4>::from_data(td, &device);
+                    let (p, d) = m.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
+                    prob = p.into_data().into_vec().unwrap();
+                    dist = d.into_data().into_vec().unwrap();
+                }
+                _ => {
+                    prob = Vec::new();
+                    dist = Vec::new();
+                    ImgalError::InvalidGeneric {
+                        msg: "No initialized StarDist2D HE model found.",
+                    };
+                }
+            }
         } else {
-            let device = Default::default();
-            let tensor = Tensor::<CpuConfigBackend, 4>::from_data(td, &device);
-            let (p, d) = HE_CPU_MODEL.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
-            prob = p.into_data().into_vec().unwrap();
-            dist = d.into_data().into_vec().unwrap();
+            match self.model {
+                StarDist2DModels::HeCpu(m) => {
+                    let device = Default::default();
+                    let tensor = Tensor::<CpuConfigBackend, 4>::from_data(td, &device);
+                    let (p, d) = m.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
+                    prob = p.into_data().into_vec().unwrap();
+                    dist = d.into_data().into_vec().unwrap();
+                }
+                _ => {
+                    prob = Vec::new();
+                    dist = Vec::new();
+                    ImgalError::InvalidGeneric {
+                        msg: "No initialized StarDist2D HE CPU model found.",
+                    };
+                }
+            }
         }
         Ok(prob_dist_to_labels_2d(
             prob,
