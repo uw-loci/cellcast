@@ -9,7 +9,7 @@ use ndarray::{Array1, Array2, Array3, ArrayBase, AsArray, Axis, Ix2, Ix3, ViewRe
 
 use crate::config::backend::{CpuBackend, GpuBackend};
 use crate::labeling;
-use crate::networks::stardist::{versatile_fluo_2d, versatile_he_2d};
+use crate::networks::stardist::{fluo_2d, he_2d};
 use crate::process::nms::polygon_nms;
 use crate::utils::{axes, border};
 
@@ -26,10 +26,10 @@ type GpuConfigBackend = GpuBackend<f32, i32>;
 
 #[derive(Debug)]
 enum StarDist2DModels {
-    FluoCpu(versatile_fluo_2d::Model<CpuConfigBackend>),
-    FluoGpu(versatile_fluo_2d::Model<GpuConfigBackend>),
-    HeCpu(versatile_he_2d::Model<CpuConfigBackend>),
-    HeGpu(versatile_he_2d::Model<GpuConfigBackend>),
+    FluoCpu(fluo_2d::Model<CpuConfigBackend>),
+    FluoGpu(fluo_2d::Model<GpuConfigBackend>),
+    HeCpu(he_2d::Model<CpuConfigBackend>),
+    HeGpu(he_2d::Model<GpuConfigBackend>),
 }
 
 #[derive(Debug)]
@@ -60,23 +60,19 @@ impl StarDist2D {
             let device = Default::default();
             Self {
                 gpu,
-                model: StarDist2DModels::FluoGpu(
-                    versatile_fluo_2d::Model::<GpuConfigBackend>::init(
-                        &device,
-                        weights_path.clone(),
-                    ),
-                ),
+                model: StarDist2DModels::FluoGpu(fluo_2d::Model::<GpuConfigBackend>::init(
+                    &device,
+                    weights_path.clone(),
+                )),
             }
         } else {
             let device = Default::default();
             Self {
                 gpu,
-                model: StarDist2DModels::FluoCpu(
-                    versatile_fluo_2d::Model::<CpuConfigBackend>::init(
-                        &device,
-                        weights_path.clone(),
-                    ),
-                ),
+                model: StarDist2DModels::FluoCpu(fluo_2d::Model::<CpuConfigBackend>::init(
+                    &device,
+                    weights_path.clone(),
+                )),
             }
         }
     }
@@ -101,7 +97,7 @@ impl StarDist2D {
             let device = Default::default();
             Self {
                 gpu,
-                model: StarDist2DModels::HeGpu(versatile_he_2d::Model::<GpuConfigBackend>::init(
+                model: StarDist2DModels::HeGpu(he_2d::Model::<GpuConfigBackend>::init(
                     &device,
                     weights_path.clone(),
                 )),
@@ -110,7 +106,7 @@ impl StarDist2D {
             let device = Default::default();
             Self {
                 gpu,
-                model: StarDist2DModels::HeCpu(versatile_he_2d::Model::<CpuConfigBackend>::init(
+                model: StarDist2DModels::HeCpu(he_2d::Model::<CpuConfigBackend>::init(
                     &device,
                     weights_path.clone(),
                 )),
