@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use burn::prelude::*;
 use imgal::image::percentile_normalize;
 use imgal::prelude::*;
@@ -8,7 +10,7 @@ use ndarray::{Array1, Array2, Array3, Array4, ArrayBase, AsArray, Axis, Ix3, Vie
 
 use crate::config::backend::{CpuBackend, GpuBackend};
 use crate::labeling::distance_polyhedron_to_label;
-use crate::networks::stardist::demo_3d;
+use crate::networks::stardist::fluo_3d;
 use crate::process::nms::polyhedron_nms;
 use crate::utils::{axes, border};
 
@@ -22,91 +24,180 @@ const NMS_THRESHOLD: f64 = 0.3;
 type CpuConfigBackend = CpuBackend<f32, i32>;
 type GpuConfigBackend = GpuBackend<f32, i32>;
 
-pub fn predict_demo<'a, T, A>(
-    data: A,
-    pmin: Option<f64>,
-    pmax: Option<f64>,
-    prob_threshold: Option<f64>,
-    nms_threshold: Option<f64>,
-    axis: Option<usize>,
+#[derive(Debug)]
+enum StarDist3DModels {
+    FluoCpu(fluo_3d::Model<CpuConfigBackend>),
+    FluoGpu(fluo_3d::Model<GpuConfigBackend>),
+}
+
+#[derive(Debug)]
+pub struct StarDist3D {
     gpu: bool,
-) -> Result<Array3<u64>, ImgalError>
-where
-    A: AsArray<'a, T, Ix3>,
-    T: 'a + AsNumeric,
-{
-    let axis = axis.unwrap_or(0);
-    if axis >= 3 {
-        return Err(ImgalError::InvalidAxis {
-            axis_idx: axis,
-            dim_len: 3,
-        });
-    }
-    let data: ArrayBase<ViewRepr<&'a T>, Ix3> = data.into();
-    let pmin = pmin.unwrap_or(PMIN);
-    let pmax = pmax.unwrap_or(PMAX);
-    let prob_threshold = prob_threshold.unwrap_or(PROB_THRESHOLD) as f32;
-    let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
-    let norm = percentile_normalize(&data, pmin, pmax, false, None, None, None)?;
-    let anisotropy: [f64; 3] = [2.0, 1.0, 1.0];
-    let norm = norm.mapv(|v| v as f32);
-    let [src_row, src_col] = {
-        let mut shape = data.shape().to_vec();
-        shape.remove(axis);
-        [shape[0], shape[1]]
-    };
-    // this pattern determines how many pixels to pad in each axis to be
-    // divisible by 16 as expected by the network, except for the planes (z)
-    // axis which remains fixed (i.e. an asymmetrical pad)
-    let pad_config: Vec<usize> = data
-        .shape()
-        .iter()
-        .enumerate()
-        .map(|(i, &v)| {
-            if i == axis {
-                0
-            } else {
-                axes::divisible_pad(v, DIV)
+    model: StarDist3DModels,
+}
+
+impl StarDist3D {
+    /// TODO
+    ///
+    /// # Description
+    ///
+    /// todo
+    ///
+    /// # Arguments
+    ///
+    /// * `weights_path`:
+    /// * `gpu`: If `true`, GPU computation is used with the `Wgpu` backend. If
+    ///   `false` CPU computation is used with the `Flex` backend.
+    ///
+    /// # Returns
+    ///
+    /// * `StarDist2D`:
+    pub fn init_fluo(weights_path: Option<&str>, gpu: bool) -> Self {
+        let weights_path = weights_path.map(PathBuf::from);
+        if gpu {
+            let device = Default::default();
+            Self {
+                gpu,
+                model: StarDist3DModels::FluoGpu(fluo_3d::Model::<GpuConfigBackend>::init(
+                    &device,
+                    weights_path.clone(),
+                )),
             }
-        })
-        .collect();
-    let norm_pad = reflect_pad(&norm, &pad_config, Some(0), None)?;
-    let mut pad_shape = norm_pad.shape().to_vec();
-    let plns = pad_shape.remove(axis);
-    let (raw_data, _) = norm_pad.into_raw_vec_and_offset();
-    let td = TensorData::new(raw_data, [1, 1, plns, pad_shape[0], pad_shape[1]]);
-    let prob: Vec<f32>;
-    let dist: Vec<f32>;
-    if gpu {
-        let device = Default::default();
-        let stardist_net = demo_3d::Model::<GpuConfigBackend>::default();
-        let tensor = Tensor::<GpuConfigBackend, 5>::from_data(td, &device);
-        let (p, d) = stardist_net.forward(
-            tensor,
-            (plns as i32, pad_shape[0] as i32, pad_shape[1] as i32),
-        );
-        prob = p.into_data().into_vec().unwrap();
-        dist = d.into_data().into_vec().unwrap();
-    } else {
-        let device = Default::default();
-        let stardist_net = demo_3d::Model::<CpuConfigBackend>::default();
-        let tensor = Tensor::<CpuConfigBackend, 5>::from_data(td, &device);
-        let (p, d) = stardist_net.forward(
-            tensor,
-            (plns as i32, pad_shape[0] as i32, pad_shape[1] as i32),
-        );
-        prob = p.into_data().into_vec().unwrap();
-        dist = d.into_data().into_vec().unwrap();
+        } else {
+            let device = Default::default();
+            Self {
+                gpu,
+                model: StarDist3DModels::FluoCpu(fluo_3d::Model::<CpuConfigBackend>::init(
+                    &device,
+                    weights_path.clone(),
+                )),
+            }
+        }
     }
-    prob_dist_to_labels_3d(
-        prob,
-        dist,
-        prob_threshold,
-        nms_threshold,
-        anisotropy,
-        pad_shape,
-        [plns, src_row, src_col],
-    )
+
+    /// TODO
+    pub fn predict_demo<'a, T, A>(
+        self,
+        data: A,
+        pmin: Option<f64>,
+        pmax: Option<f64>,
+        prob_threshold: Option<f64>,
+        nms_threshold: Option<f64>,
+        axis: Option<usize>,
+    ) -> Result<Array3<u64>, ImgalError>
+    where
+        A: AsArray<'a, T, Ix3>,
+        T: 'a + AsNumeric,
+    {
+        let axis = axis.unwrap_or(0);
+        if axis >= 3 {
+            return Err(ImgalError::InvalidAxis {
+                axis_idx: axis,
+                dim_len: 3,
+            });
+        }
+        let data: ArrayBase<ViewRepr<&'a T>, Ix3> = data.into();
+        let pmin = pmin.unwrap_or(PMIN);
+        let pmax = pmax.unwrap_or(PMAX);
+        let prob_threshold = prob_threshold.unwrap_or(PROB_THRESHOLD) as f32;
+        let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
+        let norm = percentile_normalize(&data, pmin, pmax, false, None, None, None)?;
+        let anisotropy: [f64; 3] = [2.0, 1.0, 1.0];
+        let norm = norm.mapv(|v| v as f32);
+        let [src_row, src_col] = {
+            let mut shape = data.shape().to_vec();
+            shape.remove(axis);
+            [shape[0], shape[1]]
+        };
+        // this pattern determines how many pixels to pad in each axis to be
+        // divisible by 16 as expected by the network, except for the planes (z)
+        // axis which remains fixed (i.e. an asymmetrical pad)
+        let pad_config: Vec<usize> = data
+            .shape()
+            .iter()
+            .enumerate()
+            .map(|(i, &v)| {
+                if i == axis {
+                    0
+                } else {
+                    axes::divisible_pad(v, DIV)
+                }
+            })
+            .collect();
+        let norm_pad = reflect_pad(&norm, &pad_config, Some(0), None)?;
+        let mut pad_shape = norm_pad.shape().to_vec();
+        let plns = pad_shape.remove(axis);
+        let (raw_data, _) = norm_pad.into_raw_vec_and_offset();
+        let td = TensorData::new(raw_data, [1, 1, plns, pad_shape[0], pad_shape[1]]);
+        let prob: Vec<f32>;
+        let dist: Vec<f32>;
+        if self.gpu {
+            match self.model {
+                StarDist3DModels::FluoGpu(m) => {
+                    let device = Default::default();
+                    let tensor = Tensor::<GpuConfigBackend, 5>::from_data(td, &device);
+                    let (p, d) = m.forward(
+                        tensor,
+                        (plns as i32, pad_shape[0] as i32, pad_shape[1] as i32),
+                    );
+                    prob = p.into_data().into_vec().unwrap();
+                    dist = d.into_data().into_vec().unwrap();
+                }
+                _ => {
+                    prob = Vec::new();
+                    dist = Vec::new();
+                    ImgalError::InvalidGeneric {
+                        msg: "No initialized StarDist2D Fluo model found.",
+                    };
+                }
+            }
+        } else {
+            match self.model {
+                StarDist3DModels::FluoCpu(m) => {
+                    let device = Default::default();
+                    let tensor = Tensor::<CpuConfigBackend, 5>::from_data(td, &device);
+                    let (p, d) = m.forward(
+                        tensor,
+                        (plns as i32, pad_shape[0] as i32, pad_shape[1] as i32),
+                    );
+                    prob = p.into_data().into_vec().unwrap();
+                    dist = d.into_data().into_vec().unwrap();
+                }
+                _ => {
+                    prob = Vec::new();
+                    dist = Vec::new();
+                    ImgalError::InvalidGeneric {
+                        msg: "No initialized StarDist2D Fluo model found.",
+                    };
+                }
+            }
+        }
+        prob_dist_to_labels_3d(
+            prob,
+            dist,
+            prob_threshold,
+            nms_threshold,
+            anisotropy,
+            pad_shape,
+            [plns, src_row, src_col],
+        )
+    }
+
+    /// Warm up the demo 3D model.
+    pub fn warm_up_demo(self) {
+        let center = arr2(&[[32.0, 32.0, 32.0]]);
+        let radius = [5.0];
+        let intensity = [10.0];
+        let falloff = [2.0];
+        let background = 0.0;
+        let shape = [64; 3];
+        let sim = logistic_metaballs(
+            &center, &radius, &intensity, &falloff, background, &shape, None,
+        )
+        .unwrap();
+        let sim = sim.into_dimensionality::<Ix3>().unwrap();
+        let _ = self.predict_demo(&sim, None, None, None, None, None);
+    }
 }
 
 fn prob_dist_to_labels_3d(
@@ -216,20 +307,4 @@ fn prob_dist_to_labels_3d(
         anisotropy,
         src_shape,
     )
-}
-
-/// Warm up the demo 3D model.
-pub fn warm_up_demo(gpu: bool) {
-    let center = arr2(&[[32.0, 32.0, 32.0]]);
-    let radius = [5.0];
-    let intensity = [10.0];
-    let falloff = [2.0];
-    let background = 0.0;
-    let shape = [64; 3];
-    let sim = logistic_metaballs(
-        &center, &radius, &intensity, &falloff, background, &shape, None,
-    )
-    .unwrap();
-    let sim = sim.into_dimensionality::<Ix3>().unwrap();
-    let _ = predict_demo(&sim, None, None, None, None, None, gpu);
 }
