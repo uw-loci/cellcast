@@ -145,7 +145,7 @@ impl StarDist2D {
     ///
     /// <https://doi.org/10.48550/arXiv.1806.03535>
     pub fn predict_fluo<'a, T, A>(
-        self,
+        &self,
         data: A,
         pmin: Option<f64>,
         pmax: Option<f64>,
@@ -180,7 +180,7 @@ impl StarDist2D {
         let prob: Vec<f32>;
         let dist: Vec<f32>;
         if self.gpu {
-            match self.model {
+            match &self.model {
                 StarDist2DModels::FluoGpu(m) => {
                     let device = Default::default();
                     let tensor = Tensor::<GpuConfigBackend, 4>::from_data(td, &device);
@@ -197,7 +197,7 @@ impl StarDist2D {
                 }
             }
         } else {
-            match self.model {
+            match &self.model {
                 StarDist2DModels::FluoCpu(m) => {
                     let device = Default::default();
                     let tensor = Tensor::<CpuConfigBackend, 4>::from_data(td, &device);
@@ -255,7 +255,7 @@ impl StarDist2D {
     ///
     /// <https://doi.org/10.48550/arXiv.1806.03535>
     pub fn predict_he<'a, T, A>(
-        self,
+        &self,
         data: A,
         pmin: Option<f64>,
         pmax: Option<f64>,
@@ -306,7 +306,7 @@ impl StarDist2D {
         let prob: Vec<f32>;
         let dist: Vec<f32>;
         if self.gpu {
-            match self.model {
+            match &self.model {
                 StarDist2DModels::HeGpu(m) => {
                     let device = Default::default();
                     let tensor = Tensor::<GpuConfigBackend, 4>::from_data(td, &device);
@@ -323,7 +323,7 @@ impl StarDist2D {
                 }
             }
         } else {
-            match self.model {
+            match &self.model {
                 StarDist2DModels::HeCpu(m) => {
                     let device = Default::default();
                     let tensor = Tensor::<CpuConfigBackend, 4>::from_data(td, &device);
@@ -351,7 +351,7 @@ impl StarDist2D {
     }
 
     /// Warm up the versatile fluo model.
-    pub fn warm_up_versatile_fluo(self) {
+    pub fn warm_up_versatile_fluo(&self) {
         let mock = Array2::<f32>::zeros((64, 64));
         let _ = self.predict_fluo(&mock, None, None, None, None);
     }

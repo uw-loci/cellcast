@@ -77,7 +77,7 @@ impl StarDist3D {
 
     /// TODO
     pub fn predict_fluo<'a, T, A>(
-        self,
+        &self,
         data: A,
         pmin: Option<f64>,
         pmax: Option<f64>,
@@ -132,7 +132,7 @@ impl StarDist3D {
         let prob: Vec<f32>;
         let dist: Vec<f32>;
         if self.gpu {
-            match self.model {
+            match &self.model {
                 StarDist3DModels::FluoGpu(m) => {
                     let device = Default::default();
                     let tensor = Tensor::<GpuConfigBackend, 5>::from_data(td, &device);
@@ -152,7 +152,7 @@ impl StarDist3D {
                 }
             }
         } else {
-            match self.model {
+            match &self.model {
                 StarDist3DModels::FluoCpu(m) => {
                     let device = Default::default();
                     let tensor = Tensor::<CpuConfigBackend, 5>::from_data(td, &device);
@@ -184,7 +184,7 @@ impl StarDist3D {
     }
 
     /// Warm up the demo 3D model.
-    pub fn warm_up_demo(self) {
+    pub fn warm_up_demo(&self) {
         let center = arr2(&[[32.0, 32.0, 32.0]]);
         let radius = [5.0];
         let intensity = [10.0];
