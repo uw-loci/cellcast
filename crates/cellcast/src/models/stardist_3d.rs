@@ -183,8 +183,8 @@ impl StarDist3D {
         )
     }
 
-    /// Warm up the demo 3D model.
-    pub fn warm_up_demo(&self) {
+    /// Warm up the StarDist3D fluo model.
+    pub fn warm_up_fluo(&self) {
         let center = arr2(&[[32.0, 32.0, 32.0]]);
         let radius = [5.0];
         let intensity = [10.0];

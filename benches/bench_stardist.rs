@@ -30,7 +30,7 @@ fn bench_stardist_2d(c: &mut Criterion) {
     let data = data.into_dimensionality::<Ix2>().unwrap();
     let mut group = c.benchmark_group("StarDist2D");
     let sd = StarDist2D::init_fluo(None, GPU);
-    sd.warm_up_versatile_fluo();
+    sd.warm_up_fluo();
     group.bench_function("predict_fluo", |b| {
         b.iter(|| {
             let _ = sd.predict_fluo(&data, None, None, None, None).unwrap();
@@ -74,7 +74,7 @@ fn bench_stardist_3d(c: &mut Criterion) {
     let mut group = c.benchmark_group("StarDist3D");
     group.sample_size(10);
     let sd = StarDist3D::init_fluo(None, GPU);
-    sd.warm_up_demo();
+    sd.warm_up_fluo();
     group.bench_function("predict_fluo", |b| {
         b.iter(|| {
             let _ = sd

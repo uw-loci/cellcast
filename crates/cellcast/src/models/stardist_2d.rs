@@ -350,8 +350,8 @@ impl StarDist2D {
         ))
     }
 
-    /// Warm up the versatile fluo model.
-    pub fn warm_up_versatile_fluo(&self) {
+    /// Warm up the StarDist2D fluo model.
+    pub fn warm_up_fluo(&self) {
         let mock = Array2::<f32>::zeros((64, 64));
         let _ = self.predict_fluo(&mock, None, None, None, None);
     }
