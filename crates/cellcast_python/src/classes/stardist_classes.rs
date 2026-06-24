@@ -145,6 +145,11 @@ impl PyStarDist2D {
             ))
         }
     }
+
+    /// TODO
+    pub fn warm_up_fluo(&self) {
+        self.0.warm_up_fluo();
+    }
 }
 
 #[pyclass(name = "StarDist3D")]
@@ -172,27 +177,62 @@ impl PyStarDist3D {
     ) -> PyResult<Bound<'py, PyArray3<u64>>> {
         if let Ok(arr) = data.extract::<PyReadonlyArray3<u8>>() {
             self.0
-                .predict_fluo(arr.as_array(), pmin, pmax, prob_threshold, nms_threshold, axis)
+                .predict_fluo(
+                    arr.as_array(),
+                    pmin,
+                    pmax,
+                    prob_threshold,
+                    nms_threshold,
+                    axis,
+                )
                 .map(|output| output.into_pyarray(py))
                 .map_err(imgal_error_to_pyerr)
         } else if let Ok(arr) = data.extract::<PyReadonlyArray3<u16>>() {
             self.0
-                .predict_fluo(arr.as_array(), pmin, pmax, prob_threshold, nms_threshold, axis)
+                .predict_fluo(
+                    arr.as_array(),
+                    pmin,
+                    pmax,
+                    prob_threshold,
+                    nms_threshold,
+                    axis,
+                )
                 .map(|output| output.into_pyarray(py))
                 .map_err(imgal_error_to_pyerr)
         } else if let Ok(arr) = data.extract::<PyReadonlyArray3<u64>>() {
             self.0
-                .predict_fluo(arr.as_array(), pmin, pmax, prob_threshold, nms_threshold, axis)
+                .predict_fluo(
+                    arr.as_array(),
+                    pmin,
+                    pmax,
+                    prob_threshold,
+                    nms_threshold,
+                    axis,
+                )
                 .map(|output| output.into_pyarray(py))
                 .map_err(imgal_error_to_pyerr)
         } else if let Ok(arr) = data.extract::<PyReadonlyArray3<f32>>() {
             self.0
-                .predict_fluo(arr.as_array(), pmin, pmax, prob_threshold, nms_threshold, axis)
+                .predict_fluo(
+                    arr.as_array(),
+                    pmin,
+                    pmax,
+                    prob_threshold,
+                    nms_threshold,
+                    axis,
+                )
                 .map(|output| output.into_pyarray(py))
                 .map_err(imgal_error_to_pyerr)
         } else if let Ok(arr) = data.extract::<PyReadonlyArray3<f64>>() {
             self.0
-                .predict_fluo(arr.as_array(), pmin, pmax, prob_threshold, nms_threshold, axis)
+                .predict_fluo(
+                    arr.as_array(),
+                    pmin,
+                    pmax,
+                    prob_threshold,
+                    nms_threshold,
+                    axis,
+                )
                 .map(|output| output.into_pyarray(py))
                 .map_err(imgal_error_to_pyerr)
         } else {
@@ -200,5 +240,10 @@ impl PyStarDist3D {
                 "Unsupported array dtype, supported array dtypes are u8, u16, u64, f32, and f64.",
             ))
         }
+    }
+
+    /// TODO
+    pub fn warm_up_fluo(&self) {
+        self.0.warm_up_fluo();
     }
 }
