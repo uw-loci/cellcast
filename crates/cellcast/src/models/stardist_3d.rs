@@ -76,7 +76,7 @@ impl StarDist3D {
     }
 
     /// TODO
-    pub fn predict_demo<'a, T, A>(
+    pub fn predict_fluo<'a, T, A>(
         self,
         data: A,
         pmin: Option<f64>,
@@ -196,7 +196,7 @@ impl StarDist3D {
         )
         .unwrap();
         let sim = sim.into_dimensionality::<Ix3>().unwrap();
-        let _ = self.predict_demo(&sim, None, None, None, None, None);
+        let _ = self.predict_fluo(&sim, None, None, None, None, None);
     }
 }
 
