@@ -3,8 +3,7 @@ use imgal::simulation::blob::logistic_metaballs;
 use imgal::spatial::roi::roi_cloud_map;
 use ndarray::{Ix2, Ix3, arr2};
 
-use cellcast::models::stardist_2d::predict_versatile_fluo;
-use cellcast::models::stardist_3d::predict_demo;
+use cellcast::models::{StarDist2D, StarDist3D};
 
 const CENTERS_2D: [[f64; 2]; 20] = [
     [45.0, 57.5],
@@ -67,7 +66,8 @@ fn stardist_2d_predict_versatile_fluo_expected_results() -> Result<(), ImgalErro
         None,
     )?;
     let data = data.into_dimensionality::<Ix2>().unwrap();
-    let labels = predict_versatile_fluo(&data, None, None, None, None, false)?;
+    let sd = StarDist2D::init_fluo(None, false);
+    let labels = sd.predict_fluo(&data, None, None, None, None)?;
     let rcm = roi_cloud_map(&labels, None);
     assert_eq!(rcm.len(), 20);
     assert_eq!(rcm.get(&1).expect("ROI 1 not foud.").dim().0, 244);
@@ -108,7 +108,8 @@ fn stardist_3d_predict_demo_expected_results() -> Result<(), ImgalError> {
         None,
     )?;
     let data = data.into_dimensionality::<Ix3>().unwrap();
-    let labels = predict_demo(&data, None, None, None, None, None, false)?;
+    let sd = StarDist3D::init_fluo(None, false);
+    let labels = sd.predict_fluo(&data, None, None, None, None, None)?;
     let rcm = roi_cloud_map(&labels, None);
     assert_eq!(rcm.len(), 9);
     assert_eq!(rcm.get(&1).expect("ROI 1 not found.").dim().0, 1287);
