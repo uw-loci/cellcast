@@ -51,11 +51,11 @@ const BACKGROUND: f64 = 0.0;
 const SHAPE_2D: [usize; 2] = [128, 128];
 const SHAPE_3D: [usize; 3] = [8, 64, 64];
 
-/// Tests that `predict_versatile_fluo` returns the expected results for a
-/// simulated dataset of 20 blobs. This test asserts the number of blobs found
-/// and their size.
+/// Tests that `predict_fluo` returns the expected results with the "versatile"
+/// pretrained weights for a simulated dataset of 20 blobs. This test asserts
+/// the number of blobs found and their size.
 #[test]
-fn stardist_2d_predict_versatile_fluo_expected_results() -> Result<(), ImgalError> {
+fn stardist_2d_predict_fluo_expected_results() -> Result<(), ImgalError> {
     let data = logistic_metaballs(
         &arr2(&CENTERS_2D),
         &RADII_2D,
@@ -93,11 +93,11 @@ fn stardist_2d_predict_versatile_fluo_expected_results() -> Result<(), ImgalErro
     Ok(())
 }
 
-/// Tests that `predict_demo` returns the expected results for a simulated
-/// dataset of 9 blobs in 3D. This test asserts the number of blobs found and
-/// their size.
+/// Tests that `predict_fluo` returns the expected results with the "3D_demo"
+/// pretrained weights for a simulated dataset of 9 blobs in 3D. This test
+/// asserts the number of blobs found and their size.
 #[test]
-fn stardist_3d_predict_demo_expected_results() -> Result<(), ImgalError> {
+fn stardist_3d_predict_fluo_expected_results() -> Result<(), ImgalError> {
     let data = logistic_metaballs(
         &arr2(&CENTERS_3D),
         &RADII_3D,
