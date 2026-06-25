@@ -344,9 +344,38 @@ impl StarDist2D {
     }
 
     /// Warm up the StarDist2D fluo model.
-    pub fn warm_up_fluo(&self) {
-        let mock = Array2::<f32>::zeros((64, 64));
-        let _ = self.predict_fluo(&mock, None, None, None, None);
+    pub fn warm_up_fluo(&self) -> Result<(), CellcastError> {
+        let zeros = vec![0.0; 4096];
+        let td = TensorData::new(zeros, [1, 1, 128, 128]);
+        if self.gpu {
+            match &self.model {
+                StarDist2DModels::FluoGpu(m) => {
+                    let device = Default::default();
+                    let tensor = Tensor::<GpuConfigBackend, 4>::from_data(td, &device);
+                    let _ = m.forward(tensor, (128, 128));
+                    Ok(())
+                }
+                _ => {
+                    return Err(CellcastError::Imgal(ImgalError::InvalidGeneric {
+                        msg: "No initialized StarDist2D Fluo GPU model found.",
+                    }));
+                }
+            }
+        } else {
+            match &self.model {
+                StarDist2DModels::FluoCpu(m) => {
+                    let device = Default::default();
+                    let tensor = Tensor::<CpuConfigBackend, 4>::from_data(td, &device);
+                    let _ = m.forward(tensor, (128, 128));
+                    Ok(())
+                }
+                _ => {
+                    return Err(CellcastError::Imgal(ImgalError::InvalidGeneric {
+                        msg: "No initialized StarDist2D Fluo CPU model found.",
+                    }));
+                }
+            }
+        }
     }
 }
 
