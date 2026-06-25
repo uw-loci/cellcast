@@ -159,10 +159,20 @@ pub struct PyStarDist3D(StarDist3D);
 impl PyStarDist3D {
     /// TODO
     #[staticmethod]
-    #[pyo3(signature = (weights_path=None, gpu=None))]
-    pub fn init_fluo(weights_path: Option<&str>, gpu: Option<bool>) -> Self {
-        Self(StarDist3D::init_fluo(weights_path, gpu.unwrap_or(true)))
+    #[pyo3(signature = (weights_path=None, anisotropy=None, gpu=None))]
+    pub fn init_fluo(
+        weights_path: Option<&str>,
+        anisotropy: Option<Vec<f64>>,
+        gpu: Option<bool>,
+    ) -> PyResult<Self> {
+        let anisotropy = anisotropy.as_deref();
+        Ok(Self(
+            StarDist3D::init_fluo(weights_path, anisotropy, gpu.unwrap_or(true))
+                .map(|output| output)
+                .map_err(imgal_error_to_pyerr)?,
+        ))
     }
+
     /// TODO
     #[pyo3(signature = (data, pmin=None, pmax=None, prob_threshold=None, nms_threshold=None, axis=None))]
     pub fn predict_fluo<'py>(

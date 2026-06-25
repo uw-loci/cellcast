@@ -32,8 +32,9 @@ enum StarDist3DModels {
 
 #[derive(Debug)]
 pub struct StarDist3D {
-    gpu: bool,
     model: StarDist3DModels,
+    anisotropy: [f64; 3],
+    gpu: bool,
 }
 
 impl StarDist3D {
@@ -46,32 +47,48 @@ impl StarDist3D {
     /// # Arguments
     ///
     /// * `weights_path`:
+    /// * `anisotropy`:
     /// * `gpu`: If `true`, GPU computation is used with the `Wgpu` backend. If
     ///   `false` CPU computation is used with the `Flex` backend.
     ///
     /// # Returns
     ///
     /// * `StarDist2D`:
-    pub fn init_fluo(weights_path: Option<&str>, gpu: bool) -> Self {
+    pub fn init_fluo(
+        weights_path: Option<&str>,
+        anisotropy: Option<&[f64]>,
+        gpu: bool,
+    ) -> Result<Self, ImgalError> {
         let weights_path = weights_path.map(PathBuf::from);
+        let anisotropy = anisotropy.unwrap_or(&[2.0, 1.0, 1.0]);
+        if anisotropy.len() != 3 {
+            return Err(ImgalError::InvalidArrayLengthExpected {
+                arr_name: "anisotropy",
+                expected: 3,
+                got: anisotropy.len(),
+            });
+        }
+        let anisotropy = [anisotropy[0], anisotropy[1], anisotropy[2]];
         if gpu {
             let device = Default::default();
-            Self {
-                gpu,
+            Ok(Self {
                 model: StarDist3DModels::FluoGpu(fluo_3d::Model::<GpuConfigBackend>::init(
                     &device,
                     weights_path.clone(),
                 )),
-            }
+                anisotropy,
+                gpu,
+            })
         } else {
             let device = Default::default();
-            Self {
-                gpu,
+            Ok(Self {
                 model: StarDist3DModels::FluoCpu(fluo_3d::Model::<CpuConfigBackend>::init(
                     &device,
                     weights_path.clone(),
                 )),
-            }
+                anisotropy,
+                gpu,
+            })
         }
     }
 
@@ -102,7 +119,6 @@ impl StarDist3D {
         let prob_threshold = prob_threshold.unwrap_or(PROB_THRESHOLD) as f32;
         let nms_threshold = nms_threshold.unwrap_or(NMS_THRESHOLD) as f32;
         let norm = percentile_normalize(&data, pmin, pmax, false, None, None, None)?;
-        let anisotropy: [f64; 3] = [2.0, 1.0, 1.0];
         let norm = norm.mapv(|v| v as f32);
         let [src_row, src_col] = {
             let mut shape = data.shape().to_vec();
@@ -177,7 +193,7 @@ impl StarDist3D {
             dist,
             prob_threshold,
             nms_threshold,
-            anisotropy,
+            self.anisotropy,
             pad_shape,
             [plns, src_row, src_col],
         )
