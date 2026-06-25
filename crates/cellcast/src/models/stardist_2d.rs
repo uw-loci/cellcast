@@ -139,8 +139,8 @@ impl StarDist2D {
     ///
     /// * `Ok(Array2<u64>)`: The StarDist2D fluo model instance segmentation label
     ///   image.
-    /// * `Err(ImgalError)`: If `pmin` and/or `pmax` are outside of range `0.0` to
-    ///   `1.0.`
+    /// * `Err(CellcastError)`: If `pmin` and/or `pmax` are outside of range
+    ///   `0.0` to `1.0.`
     ///
     /// # Reference
     ///
@@ -152,7 +152,7 @@ impl StarDist2D {
         pmax: Option<f64>,
         prob_threshold: Option<f64>,
         nms_threshold: Option<f64>,
-    ) -> Result<Array2<u64>, ImgalError>
+    ) -> Result<Array2<u64>, CellcastError>
     where
         A: AsArray<'a, T, Ix2>,
         T: 'a + AsNumeric,
@@ -191,8 +191,9 @@ impl StarDist2D {
                 }
                 _ => {
                     return Err(ImgalError::InvalidGeneric {
-                        msg: "No initialized StarDist2D Fluo model found.",
-                    });
+                        msg: "No initialized StarDist2D Fluo GPU model found.",
+                    })
+                    .map_err(CellcastError::Imgal);
                 }
             }
         } else {
@@ -207,7 +208,8 @@ impl StarDist2D {
                 _ => {
                     return Err(ImgalError::InvalidGeneric {
                         msg: "No initialized StarDist2D Fluo CPU model found.",
-                    });
+                    })
+                    .map_err(CellcastError::Imgal);
                 }
             }
         }
@@ -245,8 +247,8 @@ impl StarDist2D {
     ///
     /// * `Ok(Array2<u64>)`: The StarDist2D HE model instance segmentation label
     ///   image.
-    /// * `Err(ImgalError)`: If `pmin` and/or `pmax` are outside of range `0.0` to
-    ///   `1.0.`
+    /// * `Err(CellcastError)`: If `pmin` and/or `pmax` are outside of range
+    ///   `0.0` to `1.0.`
     ///
     /// # Reference
     ///
@@ -259,7 +261,7 @@ impl StarDist2D {
         prob_threshold: Option<f64>,
         nms_threshold: Option<f64>,
         axis: Option<usize>,
-    ) -> Result<Array2<u64>, ImgalError>
+    ) -> Result<Array2<u64>, CellcastError>
     where
         A: AsArray<'a, T, Ix3>,
         T: 'a + AsNumeric,
@@ -275,7 +277,8 @@ impl StarDist2D {
             return Err(ImgalError::InvalidAxis {
                 axis_idx: axis,
                 dim_len: 3,
-            });
+            })
+            .map_err(CellcastError::Imgal);
         }
         let (src_row, src_col, _) = data.dim();
         let norm = norm.mapv(|v| v as f32);
@@ -313,8 +316,9 @@ impl StarDist2D {
                 }
                 _ => {
                     return Err(ImgalError::InvalidGeneric {
-                        msg: "No initialized StarDist2D HE model found.",
-                    });
+                        msg: "No initialized StarDist2D HE GPU model found.",
+                    })
+                    .map_err(CellcastError::Imgal);
                 }
             }
         } else {
@@ -328,8 +332,9 @@ impl StarDist2D {
                 }
                 _ => {
                     return Err(ImgalError::InvalidGeneric {
-                        msg: "No initialized StarDist2D HE model found.",
-                    });
+                        msg: "No initialized StarDist2D HE CPU model found.",
+                    })
+                    .map_err(CellcastError::Imgal);
                 }
             }
         }
@@ -356,9 +361,10 @@ impl StarDist2D {
                     Ok(())
                 }
                 _ => {
-                    return Err(CellcastError::Imgal(ImgalError::InvalidGeneric {
+                    return Err(ImgalError::InvalidGeneric {
                         msg: "No initialized StarDist2D Fluo GPU model found.",
-                    }));
+                    })
+                    .map_err(CellcastError::Imgal);
                 }
             }
         } else {
@@ -370,9 +376,10 @@ impl StarDist2D {
                     Ok(())
                 }
                 _ => {
-                    return Err(CellcastError::Imgal(ImgalError::InvalidGeneric {
+                    return Err(ImgalError::InvalidGeneric {
                         msg: "No initialized StarDist2D Fluo CPU model found.",
-                    }));
+                    })
+                    .map_err(CellcastError::Imgal);
                 }
             }
         }

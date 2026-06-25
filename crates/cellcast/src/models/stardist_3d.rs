@@ -8,6 +8,7 @@ use imgal::threshold::manual::manual_mask;
 use imgal::transform::pad::reflect_pad;
 use ndarray::{Array1, Array2, Array3, Array4, ArrayBase, AsArray, Axis, Ix3, ViewRepr, arr2};
 
+use crate::CellcastError;
 use crate::config::backend::{CpuBackend, GpuBackend};
 use crate::labeling::distance_polyhedron_to_label;
 use crate::networks::stardist::fluo_3d;
@@ -58,7 +59,7 @@ impl StarDist3D {
         weights_path: Option<&str>,
         anisotropy: Option<&[f64]>,
         gpu: bool,
-    ) -> Result<Self, ImgalError> {
+    ) -> Result<Self, CellcastError> {
         let weights_path = weights_path.map(PathBuf::from);
         let anisotropy = anisotropy.unwrap_or(&[2.0, 1.0, 1.0]);
         if anisotropy.len() != 3 {
@@ -66,7 +67,8 @@ impl StarDist3D {
                 arr_name: "anisotropy",
                 expected: 3,
                 got: anisotropy.len(),
-            });
+            })
+            .map_err(CellcastError::Imgal);
         }
         let anisotropy = [anisotropy[0], anisotropy[1], anisotropy[2]];
         if gpu {
@@ -101,7 +103,7 @@ impl StarDist3D {
         prob_threshold: Option<f64>,
         nms_threshold: Option<f64>,
         axis: Option<usize>,
-    ) -> Result<Array3<u64>, ImgalError>
+    ) -> Result<Array3<u64>, CellcastError>
     where
         A: AsArray<'a, T, Ix3>,
         T: 'a + AsNumeric,
@@ -111,7 +113,8 @@ impl StarDist3D {
             return Err(ImgalError::InvalidAxis {
                 axis_idx: axis,
                 dim_len: 3,
-            });
+            })
+            .map_err(CellcastError::Imgal);
         }
         let data: ArrayBase<ViewRepr<&'a T>, Ix3> = data.into();
         let pmin = pmin.unwrap_or(PMIN);
@@ -161,8 +164,9 @@ impl StarDist3D {
                 }
                 _ => {
                     return Err(ImgalError::InvalidGeneric {
-                        msg: "No initialized StarDist3D Fluo model found.",
-                    });
+                        msg: "No initialized StarDist3D Fluo GPU model found.",
+                    })
+                    .map_err(CellcastError::Imgal);
                 }
             }
         } else {
@@ -179,8 +183,9 @@ impl StarDist3D {
                 }
                 _ => {
                     return Err(ImgalError::InvalidGeneric {
-                        msg: "No initialized StarDist3D Fluo model found.",
-                    });
+                        msg: "No initialized StarDist3D Fluo CPU model found.",
+                    })
+                    .map_err(CellcastError::Imgal);
                 }
             }
         }
@@ -193,6 +198,7 @@ impl StarDist3D {
             pad_shape,
             [plns, src_row, src_col],
         )
+        .map_err(CellcastError::Imgal)
     }
 
     /// Warm up the StarDist3D fluo model.

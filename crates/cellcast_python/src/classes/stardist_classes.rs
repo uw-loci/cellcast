@@ -2,7 +2,7 @@ use numpy::{IntoPyArray, PyArray2, PyArray3, PyReadonlyArray2, PyReadonlyArray3}
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 
-use crate::error::imgal_error_to_pyerr;
+use crate::error::cellcast_error_to_pyerr;
 use cellcast::models::{StarDist2D, StarDist3D};
 
 #[pyclass(name = "StarDist2D")]
@@ -39,27 +39,27 @@ impl PyStarDist2D {
             self.0
                 .predict_fluo(arr.as_array(), pmin, pmax, prob_threshold, nms_threshold)
                 .map(|output| output.into_pyarray(py))
-                .map_err(imgal_error_to_pyerr)
+                .map_err(cellcast_error_to_pyerr)
         } else if let Ok(arr) = data.extract::<PyReadonlyArray2<u16>>() {
             self.0
                 .predict_fluo(arr.as_array(), pmin, pmax, prob_threshold, nms_threshold)
                 .map(|output| output.into_pyarray(py))
-                .map_err(imgal_error_to_pyerr)
+                .map_err(cellcast_error_to_pyerr)
         } else if let Ok(arr) = data.extract::<PyReadonlyArray2<u64>>() {
             self.0
                 .predict_fluo(arr.as_array(), pmin, pmax, prob_threshold, nms_threshold)
                 .map(|output| output.into_pyarray(py))
-                .map_err(imgal_error_to_pyerr)
+                .map_err(cellcast_error_to_pyerr)
         } else if let Ok(arr) = data.extract::<PyReadonlyArray2<f32>>() {
             self.0
                 .predict_fluo(arr.as_array(), pmin, pmax, prob_threshold, nms_threshold)
                 .map(|output| output.into_pyarray(py))
-                .map_err(imgal_error_to_pyerr)
+                .map_err(cellcast_error_to_pyerr)
         } else if let Ok(arr) = data.extract::<PyReadonlyArray2<f64>>() {
             self.0
                 .predict_fluo(arr.as_array(), pmin, pmax, prob_threshold, nms_threshold)
                 .map(|output| output.into_pyarray(py))
-                .map_err(imgal_error_to_pyerr)
+                .map_err(cellcast_error_to_pyerr)
         } else {
             Err(PyErr::new::<PyTypeError, _>(
                 "Unsupported array dtype, supported array dtypes are u8, u16, u64, f32, and f64.",
@@ -90,7 +90,7 @@ impl PyStarDist2D {
                     axis,
                 )
                 .map(|output| output.into_pyarray(py))
-                .map_err(imgal_error_to_pyerr)
+                .map_err(cellcast_error_to_pyerr)
         } else if let Ok(arr) = data.extract::<PyReadonlyArray3<u16>>() {
             self.0
                 .predict_he(
@@ -102,7 +102,7 @@ impl PyStarDist2D {
                     axis,
                 )
                 .map(|output| output.into_pyarray(py))
-                .map_err(imgal_error_to_pyerr)
+                .map_err(cellcast_error_to_pyerr)
         } else if let Ok(arr) = data.extract::<PyReadonlyArray3<u64>>() {
             self.0
                 .predict_he(
@@ -114,7 +114,7 @@ impl PyStarDist2D {
                     axis,
                 )
                 .map(|output| output.into_pyarray(py))
-                .map_err(imgal_error_to_pyerr)
+                .map_err(cellcast_error_to_pyerr)
         } else if let Ok(arr) = data.extract::<PyReadonlyArray3<f32>>() {
             self.0
                 .predict_he(
@@ -126,7 +126,7 @@ impl PyStarDist2D {
                     axis,
                 )
                 .map(|output| output.into_pyarray(py))
-                .map_err(imgal_error_to_pyerr)
+                .map_err(cellcast_error_to_pyerr)
         } else if let Ok(arr) = data.extract::<PyReadonlyArray3<f64>>() {
             self.0
                 .predict_he(
@@ -138,7 +138,7 @@ impl PyStarDist2D {
                     axis,
                 )
                 .map(|output| output.into_pyarray(py))
-                .map_err(imgal_error_to_pyerr)
+                .map_err(cellcast_error_to_pyerr)
         } else {
             Err(PyErr::new::<PyTypeError, _>(
                 "Unsupported array dtype, supported array dtypes are u8, u16, u64, f32, and f64.",
@@ -147,8 +147,8 @@ impl PyStarDist2D {
     }
 
     /// TODO
-    pub fn warm_up_fluo(&self) {
-        self.0.warm_up_fluo();
+    pub fn warm_up_fluo(&self) -> PyResult<()> {
+        self.0.warm_up_fluo().map_err(cellcast_error_to_pyerr)
     }
 }
 
@@ -169,7 +169,7 @@ impl PyStarDist3D {
         Ok(Self(
             StarDist3D::init_fluo(weights_path, anisotropy, gpu.unwrap_or(true))
                 .map(|output| output)
-                .map_err(imgal_error_to_pyerr)?,
+                .map_err(cellcast_error_to_pyerr)?,
         ))
     }
 
@@ -196,7 +196,7 @@ impl PyStarDist3D {
                     axis,
                 )
                 .map(|output| output.into_pyarray(py))
-                .map_err(imgal_error_to_pyerr)
+                .map_err(cellcast_error_to_pyerr)
         } else if let Ok(arr) = data.extract::<PyReadonlyArray3<u16>>() {
             self.0
                 .predict_fluo(
@@ -208,7 +208,7 @@ impl PyStarDist3D {
                     axis,
                 )
                 .map(|output| output.into_pyarray(py))
-                .map_err(imgal_error_to_pyerr)
+                .map_err(cellcast_error_to_pyerr)
         } else if let Ok(arr) = data.extract::<PyReadonlyArray3<u64>>() {
             self.0
                 .predict_fluo(
@@ -220,7 +220,7 @@ impl PyStarDist3D {
                     axis,
                 )
                 .map(|output| output.into_pyarray(py))
-                .map_err(imgal_error_to_pyerr)
+                .map_err(cellcast_error_to_pyerr)
         } else if let Ok(arr) = data.extract::<PyReadonlyArray3<f32>>() {
             self.0
                 .predict_fluo(
@@ -232,7 +232,7 @@ impl PyStarDist3D {
                     axis,
                 )
                 .map(|output| output.into_pyarray(py))
-                .map_err(imgal_error_to_pyerr)
+                .map_err(cellcast_error_to_pyerr)
         } else if let Ok(arr) = data.extract::<PyReadonlyArray3<f64>>() {
             self.0
                 .predict_fluo(
@@ -244,7 +244,7 @@ impl PyStarDist3D {
                     axis,
                 )
                 .map(|output| output.into_pyarray(py))
-                .map_err(imgal_error_to_pyerr)
+                .map_err(cellcast_error_to_pyerr)
         } else {
             Err(PyErr::new::<PyTypeError, _>(
                 "Unsupported array dtype, supported array dtypes are u8, u16, u64, f32, and f64.",
