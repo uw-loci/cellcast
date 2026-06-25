@@ -3,8 +3,7 @@ use imgal::simulation::blob::logistic_metaballs;
 use imgal::spatial::roi::roi_cloud_map;
 use ndarray::{Ix2, Ix3, arr2};
 
-use cellcast::models::stardist_2d::predict_versatile_fluo;
-use cellcast::models::stardist_3d::predict_demo;
+use cellcast::models::{StarDist2D, StarDist3D};
 
 const CENTERS_2D: [[f64; 2]; 20] = [
     [45.0, 57.5],
@@ -52,11 +51,11 @@ const BACKGROUND: f64 = 0.0;
 const SHAPE_2D: [usize; 2] = [128, 128];
 const SHAPE_3D: [usize; 3] = [8, 64, 64];
 
-/// Tests that `predict_versatile_fluo` returns the expected results for a
-/// simulated dataset of 20 blobs. This test asserts the number of blobs found
-/// and their size.
+/// Tests that `predict_fluo` returns the expected results with the "versatile"
+/// pretrained weights for a simulated dataset of 20 blobs. This test asserts
+/// the number of blobs found and their size.
 #[test]
-fn stardist_2d_predict_versatile_fluo_expected_results() -> Result<(), ImgalError> {
+fn stardist_2d_predict_fluo_expected_results() -> Result<(), ImgalError> {
     let data = logistic_metaballs(
         &arr2(&CENTERS_2D),
         &RADII_2D,
@@ -67,7 +66,8 @@ fn stardist_2d_predict_versatile_fluo_expected_results() -> Result<(), ImgalErro
         None,
     )?;
     let data = data.into_dimensionality::<Ix2>().unwrap();
-    let labels = predict_versatile_fluo(&data, None, None, None, None, false)?;
+    let sd = StarDist2D::init_fluo(None, false);
+    let labels = sd.predict_fluo(&data, None, None, None, None)?;
     let rcm = roi_cloud_map(&labels, None);
     assert_eq!(rcm.len(), 20);
     assert_eq!(rcm.get(&1).expect("ROI 1 not foud.").dim().0, 244);
@@ -93,11 +93,11 @@ fn stardist_2d_predict_versatile_fluo_expected_results() -> Result<(), ImgalErro
     Ok(())
 }
 
-/// Tests that `predict_demo` returns the expected results for a simulated
-/// dataset of 9 blobs in 3D. This test asserts the number of blobs found and
-/// their size.
+/// Tests that `predict_fluo` returns the expected results with the "3D_demo"
+/// pretrained weights for a simulated dataset of 9 blobs in 3D. This test
+/// asserts the number of blobs found and their size.
 #[test]
-fn stardist_3d_predict_demo_expected_results() -> Result<(), ImgalError> {
+fn stardist_3d_predict_fluo_expected_results() -> Result<(), ImgalError> {
     let data = logistic_metaballs(
         &arr2(&CENTERS_3D),
         &RADII_3D,
@@ -108,7 +108,8 @@ fn stardist_3d_predict_demo_expected_results() -> Result<(), ImgalError> {
         None,
     )?;
     let data = data.into_dimensionality::<Ix3>().unwrap();
-    let labels = predict_demo(&data, None, None, None, None, None, false)?;
+    let sd = StarDist3D::init_fluo(None, false);
+    let labels = sd.predict_fluo(&data, None, None, None, None, None)?;
     let rcm = roi_cloud_map(&labels, None);
     assert_eq!(rcm.len(), 9);
     assert_eq!(rcm.get(&1).expect("ROI 1 not found.").dim().0, 1287);

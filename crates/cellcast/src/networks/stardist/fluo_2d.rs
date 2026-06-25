@@ -1,5 +1,7 @@
 // Generated from ONNX using burn-import and then modified for dynamic tensor
 // shape intputs.
+use std::path::PathBuf;
+
 use burn::nn::PaddingConfig2d;
 use burn::nn::conv::Conv2d;
 use burn::nn::conv::Conv2dConfig;
@@ -9,6 +11,7 @@ use burn::prelude::*;
 use burn_store::BurnpackStore;
 use burn_store::ModuleSnapshot;
 
+use crate::config::weights::VERSATILE_FLUO_2D_URL;
 use crate::utils::fetch;
 
 #[derive(Module, Debug)]
@@ -43,22 +46,28 @@ pub struct Model<B: Backend> {
 
 impl<B: Backend> Default for Model<B> {
     fn default() -> Self {
-        let url = "https://github.com/uw-loci/cellcast/raw/refs/tags/cellcast-v0.1.2/weights/stardist/stardist_2d_versatile_fluo.bpk";
-        let file_name = "stardist_2d_versatile_fluo.bpk";
-        let weights_path = fetch::fetch_weights(url, file_name, false)
+        let weights_path = fetch::fetch_weights(VERSATILE_FLUO_2D_URL, false)
             .expect("Failed to download the stardist_2d_versatile_fluo weights.");
         Self::from_file(weights_path.to_str().unwrap(), &Default::default())
     }
 }
 
 impl<B: Backend> Model<B> {
+    /// TODO
+    pub fn init(device: &B::Device, weights_path: Option<PathBuf>) -> Self {
+        match weights_path {
+            Some(wp) => Self::from_file(wp.to_str().unwrap(), device),
+            None => Self::default(),
+        }
+    }
+
     /// Load model weights from a burnpack file.
     pub fn from_file(file: &str, device: &B::Device) -> Self {
         let mut model = Self::new(device);
         let mut store = BurnpackStore::from_file(file);
         model
             .load_from(&mut store)
-            .expect("Failed to load the StarDist2D model weights burnpack file.");
+            .expect("Failed to load the StarDist2D Fluo model weights burnpack file.");
         model
     }
 }

@@ -28,8 +28,9 @@ const CACHE_NAME: &str = ".cache/cellcast/weights";
 ///
 /// * `Ok(PathBuf)`: The validate path to the `.bin` weights file.
 /// * `Err(Error)`: If the `url` is not valid. If the `file_name` is not valid.
-pub fn fetch_weights(url: &str, file_name: &str, verbose: bool) -> Result<PathBuf, Box<dyn Error>> {
+pub fn fetch_weights(url: &str, verbose: bool) -> Result<PathBuf, Box<dyn Error>> {
     let cache_dir = get_cache_dir()?;
+    let file_name = url.split("/").last().expect("No file name in URL.");
     let weights_path = cache_dir.join(file_name);
     if weights_path.exists() {
         if verbose {
