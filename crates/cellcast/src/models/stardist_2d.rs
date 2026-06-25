@@ -7,6 +7,7 @@ use imgal::threshold::manual::manual_mask;
 use imgal::transform::pad::reflect_pad;
 use ndarray::{Array1, Array2, Array3, ArrayBase, AsArray, Axis, Ix2, Ix3, ViewRepr};
 
+use crate::CellcastError;
 use crate::config::backend::{CpuBackend, GpuBackend};
 use crate::labeling;
 use crate::networks::stardist::{fluo_2d, he_2d};
