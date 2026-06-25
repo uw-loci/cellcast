@@ -160,11 +160,9 @@ impl StarDist3D {
                     dist = d.into_data().into_vec().unwrap();
                 }
                 _ => {
-                    prob = Vec::new();
-                    dist = Vec::new();
-                    ImgalError::InvalidGeneric {
-                        msg: "No initialized StarDist2D Fluo model found.",
-                    };
+                    return Err(ImgalError::InvalidGeneric {
+                        msg: "No initialized StarDist3D Fluo model found.",
+                    });
                 }
             }
         } else {
@@ -180,11 +178,9 @@ impl StarDist3D {
                     dist = d.into_data().into_vec().unwrap();
                 }
                 _ => {
-                    prob = Vec::new();
-                    dist = Vec::new();
-                    ImgalError::InvalidGeneric {
-                        msg: "No initialized StarDist2D Fluo model found.",
-                    };
+                    return Err(ImgalError::InvalidGeneric {
+                        msg: "No initialized StarDist3D Fluo model found.",
+                    });
                 }
             }
         }

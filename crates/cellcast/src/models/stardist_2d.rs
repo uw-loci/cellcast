@@ -189,11 +189,9 @@ impl StarDist2D {
                     dist = d.into_data().into_vec().unwrap();
                 }
                 _ => {
-                    prob = Vec::new();
-                    dist = Vec::new();
-                    ImgalError::InvalidGeneric {
+                    return Err(ImgalError::InvalidGeneric {
                         msg: "No initialized StarDist2D Fluo model found.",
-                    };
+                    });
                 }
             }
         } else {
@@ -206,11 +204,9 @@ impl StarDist2D {
                     dist = d.into_data().into_vec().unwrap();
                 }
                 _ => {
-                    prob = Vec::new();
-                    dist = Vec::new();
-                    ImgalError::InvalidGeneric {
+                    return Err(ImgalError::InvalidGeneric {
                         msg: "No initialized StarDist2D Fluo CPU model found.",
-                    };
+                    });
                 }
             }
         }
@@ -315,11 +311,9 @@ impl StarDist2D {
                     dist = d.into_data().into_vec().unwrap();
                 }
                 _ => {
-                    prob = Vec::new();
-                    dist = Vec::new();
-                    ImgalError::InvalidGeneric {
+                    return Err(ImgalError::InvalidGeneric {
                         msg: "No initialized StarDist2D HE model found.",
-                    };
+                    });
                 }
             }
         } else {
@@ -332,11 +326,9 @@ impl StarDist2D {
                     dist = d.into_data().into_vec().unwrap();
                 }
                 _ => {
-                    prob = Vec::new();
-                    dist = Vec::new();
-                    ImgalError::InvalidGeneric {
-                        msg: "No initialized StarDist2D HE CPU model found.",
-                    };
+                    return Err(ImgalError::InvalidGeneric {
+                        msg: "No initialized StarDist2D HE model found.",
+                    });
                 }
             }
         }
