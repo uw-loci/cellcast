@@ -1,8 +1,8 @@
-use imgal::prelude::*;
 use imgal::simulation::blob::logistic_metaballs;
 use imgal::spatial::roi::roi_cloud_map;
 use ndarray::{Ix2, Ix3, arr2};
 
+use cellcast::CellcastError;
 use cellcast::models::{StarDist2D, StarDist3D};
 
 const CENTERS_2D: [[f64; 2]; 20] = [
@@ -55,7 +55,7 @@ const SHAPE_3D: [usize; 3] = [8, 64, 64];
 /// pretrained weights for a simulated dataset of 20 blobs. This test asserts
 /// the number of blobs found and their size.
 #[test]
-fn stardist_2d_predict_fluo_expected_results() -> Result<(), ImgalError> {
+fn stardist_2d_predict_fluo_expected_results() -> Result<(), CellcastError> {
     let data = logistic_metaballs(
         &arr2(&CENTERS_2D),
         &RADII_2D,
@@ -97,7 +97,7 @@ fn stardist_2d_predict_fluo_expected_results() -> Result<(), ImgalError> {
 /// pretrained weights for a simulated dataset of 9 blobs in 3D. This test
 /// asserts the number of blobs found and their size.
 #[test]
-fn stardist_3d_predict_fluo_expected_results() -> Result<(), ImgalError> {
+fn stardist_3d_predict_fluo_expected_results() -> Result<(), CellcastError> {
     let data = logistic_metaballs(
         &arr2(&CENTERS_3D),
         &RADII_3D,
