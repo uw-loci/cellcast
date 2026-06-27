@@ -202,19 +202,40 @@ impl StarDist3D {
     }
 
     /// Warm up the StarDist3D fluo model.
-    pub fn warm_up_fluo(&self) {
-        let center = arr2(&[[32.0, 32.0, 32.0]]);
-        let radius = [5.0];
-        let intensity = [10.0];
-        let falloff = [2.0];
-        let background = 0.0;
-        let shape = [64; 3];
-        let sim = logistic_metaballs(
-            &center, &radius, &intensity, &falloff, background, &shape, None,
-        )
-        .unwrap();
-        let sim = sim.into_dimensionality::<Ix3>().unwrap();
-        let _ = self.predict_fluo(&sim, None, None, None, None, None);
+    pub fn warm_up_fluo(&self) -> Result<(), CellcastError> {
+        let zeros = vec![0.0; 131072];
+        let td = TensorData::new(zeros, [1, 1, 32, 64, 64]);
+        if self.gpu {
+            match &self.model {
+                StarDist3DModels::FluoGpu(m) => {
+                    let device = Default::default();
+                    let tensor = Tensor::<GpuConfigBackend, 5>::from_data(td, &device);
+                    let _ = m.forward(tensor, (32, 64, 64));
+                    Ok(())
+                }
+                _ => {
+                    return Err(ImgalError::InvalidGeneric {
+                        msg: "No initialized StarDist3D Fluo GPU model found.",
+                    })
+                    .map_err(CellcastError::Imgal);
+                }
+            }
+        } else {
+            match &self.model {
+                StarDist3DModels::FluoCpu(m) => {
+                    let device = Default::default();
+                    let tensor = Tensor::<CpuConfigBackend, 5>::from_data(td, &device);
+                    let _ = m.forward(tensor, (32, 64, 64));
+                    Ok(())
+                }
+                _ => {
+                    return Err(ImgalError::InvalidGeneric {
+                        msg: "No initialized StarDist2D Fluo CPU model found.",
+                    })
+                    .map_err(CellcastError::Imgal);
+                }
+            }
+        }
     }
 }
 
