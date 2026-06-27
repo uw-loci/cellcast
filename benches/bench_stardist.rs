@@ -29,8 +29,7 @@ fn bench_stardist_2d(c: &mut Criterion) {
     .unwrap();
     let data = data.into_dimensionality::<Ix2>().unwrap();
     let mut group = c.benchmark_group("StarDist2D");
-    let sd = StarDist2D::init_fluo(None, GPU);
-    sd.warm_up_fluo();
+    let sd = StarDist2D::init_fluo(None, GPU).unwrap();
     group.bench_function("predict_fluo", |b| {
         b.iter(|| {
             let _ = sd.predict_fluo(&data, None, None, None, None).unwrap();

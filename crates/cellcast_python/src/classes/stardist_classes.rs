@@ -13,15 +13,21 @@ impl PyStarDist2D {
     /// TODO
     #[staticmethod]
     #[pyo3(signature = (weights_path=None, gpu=None))]
-    pub fn init_fluo(weights_path: Option<&str>, gpu: Option<bool>) -> Self {
-        Self(StarDist2D::init_fluo(weights_path, gpu.unwrap_or(true)))
+    pub fn init_fluo(weights_path: Option<&str>, gpu: Option<bool>) -> PyResult<Self> {
+        Ok(Self(
+            StarDist2D::init_fluo(weights_path, gpu.unwrap_or(true))
+                .map_err(cellcast_error_to_pyerr)?,
+        ))
     }
 
     /// TODO
     #[staticmethod]
     #[pyo3(signature = (weights_path=None, gpu=None))]
-    pub fn init_he(weights_path: Option<&str>, gpu: Option<bool>) -> Self {
-        Self(StarDist2D::init_he(weights_path, gpu.unwrap_or(true)))
+    pub fn init_he(weights_path: Option<&str>, gpu: Option<bool>) -> PyResult<Self> {
+        Ok(Self(
+            StarDist2D::init_he(weights_path, gpu.unwrap_or(true))
+                .map_err(cellcast_error_to_pyerr)?,
+        ))
     }
 
     /// TODO
@@ -144,11 +150,6 @@ impl PyStarDist2D {
                 "Unsupported array dtype, supported array dtypes are u8, u16, u64, f32, and f64.",
             ))
         }
-    }
-
-    /// TODO
-    pub fn warm_up_fluo(&self) -> PyResult<()> {
-        self.0.warm_up_fluo().map_err(cellcast_error_to_pyerr)
     }
 }
 

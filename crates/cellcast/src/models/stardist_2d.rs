@@ -35,8 +35,8 @@ enum StarDist2DModels {
 
 #[derive(Debug)]
 pub struct StarDist2D {
-    gpu: bool,
     model: StarDist2DModels,
+    gpu: bool,
 }
 
 impl StarDist2D {
@@ -55,26 +55,30 @@ impl StarDist2D {
     /// # Returns
     ///
     /// * `StarDist2D`:
-    pub fn init_fluo(weights_path: Option<&str>, gpu: bool) -> Self {
+    pub fn init_fluo(weights_path: Option<&str>, gpu: bool) -> Result<Self, CellcastError> {
         let weights_path = weights_path.map(PathBuf::from);
         if gpu {
             let device = Default::default();
-            Self {
-                gpu,
+            let sd = Self {
                 model: StarDist2DModels::FluoGpu(fluo_2d::Model::<GpuConfigBackend>::init(
                     &device,
                     weights_path.clone(),
                 )),
-            }
+                gpu,
+            };
+            sd.warm_up_fluo()?;
+            Ok(sd)
         } else {
             let device = Default::default();
-            Self {
-                gpu,
+            let sd = Self {
                 model: StarDist2DModels::FluoCpu(fluo_2d::Model::<CpuConfigBackend>::init(
                     &device,
                     weights_path.clone(),
                 )),
-            }
+                gpu,
+            };
+            sd.warm_up_fluo()?;
+            Ok(sd)
         }
     }
 
@@ -92,26 +96,30 @@ impl StarDist2D {
     /// # Returns
     ///
     /// * `StarDist2D`:
-    pub fn init_he(weights_path: Option<&str>, gpu: bool) -> Self {
+    pub fn init_he(weights_path: Option<&str>, gpu: bool) -> Result<Self, CellcastError> {
         let weights_path = weights_path.map(PathBuf::from);
         if gpu {
             let device = Default::default();
-            Self {
-                gpu,
+            let sd = Self {
                 model: StarDist2DModels::HeGpu(he_2d::Model::<GpuConfigBackend>::init(
                     &device,
                     weights_path.clone(),
                 )),
-            }
+                gpu,
+            };
+            sd.warm_up_he()?;
+            Ok(sd)
         } else {
             let device = Default::default();
-            Self {
-                gpu,
+            let sd = Self {
                 model: StarDist2DModels::HeCpu(he_2d::Model::<CpuConfigBackend>::init(
                     &device,
                     weights_path.clone(),
                 )),
-            }
+                gpu,
+            };
+            sd.warm_up_he()?;
+            Ok(sd)
         }
     }
 
@@ -349,8 +357,8 @@ impl StarDist2D {
     }
 
     /// Warm up the StarDist2D fluo model.
-    pub fn warm_up_fluo(&self) -> Result<(), CellcastError> {
-        let zeros = vec![0.0; 4096];
+    fn warm_up_fluo(&self) -> Result<(), CellcastError> {
+        let zeros = vec![0.0; 16384];
         let td = TensorData::new(zeros, [1, 1, 128, 128]);
         if self.gpu {
             match &self.model {
@@ -370,6 +378,43 @@ impl StarDist2D {
         } else {
             match &self.model {
                 StarDist2DModels::FluoCpu(m) => {
+                    let device = Default::default();
+                    let tensor = Tensor::<CpuConfigBackend, 4>::from_data(td, &device);
+                    let _ = m.forward(tensor, (128, 128));
+                    Ok(())
+                }
+                _ => {
+                    return Err(ImgalError::InvalidGeneric {
+                        msg: "No initialized StarDist2D Fluo CPU model found.",
+                    })
+                    .map_err(CellcastError::Imgal);
+                }
+            }
+        }
+    }
+
+    /// TODO
+    fn warm_up_he(&self) -> Result<(), CellcastError> {
+        let zeros = vec![0.0; 49152];
+        let td = TensorData::new(zeros, [1, 128, 128, 3]);
+        if self.gpu {
+            match &self.model {
+                StarDist2DModels::HeGpu(m) => {
+                    let device = Default::default();
+                    let tensor = Tensor::<GpuConfigBackend, 4>::from_data(td, &device);
+                    let _ = m.forward(tensor, (128, 128));
+                    Ok(())
+                }
+                _ => {
+                    return Err(ImgalError::InvalidGeneric {
+                        msg: "No initialized StarDist2D Fluo GPU model found.",
+                    })
+                    .map_err(CellcastError::Imgal);
+                }
+            }
+        } else {
+            match &self.model {
+                StarDist2DModels::HeCpu(m) => {
                     let device = Default::default();
                     let tensor = Tensor::<CpuConfigBackend, 4>::from_data(td, &device);
                     let _ = m.forward(tensor, (128, 128));
