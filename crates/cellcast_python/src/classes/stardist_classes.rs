@@ -252,9 +252,4 @@ impl PyStarDist3D {
             ))
         }
     }
-
-    /// TODO
-    pub fn warm_up_fluo(&self) {
-        self.0.warm_up_fluo();
-    }
 }

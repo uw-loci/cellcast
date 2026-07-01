@@ -73,7 +73,6 @@ fn bench_stardist_3d(c: &mut Criterion) {
     let mut group = c.benchmark_group("StarDist3D");
     group.sample_size(10);
     let sd = StarDist3D::init_fluo(None, None, GPU).unwrap();
-    sd.warm_up_fluo();
     group.bench_function("predict_fluo", |b| {
         b.iter(|| {
             let _ = sd

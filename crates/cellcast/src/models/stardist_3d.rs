@@ -73,24 +73,28 @@ impl StarDist3D {
         let anisotropy = [anisotropy[0], anisotropy[1], anisotropy[2]];
         if gpu {
             let device = Default::default();
-            Ok(Self {
+            let sd = Self {
                 model: StarDist3DModels::FluoGpu(fluo_3d::Model::<GpuConfigBackend>::init(
                     &device,
                     weights_path.clone(),
                 )),
                 anisotropy,
                 gpu,
-            })
+            };
+            sd.warm_up_fluo()?;
+            Ok(sd)
         } else {
             let device = Default::default();
-            Ok(Self {
+            let sd = Self {
                 model: StarDist3DModels::FluoCpu(fluo_3d::Model::<CpuConfigBackend>::init(
                     &device,
                     weights_path.clone(),
                 )),
                 anisotropy,
                 gpu,
-            })
+            };
+            sd.warm_up_fluo()?;
+            Ok(sd)
         }
     }
 
@@ -202,7 +206,7 @@ impl StarDist3D {
     }
 
     /// Warm up the StarDist3D fluo model.
-    pub fn warm_up_fluo(&self) -> Result<(), CellcastError> {
+    fn warm_up_fluo(&self) -> Result<(), CellcastError> {
         let zeros = vec![0.0; 131072];
         let td = TensorData::new(zeros, [1, 1, 32, 64, 64]);
         if self.gpu {
