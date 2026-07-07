@@ -40,21 +40,26 @@ pub struct StarDist2D {
 }
 
 impl StarDist2D {
-    /// TODO
+    /// Initialize a StarDist2D fluo model.
     ///
     /// # Description
     ///
-    /// todo
+    /// Initializes a StarDist2D fluo model using the versatile fluo pretrained
+    /// weights or custom weights. A StarDist2D model can be initialized on either
+    /// the GPU or CPU, but not both concurrently. The model is pre-warmed with as
+    /// part of the initializtion process.
     ///
     /// # Arguments
     ///
-    /// * `weights_path`:
-    /// * `gpu`: If `true`, GPU computation is used with the `Wgpu` backend. If
-    ///   `false` CPU computation is used with the `Flex` backend.
+    /// * `weights_path`: The path to custom StarDist2D weights in burnpack (`.bpk`)
+    ///   format. If `None` then the versatile fluo pretrained weights are used.
+    /// * `gpu`: If `true`, the configured GPU backend is used. If `false` then the
+    ///   configured CPU backend is used.
     ///
     /// # Returns
     ///
-    /// * `StarDist2D`:
+    /// * `Ok(StarDist2D)`: An initialized StarDist2D fluo model.
+    /// * `Err(CellcastError)`: If the requested model can not be initialized.
     pub fn init_fluo(weights_path: Option<&str>, gpu: bool) -> Result<Self, CellcastError> {
         let weights_path = weights_path.map(PathBuf::from);
         if gpu {
@@ -82,20 +87,26 @@ impl StarDist2D {
         }
     }
 
-    /// TODO
+    /// Initialize a StarDist2D HE model.
     ///
     /// # Description
     ///
-    /// todo
+    /// Initializes a StarDist2D Fluo model using the versatile HE pretrained
+    /// weights or custom weights. A StarDist2D model can be initialized on either
+    /// the GPU or CPU, but not both concurrently. The model is pre-warmed with as
+    /// part of the initializtion process.
     ///
     /// # Arguments
     ///
-    /// * `weights_path`:
-    /// * `gpu`:
+    /// * `weights_path`: The path to custom StarDist2D weights in burnpack (`.bpk`)
+    ///   format. If `None` then the versatile HE pretrained weights are used.
+    /// * `gpu`: If `true`, the configured GPU backend is used. If `false` then the
+    ///   configured CPU backend is used.
     ///
     /// # Returns
     ///
-    /// * `StarDist2D`:
+    /// * `Ok(StarDist2D)`: An initialized StarDist2D HE model.
+    /// * `Err(CellcastError)`: If the requested model can not be initialized.
     pub fn init_he(weights_path: Option<&str>, gpu: bool) -> Result<Self, CellcastError> {
         let weights_path = weights_path.map(PathBuf::from);
         if gpu {
@@ -123,13 +134,12 @@ impl StarDist2D {
         }
     }
 
-    /// Predict instance segmentation labels with the StarDist2D versatile fluo
-    /// model.
+    /// Predict instance segmentation labels with the StarDist2D fluo model.
     ///
     /// # Description
     ///
-    /// Performs model inference with the StarDist2D versatile fluo model, returning
-    /// instance segmentations of star-convex shapes.
+    /// Performs model inference with the StarDist2D fluo model, returning instance
+    /// segmentations of star-convex shapes.
     ///
     /// # Arguments
     ///
@@ -231,12 +241,12 @@ impl StarDist2D {
         ))
     }
 
-    /// Predict instance segmentation labels with the StarDist2D versatile HE model.
+    /// Predict instance segmentation labels with the StarDist2D HE model.
     ///
     /// # Description
     ///
-    /// Performs model inference with the StarDist2D versatile HE model, returning
-    /// instance segmentations of star-convex shapes.
+    /// Performs model inference with the StarDist2D HE model, returning instance
+    /// segmentations of star-convex shapes.
     ///
     /// # Arguments
     ///
@@ -357,6 +367,17 @@ impl StarDist2D {
     }
 
     /// Warm up the StarDist2D fluo model.
+    ///
+    /// # Description
+    ///
+    /// Warms up the StarDist2D fluo model by creating a small tensor of zeros
+    /// and passing it to the initialized model. During this time model
+    /// optimizations like autotuning are performed.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())`: If successful.
+    /// * `Err(CellcastError)`: If the requested model can not be initialized.
     fn warm_up_fluo(&self) -> Result<(), CellcastError> {
         let zeros = vec![0.0; 16384];
         let td = TensorData::new(zeros, [1, 1, 128, 128]);
@@ -393,7 +414,18 @@ impl StarDist2D {
         }
     }
 
-    /// TODO
+    /// Warm up the StarDist2D HE model.
+    ///
+    /// # Description
+    ///
+    /// Warms up the StarDist2D HE model by creating a small tensor of zeros and
+    /// passing it to the initialized model. During this time model optimizations
+    /// like autotuning are performed.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())`: If successful.
+    /// * `Err(CellcastError)`: If the requested model can not be initialized.
     fn warm_up_he(&self) -> Result<(), CellcastError> {
         let zeros = vec![0.0; 49152];
         let td = TensorData::new(zeros, [1, 128, 128, 3]);
