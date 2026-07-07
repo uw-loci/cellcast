@@ -3,10 +3,9 @@ use std::path::PathBuf;
 use burn::prelude::*;
 use imgal::image::percentile_normalize;
 use imgal::prelude::*;
-use imgal::simulation::blob::logistic_metaballs;
 use imgal::threshold::manual::manual_mask;
 use imgal::transform::pad::reflect_pad;
-use ndarray::{Array1, Array2, Array3, Array4, ArrayBase, AsArray, Axis, Ix3, ViewRepr, arr2};
+use ndarray::{Array1, Array2, Array3, Array4, ArrayBase, AsArray, Axis, Ix3, ViewRepr};
 
 use crate::CellcastError;
 use crate::config::backend::{CpuBackend, GpuBackend};
