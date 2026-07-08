@@ -5,12 +5,13 @@
 //! ## Crate Status
 //!
 //! This crate is still under active development and it's API is not stable.
+
 mod config;
 mod error;
-pub mod geometry;
-pub mod labeling;
+mod geometry;
+mod labeling;
 pub mod models;
-pub mod networks;
-pub mod process;
-pub mod utils;
+mod networks;
+mod process;
+mod utils;
 pub use error::CellcastError;
