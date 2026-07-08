@@ -2,6 +2,7 @@
 //!
 //! This module provides functions for converting radial polygon representation
 //! into 2D and 3D label images.
+
 use std::f32::consts::TAU;
 
 use ndarray::{Array2, Array3, ArrayView1, ArrayView2, Axis};

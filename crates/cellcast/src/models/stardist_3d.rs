@@ -38,22 +38,29 @@ pub struct StarDist3D {
 }
 
 impl StarDist3D {
-    /// TODO
+    /// Initialize a StarDist3D fluo model.
     ///
     /// # Description
     ///
-    /// todo
+    /// Initializes a StarDist3D fluo model using the versatile fluo pretrained
+    /// weights or custom weights. A StarDist3D model can be initialized on either
+    /// the GPU or CPU, but not both concurrently. The model is pre-warmed with as
+    /// part of the initializtion process.
     ///
     /// # Arguments
     ///
-    /// * `weights_path`:
-    /// * `anisotropy`:
-    /// * `gpu`: If `true`, GPU computation is used with the `Wgpu` backend. If
-    ///   `false` CPU computation is used with the `Flex` backend.
+    /// * `weights_path`: The path to custom StarDist3D weights in burnpack (`.bpk`)
+    ///   format. If `None` then the versatile fluo pretrained weights are used.
+    /// * `anisotropy`: The anisotropy the model was trained with for all three
+    ///   axes. If `None` then anisotrop of `[2.0, 1.0, 1.0]` is used.
+    /// * `gpu`: If `true`, the configured GPU backend is used. If `false` then the
+    ///   configured CPU backend is used.
     ///
     /// # Returns
     ///
-    /// * `StarDist2D`:
+    /// * `Ok(StarDist2D)`: An initialized StarDist3D fluo model.
+    /// * `Err(CellcastError)`: If the requested model can not be initialized. If
+    ///   `anisotropy.len() != 3`.
     pub fn init_fluo(
         weights_path: Option<&str>,
         anisotropy: Option<&[f64]>,
@@ -97,7 +104,36 @@ impl StarDist3D {
         }
     }
 
-    /// TODO
+    /// Predict instance segmentation labels with the StarDist3D fluo model.
+    ///
+    /// # Description
+    ///
+    /// Performs model inference with the StarDist3D fluo model, returning instance
+    /// segmentations of star-convex shapes.
+    ///
+    /// # Arguments
+    ///
+    /// * `data`: The input 3D image.
+    /// * `pmin`: The minimum percentage to linear percentile normalize the input
+    ///   image. If `None`, then `pmin = 1.0`.
+    /// * `pmax`: The maximum percentage to linear percentile normalize the input
+    ///   image. If `None`, then `pmax = 99.8`.
+    /// * `prob_threshold`: The object/polyhedron probability threshold. If `None`,
+    ///   then `prob_threshold == 0.7079326182611463`.
+    /// * `nms_threshold`: The non-maximum suppression (NMS) threshold. If `None`,
+    ///   then `nms_threshold == 0.3`.
+    /// * `axis`: The `pln` or `z` axis. If `None` then `axis == 0`.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(Array2<u64>)`: The StarDist3D fluo model instance segmentation label
+    ///   image.
+    /// * `Err(CellcastError)`: If `pmin` and/or `pmax` are outside of range
+    ///   `0.0` to `1.0.` If `axis >= 3`.
+    ///
+    /// # Reference
+    ///
+    /// <https://doi.org/10.1109/WACV45572.2020.9093435>
     pub fn predict_fluo<'a, T, A>(
         &self,
         data: A,
@@ -205,6 +241,17 @@ impl StarDist3D {
     }
 
     /// Warm up the StarDist3D fluo model.
+    ///
+    /// # Description
+    ///
+    /// Warms up the StarDist3D fluo model by creating a small tensor of zeros
+    /// and passing it to the initialized model. During this time model
+    /// optimizations like autotuning are performed.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())`: If successful.
+    /// * `Err(CellcastError)`: If the requested model can not be initialized.
     fn warm_up_fluo(&self) -> Result<(), CellcastError> {
         let zeros = vec![0.0; 131072];
         let td = TensorData::new(zeros, [1, 1, 32, 64, 64]);
@@ -242,6 +289,23 @@ impl StarDist3D {
     }
 }
 
+/// Process StarDist3D object probabilities and ray distance arrays into
+/// instance segmentations.
+///
+/// # Arguments
+///
+/// * `prob`: The object probabilities as a flat 1D array.
+/// * `dist`: The ray distances as a flat 1D array.
+/// * `prob_threshold`: The object probability threshold.
+/// * `nms_threshold`: The non-maximum suppression threshold.
+/// * `anisotropy`: The anisotropy the model was trained with for all three
+///   axes.
+/// * `pad_shape`: The padded image shape.
+/// * `src_shape`: The original/source image shape.
+///
+/// # Returns
+///
+/// * `Array2<u64>`: The instance segmentation label image.
 fn prob_dist_to_labels_3d(
     prob: Vec<f32>,
     dist: Vec<f32>,

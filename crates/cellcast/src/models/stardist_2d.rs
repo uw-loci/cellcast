@@ -162,7 +162,7 @@ impl StarDist2D {
     ///
     /// # Reference
     ///
-    /// <https://doi.org/10.48550/arXiv.1806.03535>
+    /// <https://doi.org/10.1007/978-3-030-00934-2_30>
     pub fn predict_fluo<'a, T, A>(
         &self,
         data: A,
@@ -270,7 +270,7 @@ impl StarDist2D {
     ///
     /// # Reference
     ///
-    /// <https://doi.org/10.48550/arXiv.1806.03535>
+    /// <https://doi.org/10.1007/978-3-030-00934-2_30>
     pub fn predict_he<'a, T, A>(
         &self,
         data: A,
