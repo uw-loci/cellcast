@@ -52,7 +52,7 @@ impl StarDist3D {
     /// * `weights_path`: The path to custom StarDist3D weights in burnpack (`.bpk`)
     ///   format. If `None` then the versatile fluo pretrained weights are used.
     /// * `anisotropy`: The anisotropy the model was trained with for all three
-    ///   axes. If `None` then anisotrop of `[2.0, 1.0, 1.0]` is used.
+    ///   axes. If `None` then anisotropy of `[2.0, 1.0, 1.0]` is used.
     /// * `gpu`: If `true`, the configured GPU backend is used. If `false` then the
     ///   configured CPU backend is used.
     ///
