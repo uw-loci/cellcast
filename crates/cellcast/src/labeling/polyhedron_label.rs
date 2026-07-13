@@ -2,7 +2,8 @@ use imgal::prelude::*;
 use imgal::spatial::convex_hull::quickhull_3d;
 use imgal::spatial::geometry::inside_polyhedron;
 use imgal::spatial::halfspace::{hull_to_halfspace, inside_halfspace_interior};
-use ndarray::{Array1, Array3, ArrayView1, ArrayView2, Axis};
+use ndarray::{Array1, Array3, ArrayView1, ArrayView2, Axis, indices};
+use rayon::prelude::*;
 
 use crate::geometry::polyhedron::{golden_spiral, polyhedron_bbox, polyhedron_verts};
 
@@ -46,12 +47,12 @@ pub fn distance_polyhedron_to_label(
         let cur_dist = dist.row(i);
         let cur_pnt = pnts.row(i);
         let bbox = polyhedron_bbox(cur_dist, cur_pnt, gs_verts.view());
-        let z_min = bbox[0].max(0);
-        let z_max = bbox[1].min(nz as i32 - 1);
-        let y_min = bbox[2].max(0);
-        let y_max = bbox[3].min(ny as i32 - 1);
-        let x_min = bbox[4].max(0);
-        let x_max = bbox[5].min(nx as i32 - 1);
+        let z_min = bbox[0].max(0) as usize;
+        let z_max = bbox[1].min(nz as i32 - 1) as usize;
+        let y_min = bbox[2].max(0) as usize;
+        let y_max = bbox[3].min(ny as i32 - 1) as usize;
+        let x_min = bbox[4].max(0) as usize;
+        let x_max = bbox[5].min(nx as i32 - 1) as usize;
         if z_min > z_max || y_min > y_max || x_min > x_max {
             return Ok(());
         }
@@ -60,28 +61,41 @@ pub fn distance_polyhedron_to_label(
         let hull = quickhull_3d(&cur_poly_verts, None)?;
         let convex_hs = hull_to_halfspace(&hull.0, &hull.1, None)?;
         let kernel_hs = hull_to_halfspace(&cur_poly_verts, &gs_faces, None)?;
-        (z_min as usize..=z_max as usize).try_for_each(|z| {
-            (y_min as usize..=y_max as usize).try_for_each(|y| {
-                (x_min as usize..=x_max as usize).try_for_each(|x| -> Result<(), ImgalError> {
-                    let pnt = [z, y, x];
-                    let in_kernel = inside_halfspace_interior(&kernel_hs, &pnt, true, None)?;
-                    let in_convex = inside_halfspace_interior(&convex_hs, &pnt, true, None)?;
-                    if in_kernel
-                        || (in_convex
-                            && inside_polyhedron(
-                                &cur_poly_verts,
-                                &gs_faces,
-                                cur_pnt.view(),
-                                ArrayView1::from(&[z as f32, y as f32, x as f32]),
-                                None,
-                            )?)
-                    {
-                        labels[pnt] = ids[i];
-                    }
-                    Ok(())
-                })
-            })
-        })?;
+        let z_len = (z_max - z_min) + 1;
+        let y_len = (y_max - y_min) + 1;
+        let x_len = (x_max - x_min) + 1;
+        let hits = indices((z_len, y_len, x_len)).into_iter().par_bridge().try_fold(
+            || Vec::new(),
+            |mut acc, (bz, by, bx)| -> Result<Vec<([usize; 3], u64)>, ImgalError> {
+                let pnt = [bz + z_min, by + y_min, bx + x_min];
+                if inside_halfspace_interior(&kernel_hs, &pnt, true, None)? {
+                    acc.push((pnt, ids[i]));
+                    return Ok(acc);
+                }
+                if inside_halfspace_interior(&convex_hs, &pnt, true, None)?
+                    && inside_polyhedron(
+                        &cur_poly_verts,
+                        &gs_faces,
+                        cur_pnt.view(),
+                        ArrayView1::from(&[pnt[0] as f32, pnt[1] as f32, pnt[2] as f32]),
+                        None,
+                    )?
+                {
+                    acc.push((pnt, ids[i]));
+                }
+                Ok(acc)
+            },
+        )
+        .try_reduce(
+            || Vec::new(),
+            |mut a, mut b| {
+                a.append(&mut b);
+                Ok(a)
+            }
+        )?;
+        hits.iter().for_each(|&(p, i)| {
+            labels[p] = i;
+        });
         Ok(())
     })?;
     Ok(labels)
