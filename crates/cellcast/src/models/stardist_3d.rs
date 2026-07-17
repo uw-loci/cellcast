@@ -198,8 +198,14 @@ impl StarDist3D {
                         tensor,
                         (plns as i32, pad_shape[0] as i32, pad_shape[1] as i32),
                     );
-                    prob = p.into_data().into_vec().unwrap();
-                    dist = d.into_data().into_vec().unwrap();
+                    prob = p
+                        .into_data()
+                        .into_vec()
+                        .expect("Failed to copy StarDist3D probabiliates from the output tensor.");
+                    dist = d
+                        .into_data()
+                        .into_vec()
+                        .expect("Failed to copy StarDist3D distances from the output tensor.");
                 }
                 _ => {
                     return Err(ImgalError::InvalidGeneric {
@@ -217,8 +223,14 @@ impl StarDist3D {
                         tensor,
                         (plns as i32, pad_shape[0] as i32, pad_shape[1] as i32),
                     );
-                    prob = p.into_data().into_vec().unwrap();
-                    dist = d.into_data().into_vec().unwrap();
+                    prob = p
+                        .into_data()
+                        .into_vec()
+                        .expect("Failed to copy StarDist3D probabiliates from the output tensor.");
+                    dist = d
+                        .into_data()
+                        .into_vec()
+                        .expect("Failed to copy StarDist3D distances from the output tensor.");
                 }
                 _ => {
                     return Err(ImgalError::InvalidGeneric {
