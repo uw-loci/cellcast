@@ -2,7 +2,7 @@ use imgal::prelude::*;
 use imgal::spatial::convex_hull::quickhull_3d;
 use imgal::spatial::geometry::inside_polyhedron;
 use imgal::spatial::halfspace::{hull_to_halfspace, inside_halfspace_interior};
-use ndarray::{Array1, Array3, ArrayView1, ArrayView2, Axis, indices};
+use ndarray::{Array1, Array3, ArrayView1, ArrayView2, ArrayViewMut3, Axis, indices, s};
 use rayon::prelude::*;
 
 use crate::geometry::polyhedron::{golden_spiral, polyhedron_bbox, polyhedron_verts};
@@ -61,40 +61,27 @@ pub fn distance_polyhedron_to_label(
         let hull = quickhull_3d(&cur_poly_verts, None)?;
         let convex_hs = hull_to_halfspace(&hull.0, &hull.1, None)?;
         let kernel_hs = hull_to_halfspace(&cur_poly_verts, &gs_faces, None)?;
-        let z_len = (z_max - z_min) + 1;
-        let y_len = (y_max - y_min) + 1;
-        let x_len = (x_max - x_min) + 1;
-        let hits = indices((z_len, y_len, x_len)).into_iter().par_bridge().try_fold(
-            || Vec::new(),
-            |mut acc, (bz, by, bx)| -> Result<Vec<([usize; 3], u64)>, ImgalError> {
-                let pnt = [bz + z_min, by + y_min, bx + x_min];
-                if inside_halfspace_interior(&kernel_hs, &pnt, true, None)? {
-                    acc.push((pnt, ids[i]));
-                    return Ok(acc);
-                }
-                if inside_halfspace_interior(&convex_hs, &pnt, true, None)?
-                    && inside_polyhedron(
-                        &cur_poly_verts,
-                        &gs_faces,
-                        cur_pnt.view(),
-                        ArrayView1::from(&[pnt[0] as f32, pnt[1] as f32, pnt[2] as f32]),
-                        None,
-                    )?
-                {
-                    acc.push((pnt, ids[i]));
-                }
-                Ok(acc)
-            },
-        )
-        .try_reduce(
-            || Vec::new(),
-            |mut a, mut b| {
-                a.append(&mut b);
-                Ok(a)
+        let mut bbox_slice: ArrayViewMut3<u64> =
+            labels.slice_mut(s![z_min..=z_max, y_min..=y_max, x_min..=x_max]);
+        bbox_slice.indexed_iter_mut().for_each(|(p, v)| {
+            let pnt = [z_min + p.0, y_min + p.1, x_min + p.2];
+            if inside_halfspace_interior(&kernel_hs, &pnt, true, Some(1)).unwrap() {
+                *v = ids[i];
+                return;
+            } else if inside_halfspace_interior(&convex_hs, &pnt, true, Some(1)).unwrap()
+                && inside_polyhedron(
+                    &cur_poly_verts,
+                    &gs_faces,
+                    cur_pnt.view(),
+                    ArrayView1::from(&[pnt[0] as f32, pnt[1] as f32, pnt[2] as f32]),
+                    Some(1),
+                )
+                .unwrap()
+            {
+                *v = ids[i];
+            } else {
+                return;
             }
-        )?;
-        hits.iter().for_each(|&(p, i)| {
-            labels[p] = i;
         });
         Ok(())
     })?;
