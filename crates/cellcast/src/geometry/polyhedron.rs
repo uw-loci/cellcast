@@ -275,30 +275,33 @@ pub fn golden_spiral_intersection_vol(
     gs_faces: ArrayView2<usize>,
 ) -> Result<f64, ImgalError> {
     let n_gsf = gs_faces.dim().0;
-    let hs: Vec<Array1<f64>> =
-        (0..n_gsf).try_fold(Vec::with_capacity(n_gsf * 2), |mut acc, i| {
-            let [a_idx, b_idx, c_idx] = array::from_fn(|j| gs_faces[[i, j]]);
-            acc.push(face_to_halfspace(
-                vertices_a.row(a_idx),
-                vertices_a.row(b_idx),
-                vertices_a.row(c_idx),
-            )?);
-            acc.push(face_to_halfspace(
-                vertices_b.row(a_idx),
-                vertices_b.row(b_idx),
-                vertices_b.row(c_idx),
-            )?);
-            Ok(acc)
-        })?;
-    let in_pnt: [f64; 3] = array::from_fn(|i| 0.5 * (center_a[i] + center_b[i]) as f64);
-    let hs = stack(
-        Axis(0),
-        &hs.iter()
-            .map(|v| v.view())
-            .collect::<Vec<ArrayView1<f64>>>(),
-    )
-    .expect("Failed to stack halfspaces into array.");
-    let (inter_verts, inter_faces) = halfspace_intersection(&hs, &in_pnt, None)?;
+    let mut hs_stack = Array2::<f64>::zeros((n_gsf * 2, 4));
+    (0..n_gsf).for_each(|i| {
+        let a_idx = gs_faces[[i, 0]];
+        let b_idx = gs_faces[[i, 1]];
+        let c_idx = gs_faces[[i, 2]];
+        // SAFE: safe because points a, b and c are all length 3
+        let hs_a = face_to_halfspace(
+            vertices_a.row(a_idx),
+            vertices_a.row(b_idx),
+            vertices_a.row(c_idx),
+        )
+        .unwrap();
+        let hs_b = face_to_halfspace(
+            vertices_b.row(a_idx),
+            vertices_b.row(b_idx),
+            vertices_b.row(c_idx),
+        )
+        .unwrap();
+        hs_stack.row_mut(i * 2).assign(&hs_a);
+        hs_stack.row_mut(i * 2 + 1).assign(&hs_b);
+    });
+    let in_pnt = [
+        0.5 * (center_a[0] + center_b[0]) as f64,
+        0.5 * (center_a[1] + center_b[1]) as f64,
+        0.5 * (center_b[2] + center_b[2]) as f64,
+    ];
+    let (inter_verts, inter_faces) = halfspace_intersection(&hs_stack, &in_pnt, None)?;
     let n_if = inter_faces.dim().0;
     Ok((0..n_if).fold(0.0_f64, |acc, i| {
         let [a_idx, b_idx, c_idx] = array::from_fn(|j| inter_faces[[i, j]]);
