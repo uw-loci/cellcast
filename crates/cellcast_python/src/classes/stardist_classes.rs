@@ -10,7 +10,25 @@ pub struct PyStarDist2D(StarDist2D);
 
 #[pymethods]
 impl PyStarDist2D {
-    /// TODO
+    /// Initialize a StarDist2D fluo model.
+    ///
+    /// Initializes a StarDist2D fluo model using the versatile fluo pretrained
+    /// weights or custom weights. A StarDist2D model can be initialized on either
+    /// the GPU or CPU, but not both concurrently. The model is pre-warmed with as
+    /// part of the initializtion process.
+    ///
+    /// Args:
+    ///     weights_path: The path to custom StarDist2D weights in burnpack (`.bpk`)
+    ///         format. If `None` then the versatile fluo pretrained weights are
+    ///         used.
+    ///     gpu: If `true`, the configured GPU backend is used. If `false` then the
+    ///         configured CPU backend is used.
+    ///
+    /// Returns:
+    ///     An initialized StarDist2D fluo model.
+    ///
+    /// Errors:
+    ///     If the requested model can not be initialized.
     #[staticmethod]
     #[pyo3(signature = (weights_path=None, gpu=None))]
     pub fn init_fluo(weights_path: Option<&str>, gpu: Option<bool>) -> PyResult<Self> {
@@ -20,7 +38,24 @@ impl PyStarDist2D {
         ))
     }
 
-    /// TODO
+    /// Initialize a StarDist2D HE model.
+    ///
+    /// Initializes a StarDist2D Fluo model using the versatile HE pretrained
+    /// weights or custom weights. A StarDist2D model can be initialized on either
+    /// the GPU or CPU, but not both concurrently. The model is pre-warmed with as
+    /// part of the initializtion process.
+    ///
+    /// Args:
+    ///     weights_path: The path to custom StarDist2D weights in burnpack (`.bpk`)
+    ///         format. If `None` then the versatile HE pretrained weights are used.
+    ///     gpu: If `true`, the configured GPU backend is used. If `false` then the
+    ///         configured CPU backend is used.
+    ///
+    /// Returns:
+    ///     An initialized StarDist2D HE model.
+    ///
+    /// Errors:
+    ///     If the requested model can not be initialized.
     #[staticmethod]
     #[pyo3(signature = (weights_path=None, gpu=None))]
     pub fn init_he(weights_path: Option<&str>, gpu: Option<bool>) -> PyResult<Self> {
@@ -30,7 +65,30 @@ impl PyStarDist2D {
         ))
     }
 
-    /// TODO
+    /// Predict instance segmentation labels with the StarDist2D fluo model.
+    ///
+    /// Performs model inference with the StarDist2D fluo model, returning instance
+    /// segmentations of star-convex shapes.
+    ///
+    /// Args:
+    ///     data: The input 2D image.
+    ///     pmin: The minimum percentage to linear percentile normalize the input
+    ///         image. If `None`, then `pmin = 1.0`.
+    ///     pmax: The maximum percentage to linear percentile normalize the input
+    ///         image. If `None`, then `pmax = 99.8`.
+    ///     prob_threshold: The object/polygon probability threshold. If `None`,
+    ///         then `prob_threshold == 0.479071463157368`.
+    ///     nms_threshold: The non-maximum suppression (NMS) threshold. If `None`,
+    ///         then `nms_threshold == 0.3`.
+    ///
+    /// Returns:
+    ///     The StarDist2D fluo model instance segmentation label image.
+    ///
+    /// Errors:
+    ///     If `pmin` and/or `pmax` are outside of range `0.0` to `1.0.`
+    ///
+    /// Reference
+    ///     <https://doi.org/10.1007/978-3-030-00934-2_30>
     #[pyo3(signature = (data, pmin=None, pmax=None, prob_threshold=None, nms_threshold=None))]
     pub fn predict_fluo<'py>(
         &self,
