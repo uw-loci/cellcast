@@ -152,89 +152,90 @@ pub fn polyhedron_nms(
         let nz = (cur_bbox[1] - cur_bbox[0] + 1) as usize;
         let ny = (cur_bbox[3] - cur_bbox[2] + 1) as usize;
         let nx = (cur_bbox[5] - cur_bbox[4] + 1) as usize;
-        neighbors.iter().filter(|&&j| j > i && !suppressed[j].load(Ordering::Relaxed)).for_each(|&j| {
-            let mut iou: f32;
-            let ngh_dist = polyhedron_dist.row(j);
-            let ngh_pnt = polyhedron_pnts.row(j);
-            let vol_min = vols[i].min(vols[j]);
-            let upper_inter_vol = sphere_intersect_volume_iso(
-                cur_pnt,
-                ngh_pnt,
-                rad_out_iso[i],
-                rad_out_iso[j],
-                &aniso,
-            );
-            let bbox_inter_vol = bbox_intersect_vol(&cur_bbox, &bboxes[j]);
-            let upper_inter_vol = upper_inter_vol.min(bbox_inter_vol);
-            iou = (upper_inter_vol / (vol_min + eps)).min(1.0);
-            if upper_inter_vol < eps || iou <= threshold {
-                return;
-            }
-            // this checks the lower bound of intersection and IoU
-            let lower_inter_vol = sphere_intersect_volume_iso(
-                cur_pnt,
-                ngh_pnt,
-                rad_in_iso[i],
-                rad_in_iso[j],
-                &aniso,
-            );
-            iou = (lower_inter_vol / (vol_min + eps)).max(0.0);
-            if iou > threshold {
-                suppressed[j].store(true, Ordering::Relaxed);
-                return;
-            }
-            // this computes the polyhedron intersection of the lower bound
-            let ngh_poly_verts = polyhedron_verts(ngh_dist, ngh_pnt, verts);
-            let poly_inter_vol = golden_spiral_intersection_vol(
-                cur_poly_verts.view(),
-                ngh_poly_verts.view(),
-                cur_pnt,
-                ngh_pnt,
-                faces,
-            )
-            .unwrap_or(0.0) as f32;
-            iou = poly_inter_vol / (vol_min + eps);
-            if iou > threshold {
-                suppressed[j].store(true, Ordering::Relaxed);
-                return;
-            }
-            let conv_inter_vol = convex_hull_intersection_vol(
-                cur_poly_verts.view(),
-                ngh_poly_verts.view(),
-                cur_pnt,
-                ngh_pnt,
-            )
-            .unwrap_or(1e10) as f32;
-            iou = conv_inter_vol / (vol_min + eps);
-            if iou <= threshold {
-                return;
-            }
-            // this computes a polygon rendering check, the final check
-            let cur_poly_mask = polyhedron_to_mask(
-                cur_poly_verts.view(),
-                faces,
-                cur_pnt,
-                cur_bbox,
-                nz,
-                ny,
-                nx,
-            ).unwrap();
-            let overlap_count = overlap_polyhedron_mask(
-                ngh_poly_verts.view(),
-                faces,
-                ngh_pnt,
-                &cur_poly_mask,
-                cur_bbox,
-                nz,
-                ny,
-                nx,
-                (vol_min + eps) * threshold,
-            ).unwrap() as f32;
-            iou = overlap_count / (vol_min + eps);
-            if iou > threshold {
-                suppressed[j].store(true, Ordering::Relaxed);
-            }
-        });
+        neighbors
+            .iter()
+            .filter(|&&j| j > i && !suppressed[j].load(Ordering::Relaxed))
+            .for_each(|&j| {
+                let mut iou: f32;
+                let ngh_dist = polyhedron_dist.row(j);
+                let ngh_pnt = polyhedron_pnts.row(j);
+                let vol_min = vols[i].min(vols[j]);
+                let upper_inter_vol = sphere_intersect_volume_iso(
+                    cur_pnt,
+                    ngh_pnt,
+                    rad_out_iso[i],
+                    rad_out_iso[j],
+                    &aniso,
+                );
+                let bbox_inter_vol = bbox_intersect_vol(&cur_bbox, &bboxes[j]);
+                let upper_inter_vol = upper_inter_vol.min(bbox_inter_vol);
+                iou = (upper_inter_vol / (vol_min + eps)).min(1.0);
+                if upper_inter_vol < eps || iou <= threshold {
+                    return;
+                }
+                // this checks the lower bound of intersection and IoU
+                let lower_inter_vol = sphere_intersect_volume_iso(
+                    cur_pnt,
+                    ngh_pnt,
+                    rad_in_iso[i],
+                    rad_in_iso[j],
+                    &aniso,
+                );
+                iou = (lower_inter_vol / (vol_min + eps)).max(0.0);
+                if iou > threshold {
+                    suppressed[j].store(true, Ordering::Relaxed);
+                    return;
+                }
+                // this computes the polyhedron intersection of the lower bound
+                let ngh_poly_verts = polyhedron_verts(ngh_dist, ngh_pnt, verts);
+                let poly_inter_vol = golden_spiral_intersection_vol(
+                    cur_poly_verts.view(),
+                    ngh_poly_verts.view(),
+                    cur_pnt,
+                    ngh_pnt,
+                    faces,
+                )
+                .unwrap_or(0.0) as f32;
+                iou = poly_inter_vol / (vol_min + eps);
+                if iou > threshold {
+                    suppressed[j].store(true, Ordering::Relaxed);
+                    return;
+                }
+                let conv_inter_vol = convex_hull_intersection_vol(
+                    cur_poly_verts.view(),
+                    ngh_poly_verts.view(),
+                    cur_pnt,
+                    ngh_pnt,
+                )
+                .unwrap_or(1e10) as f32;
+                iou = conv_inter_vol / (vol_min + eps);
+                if iou <= threshold {
+                    return;
+                }
+                // this computes a polygon rendering check, the final check
+                let cur_poly_mask =
+                    polyhedron_to_mask(cur_poly_verts.view(), faces, cur_pnt, cur_bbox, nz, ny, nx)
+                        .unwrap();
+                let overlap_count = overlap_polyhedron_mask(
+                    ngh_poly_verts.view(),
+                    faces,
+                    ngh_pnt,
+                    &cur_poly_mask,
+                    cur_bbox,
+                    nz,
+                    ny,
+                    nx,
+                    (vol_min + eps) * threshold,
+                )
+                .unwrap() as f32;
+                iou = overlap_count / (vol_min + eps);
+                if iou > threshold {
+                    suppressed[j].store(true, Ordering::Relaxed);
+                }
+            });
     });
-    Ok(suppressed.iter().map(|v| !v.load(Ordering::Relaxed)).collect())
+    Ok(suppressed
+        .iter()
+        .map(|v| !v.load(Ordering::Relaxed))
+        .collect())
 }
