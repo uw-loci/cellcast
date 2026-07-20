@@ -304,10 +304,18 @@ pub fn golden_spiral_intersection_vol(
     let (inter_verts, inter_faces) = halfspace_intersection(&hs_stack, &in_pnt, None)?;
     let n_if = inter_faces.dim().0;
     Ok((0..n_if).fold(0.0_f64, |acc, i| {
-        let [a_idx, b_idx, c_idx] = array::from_fn(|j| inter_faces[[i, j]]);
-        let [az, ay, ax] = array::from_fn(|j| inter_verts[[a_idx, j]] - in_pnt[j]);
-        let [bz, by, bx] = array::from_fn(|j| inter_verts[[b_idx, j]] - in_pnt[j]);
-        let [cz, cy, cx] = array::from_fn(|j| inter_verts[[c_idx, j]] - in_pnt[j]);
+        let a_idx = inter_faces[[i, 0]];
+        let b_idx = inter_faces[[i, 1]];
+        let c_idx = inter_faces[[i, 2]];
+        let az = inter_verts[[a_idx, 0]] - in_pnt[0];
+        let ay = inter_verts[[a_idx, 1]] - in_pnt[1];
+        let ax = inter_verts[[a_idx, 2]] - in_pnt[2];
+        let bz = inter_verts[[b_idx, 0]] - in_pnt[0];
+        let by = inter_verts[[b_idx, 1]] - in_pnt[1];
+        let bx = inter_verts[[b_idx, 2]] - in_pnt[2];
+        let cz = inter_verts[[c_idx, 0]] - in_pnt[0];
+        let cy = inter_verts[[c_idx, 1]] - in_pnt[1];
+        let cx = inter_verts[[c_idx, 2]] - in_pnt[2];
         let cross_z = bx * cy - by * cx;
         let cross_y = bz * cx - bx * cz;
         let cross_x = by * cz - bz * cy;
