@@ -25,60 +25,6 @@ pub fn bbox_intersect_vol(bbox_a: &[i32; 6], bbox_b: &[i32; 6]) -> f32 {
     wz * wy * wx
 }
 
-/// Get the inner bounding radius (*i.e* the shortest perpendicular distance
-/// to any face plane). Note that this radius represents the largest sphere that
-/// can fit inside the polyhedron.
-#[inline]
-pub fn bounding_inner_radius(
-    // DEBUG: this function doesn't seem to be used. Its slated for removal
-    distances: ArrayView1<f32>,
-    gs_vertices: ArrayView2<f64>,
-    gs_faces: ArrayView2<usize>,
-) -> f32 {
-    let eps = 1e-10;
-    let n_faces = gs_faces.dim().0;
-    (0..n_faces).fold(f32::MAX, |acc, f| {
-        let tri = gs_faces.row(f);
-        let a: [f32; 3] = {
-            let i = tri[0];
-            let di = distances[i];
-            [
-                di * gs_vertices[[i, 0]] as f32,
-                di * gs_vertices[[i, 1]] as f32,
-                di * gs_vertices[[i, 2]] as f32,
-            ]
-        };
-        let b: [f32; 3] = {
-            let i = tri[1];
-            let di = distances[i];
-            [
-                di * gs_vertices[[i, 0]] as f32,
-                di * gs_vertices[[i, 1]] as f32,
-                di * gs_vertices[[i, 2]] as f32,
-            ]
-        };
-        let c: [f32; 3] = {
-            let i = tri[2];
-            let di = distances[i];
-            [
-                di * gs_vertices[[i, 0]] as f32,
-                di * gs_vertices[[i, 1]] as f32,
-                di * gs_vertices[[i, 2]] as f32,
-            ]
-        };
-        // compute the edge vectors and cross product
-        let (baz, bay, bax) = (b[0] - a[0], b[1] - a[1], b[2] - a[2]);
-        let (caz, cay, cax) = (c[0] - a[0], c[1] - a[1], c[2] - a[2]);
-        let nz = bax * cay - bay * cax;
-        let ny = baz * cax - bax * caz;
-        let nx = bay * caz - baz * cay;
-        let norm = 1.0 / (nz * nz + ny * ny + nx * nx).sqrt().max(eps);
-        let (nz, ny, nx) = (nz * norm, ny * norm, nx * norm);
-        let dist = a[0] * nz + a[1] * ny + a[2] * nx;
-        acc.min(dist)
-    })
-}
-
 /// TODO
 #[inline]
 pub fn bounding_inner_radius_iso(
