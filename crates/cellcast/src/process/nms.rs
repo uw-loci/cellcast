@@ -29,7 +29,7 @@ use crate::geometry::polyhedron::{
 ///   containing the radial distances from polygon centers to their boundaries
 ///   at each ray angle. This array must be pre-sorted in descending order by
 ///   polygon probability.
-/// * `polygon_pos`: Input polygon positions array with shape `(n_polys, 2)`
+/// * `polygon_pnts`: Input polygon positions array with shape `(n_polys, 2)`
 ///   containing the (row, col) coordinates of polygon centers. This array must
 ///   be pre-sorted in descending order by polygon probability.
 /// * `n_polys`: The number of polygons.
@@ -44,15 +44,15 @@ use crate::geometry::polyhedron::{
 ///   retained).
 pub fn polygon_nms(
     polygon_dist: ArrayView2<f32>,
-    polygon_pos: ArrayView2<usize>,
+    polygon_pnts: ArrayView2<usize>,
     n_polys: usize,
     n_rays: usize,
     threshold: f32,
 ) -> Vec<bool> {
     // create 2D polygons vector and perform NMS
     let suppressed: Vec<AtomicBool> = (0..n_polys).map(|_| AtomicBool::new(false)).collect();
-    let polygons = build_polygons(polygon_dist.view(), polygon_pos.view(), n_polys, n_rays);
-    let kdtree = KDTree::build(polygon_pos.view());
+    let polygons = build_polygons(polygon_dist.view(), polygon_pnts.view(), n_polys, n_rays);
+    let kdtree = KDTree::build(polygon_pnts.view());
     let max_dist = polygons.iter().map(|p| p.dist).fold(0.0, f32::max);
     // iterate through each polygon and skip already suppressed polygons
     // the key here is that each polygon's probability is encoded in it's order
@@ -61,7 +61,7 @@ pub fn polygon_nms(
         if suppressed[i].load(Ordering::Relaxed) {
             return;
         }
-        let query = [polygon_pos[[i, 0]], polygon_pos[[i, 1]]];
+        let query = [polygon_pnts[[i, 0]], polygon_pnts[[i, 1]]];
         let radius = (max_dist + polygons[i].dist) as f64;
         let neighbors = kdtree.search_for_indices(&query, radius).unwrap();
         neighbors.par_iter().for_each(|&j| {
