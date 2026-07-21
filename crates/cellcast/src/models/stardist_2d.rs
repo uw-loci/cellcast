@@ -25,6 +25,10 @@ const NMS_THRESHOLD: f64 = 0.3;
 type CpuConfigBackend = CpuBackend<f32, i32>;
 type GpuConfigBackend = GpuBackend<f32, i32>;
 
+/// Backend variants for a `StarDist2D` model.
+///
+/// This enum tracks the possible StarDist2D model variants between the `fluo`
+/// and `he` models initialized on the CPU or GPU.
 #[derive(Debug)]
 enum StarDist2DModels {
     FluoCpu(fluo_2d::Model<CpuConfigBackend>),
@@ -33,6 +37,12 @@ enum StarDist2DModels {
     HeGpu(he_2d::Model<GpuConfigBackend>),
 }
 
+/// A StarDist2D instance segmentation model.
+///
+/// Initializes a StarDist2D instance segmentation model with pretrained or
+/// custom weights for 2D fluorescence (`fluo`) or H&E-stained (`he`) images.
+/// The model runs on either a CPU or GPU backend as determined at
+/// initialization time.
 #[derive(Debug)]
 pub struct StarDist2D {
     model: StarDist2DModels,
