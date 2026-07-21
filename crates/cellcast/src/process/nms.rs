@@ -14,13 +14,14 @@ use crate::geometry::polyhedron::{
     polyhedron_verts, polyhedron_vol, sphere_intersect_volume_iso,
 };
 
-/// Perform Non-Maximum Suppression (NMS) on 2-dimensional polygons.
+/// Perform Non-Maximum Suppression (NMS) on distance representation polygons.
 ///
 /// # Description
 ///
-/// Performs None-Maximum Suppression (NMS) that suppresses overlappin polygons
-/// based on their intersection area. Input distances and polygon positions are
-/// expected in descending order, with the highest probability first.
+/// Performs Non-Maximum Suppression (NMS) on polygons in ray distance
+/// representation. Overlapping polygons are suppressed based on their
+/// intersection area. Polygon distances and positions are expected in
+/// descending order, with the highest probability first.
 ///
 /// # Arguments
 ///
@@ -33,14 +34,14 @@ use crate::geometry::polyhedron::{
 ///   be pre-sorted in descending order by polygon probability.
 /// * `n_polys`: The number of polygons.
 /// * `n_rays`: The number of ray angles.
-/// * `threshold`: The overlap threshold in range `0` to `1`. Polygons exceeding
-///   this overlap threshold value are suppressed.
+/// * `threshold`: The overlap threshold in range `0.0` to `1.0`. Polygons
+///   exceeding this overlap threshold value are suppressed.
 ///
 /// # Returns
 ///
 /// * `Vec<bool>`: A boolean array of length `n_polys` where `True` indicates
 ///   valid or non-suppressed polygon indices (*i.e.* polygons that should be
-///   kept).
+///   retained).
 pub fn polygon_nms(
     polygon_dist: ArrayView2<f32>,
     polygon_pos: ArrayView2<usize>,
@@ -84,25 +85,35 @@ pub fn polygon_nms(
         .collect()
 }
 
-/// TODO
+/// Perform Non-Maximum Suppression (NMS) on distance representation polyhedra.
 ///
 /// # Description
 ///
-/// todo
+/// Performs Non-Maximum Suppression (NMS) on polyhedra in ray distance
+/// representation. Overlapping polyhedra are suppressed based on their
+/// intersection volume. Polyhedra distances and points (*.i.e.* centers) are
+/// expected in descending order, with the highest probability first.
 ///
 /// # Arguments
 ///
-/// * `polyhedron_dist`:
-/// * `polyhedron_pnts`:
-/// * `polyhedron_prob`:
-/// * `n_polys`:
-/// * `n_rays`:
-/// * `threshold`:
+/// * `polyhedron_dist`: Input radial distance array with shape
+///   `(n_polys, n_rays)` containing the radial distances from polygon centers
+///   to their boundaries at each ray angle. This array must be pre-sorted in
+///   descending order by polygon probability.
+/// * `polyhedron_pnts`: Input polyhedron points array with shape `(n_polys, 3)`
+///   containing the (pln, row, col) coordinates of polyhedron centers. This
+///   array must be pre-sorted in descending order by polygon probability.
+/// * `n_polys`: The number of polyhedra.
+/// * `n_rays`: The number of ray angles.
+/// * `threshold`: The overlap threshold in range `0.0` to `1.0`. Polyhedra
+///   exceeding this overlap threshold value are suppressed.
 ///
 /// # Returns
 ///
-/// * `Ok(Vec<bool>)`:
-/// * `Err(ImgalError)`:
+/// * `Ok(Vec<bool>)`: A boolean array of length `n_polys` where `true`
+///   indicates valid or non-suppressed polyhedron indices (*i.e.* polyhedra
+///   that should be retained).
+/// * `Err(ImgalError)`: If the golden spiral can not be constructed.
 pub fn polyhedron_nms(
     polyhedron_dist: ArrayView2<f32>,
     polyhedron_pnts: ArrayView2<f32>,
