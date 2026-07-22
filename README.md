@@ -22,27 +22,40 @@ To use cellcast in your Rust project add it to your crate's dependencies and imp
 
 ```toml
 [dependencies]
-cellcast = "0.2.0"
+cellcast = "0.3.0"
 ```
 
-The example below demonstrates how to use cellcast and the StarDist 2D versatile fluo segmentation model with Rust.
-This example assumes you have the appropriate dependencies and helper functions to load your data as an `Array2<T>` type:
+The following examples demonstrate how to use cellcast's StarDist2D model in Rust with fetched *versatile fluo* pretrained
+and custom weights. Each supported cell segmentation model in cellcast is configured and initialized via it's model struct
+in the imported from the `models` module. If no `weights_path` is provided then the model's published pretrained weights
+are downloaded and cached (note that the the cache weights are ideally used if present instead of downloading):
 
 ```rust
-use ndarray::Array2;
-use cellcast::models::stardist_2d::predict_versatile_fluo;
+use cellcast::CellcastError;
+use cellcast::models::StarDist2D;
 
-fn main() {
-  let data_2d = load_image("/path/to/data_2d.tif");
-  let labels = predict_versatile_fluo(&data, Some(1.0), Some(99.8), None, None, True);
+fn main() -> Result<(), CellcastError>{
+  let data = get_image("path/to/data.tif");
+  // initialize a StarDist2D fluo model with fetched weights on the GPU
+  let sd = StarDist2D::init_fluo(None, true)?;
+  // run the model on the input data with default settings
+  let labels = sd.predict_fluo(&data, None, None, None, None);
 }
 
-fn load_image(path: &str) -> Array2<u16> {
-  // your logic to read/load from a file here
+fn get_image(papth: &str) -> Array2<u16> {
+  // your logic to get image data as an array. 
 }
 ```
 
-*Note: `T` here can be any numeric value (*i.e.* `u8`, `i32`, `f64`).*
+To initialize a model with custom weights, provide the path to the weights in burnpack format (`.bpk`) when creating a model
+instance.
+
+```rust
+let sd = StarDist2D::init_fluo("path/to/custom_weights.bpk", true)?;
+```
+
+See the [burn-store](https://github.com/tracel-ai/burn/tree/main/crates/burn-store) and the
+[burn-onnx](https://github.com/tracel-ai/burn-onnx) crates for more details.
 
 ### Using cellcast with Python
 
@@ -63,21 +76,18 @@ The `cellcast` Python package currently supports the following architectures:
 
 Cellcast is compatible with Python `>=3.7` and requires *only* `NumPy`.
 
-The example below demonstrates how to use cellcast and the StarDist 2D versatile fluo segmentation model with Python.
-Note that this example assumes you have access to 2D data and `tifffile` installed in your Python environment with cellcast:
+The following example demonstrates how to use cellcast's StarDist2D model in Python with fetched *versatile fluo* pretrained weights (note: here we
+assume you have your data in a 2D NumPy array):
 
 ```python
-import cellcast.models.stardist_2d as sd
-from tifffile import imread
+import cellcast.models.StarDist2D as StarDist2D
 
-# load 2D data for inference
-data_2d = imread("path/to/data_2d.tif")
-
-# run stardist inference and produce instance segmentations
-labels = sd.predict_versatile_fluo(data, gpu=True)
+# assuming "data" is a 2D NumPy array
+sd = StarDist2D.init_fluo(gpu=True)
+labels = sd.predict_fluo(data)
 ```
 
-Run `help()` on the `predict_versatile_fluo()` function to see the full function signature and default values. 
+Run `help()` on the `predict_fluo()` function to see the full function signature and default values. 
 
 ## Building from source
 
