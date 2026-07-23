@@ -465,7 +465,7 @@ pub fn polyhedron_vol(
 /// # Returns
 ///
 /// * `Vec<bool>`:
-#[inline]
+#[inline(always)]
 pub fn polyhedron_to_mask(
     vertices: ArrayView2<f32>,
     gs_faces: ArrayView2<usize>,
@@ -474,26 +474,26 @@ pub fn polyhedron_to_mask(
     nz: usize,
     ny: usize,
     nx: usize,
-) -> Result<Vec<bool>, ImgalError> {
+) -> Vec<bool> {
     let mut render = vec![false; nz * ny * nx];
-    let center = center.mapv(|v| v as f32);
-    (0..nz).try_for_each(|z| {
-        (0..ny).try_for_each(|y| {
-            (0..nx).try_for_each(|x| {
-                let query = Array1::from_iter([
-                    (z as i32 + bbox[0]) as f32,
-                    (y as i32 + bbox[2]) as f32,
-                    (x as i32 + bbox[4]) as f32,
-                ]);
-                render[x + y * nx + z * nx * ny] =
-                    inside_polyhedron(vertices, gs_faces, center.view(), query.view(), None)?;
-                Ok(())
-            })?;
-            Ok(())
-        })?;
-        Ok(())
-    })?;
-    Ok(render)
+    let center: [f32; 3] = [center[0], center[1], center[2]];
+    let mut query = [0.0; 3];
+    let bz = bbox[0] as f32;
+    let by = bbox[2] as f32;
+    let bx = bbox[4] as f32;
+    (0..nz).for_each(|z| {
+        query[0] = bz + z as f32;
+        (0..ny).for_each(|y| {
+            query[1] = by + y as f32;
+            (0..nx).for_each(|x| {
+                query[2] = bx + x as f32;
+                let idx = x + y * nx + z * nx * ny;
+                render[idx] = inside_polyhedron(vertices, gs_faces, &center, &query, Some(1))
+                    .unwrap_or(false);
+            });
+        });
+    });
+    render
 }
 
 /// Compute the intersection volume of two spheres with isotropic distance. If

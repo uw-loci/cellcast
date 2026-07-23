@@ -225,8 +225,7 @@ pub fn polyhedron_nms(
                 }
                 // this computes a polygon rendering check, the final check
                 let cur_poly_mask =
-                    polyhedron_to_mask(cur_poly_verts.view(), faces, cur_pnt, cur_bbox, nz, ny, nx)
-                        .unwrap();
+                    polyhedron_to_mask(cur_poly_verts.view(), faces, cur_pnt, cur_bbox, nz, ny, nx);
                 let overlap_count = overlap_polyhedron_mask(
                     ngh_poly_verts.view(),
                     faces,
