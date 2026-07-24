@@ -5,7 +5,7 @@ use imgal::prelude::*;
 use imgal::spatial::convex_hull::quickhull_3d;
 use imgal::spatial::geometry::{inside_polyhedron, tetrahedron_volume};
 use imgal::spatial::halfspace::{face_to_halfspace, halfspace_intersection, hull_to_halfspace};
-use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, arr1, concatenate, stack};
+use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, concatenate, stack};
 
 /// Compute the intersection volume of two axis-aligned 3D bounding boxes.
 ///
@@ -271,7 +271,7 @@ pub fn golden_spiral_intersection_vol(
 }
 
 /// TODO
-#[inline]
+#[inline(always)]
 pub fn overlap_polyhedron_mask(
     vertices: ArrayView2<f32>,
     faces: ArrayView2<usize>,
@@ -282,32 +282,38 @@ pub fn overlap_polyhedron_mask(
     ny: usize,
     nx: usize,
     overlap_threshold: f32,
-) -> Result<i32, ImgalError> {
-    let mut count = 0;
+) -> f32 {
+    let mut count = 0.0;
+    let mut query = [0.0; 3];
     let nx_ny = nx * ny;
+    let bz = bbox[0] as f32;
+    let by = bbox[2] as f32;
+    let bx = bbox[4] as f32;
     for z in 0..nz {
         let z_nx_ny = z * nx_ny;
-        let qz = (z as i32 + bbox[0]) as f32;
         for y in 0..ny {
             let y_nx = y * nx;
-            let qy = (y as i32 + bbox[2]) as f32;
             for x in 0..nx {
                 let idx = x + y_nx + z_nx_ny;
                 if !mask[idx] {
                     continue;
                 }
-                let qx = (x as i32 + bbox[4]) as f32;
-                let query = arr1(&[qz, qy, qx]);
-                if inside_polyhedron(vertices, faces, center.view(), query.view(), None)? {
-                    count += 1;
-                    if (count as f32) > overlap_threshold {
-                        return Ok(count);
+                query[0] = bz + z as f32;
+                query[1] = by + y as f32;
+                query[2] = bx + x as f32;
+                let query_view = ArrayView1::from(&query);
+                if inside_polyhedron(vertices, faces, center, query_view, None)
+                    .unwrap_or(false)
+                {
+                    count += 1.0;
+                    if count > overlap_threshold {
+                        return count;
                     }
                 }
             }
         }
     }
-    Ok(count)
+    count
 }
 
 /// Compute the axis-aligned bounding box of a polyhedron.

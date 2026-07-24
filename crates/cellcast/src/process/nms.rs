@@ -236,8 +236,7 @@ pub fn polyhedron_nms(
                     ny,
                     nx,
                     (vol_min + eps) * threshold,
-                )
-                .unwrap() as f32;
+                );
                 iou = overlap_count / (vol_min + eps);
                 if iou > threshold {
                     suppressed[j].store(true, Ordering::Relaxed);
