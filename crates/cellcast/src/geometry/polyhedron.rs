@@ -334,7 +334,7 @@ pub fn overlap_polyhedron_mask(
 ///
 /// * `[i32; 6]`: The bounding box coordinates in
 ///   `[z_min, z_max, y_min, y_max, x_min, x_max]` order.
-#[inline]
+#[inline(always)]
 pub fn polyhedron_bbox(
     distances: ArrayView1<f32>,
     center: ArrayView1<f32>,
@@ -346,10 +346,13 @@ pub fn polyhedron_bbox(
     let mut z2 = i32::MIN;
     let mut y2 = i32::MIN;
     let mut x2 = i32::MIN;
+    let cen_z = center[0];
+    let cen_y = center[1];
+    let cen_x = center[2];
     distances.iter().enumerate().for_each(|(i, &d)| {
-        let z = (center[0] + d * gs_vertices[[i, 0]] as f32).round_ties_even() as i32;
-        let y = (center[1] + d * gs_vertices[[i, 1]] as f32).round_ties_even() as i32;
-        let x = (center[2] + d * gs_vertices[[i, 2]] as f32).round_ties_even() as i32;
+        let z = (cen_z + d * gs_vertices[[i, 0]] as f32).round_ties_even() as i32;
+        let y = (cen_y + d * gs_vertices[[i, 1]] as f32).round_ties_even() as i32;
+        let x = (cen_x + d * gs_vertices[[i, 2]] as f32).round_ties_even() as i32;
         z1 = z1.min(z);
         y1 = y1.min(y);
         x1 = x1.min(x);
