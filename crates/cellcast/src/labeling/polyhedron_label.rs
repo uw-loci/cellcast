@@ -13,7 +13,7 @@ pub fn distance_polyhedron_to_label(
     polyhedron_pnts: ArrayView2<f32>,
     polyhedron_prob: ArrayView1<f32>,
     prob_threshold: f32,
-    anisotropy: [f64; 3],
+    anisotropy: [f32; 3],
     shape: [usize; 3],
 ) -> Result<Array3<u64>, ImgalError> {
     let n_polys = polyhedron_dist.dim().0;

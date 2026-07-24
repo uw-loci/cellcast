@@ -42,7 +42,7 @@ enum StarDist3DModels {
 #[derive(Debug)]
 pub struct StarDist3D {
     model: StarDist3DModels,
-    anisotropy: [f64; 3],
+    anisotropy: [f32; 3],
     gpu: bool,
 }
 
@@ -72,7 +72,7 @@ impl StarDist3D {
     ///   `anisotropy.len() != 3`.
     pub fn init_fluo(
         weights_path: Option<&str>,
-        anisotropy: Option<&[f64]>,
+        anisotropy: Option<&[f32]>,
         gpu: bool,
     ) -> Result<Self, CellcastError> {
         let weights_path = weights_path.map(PathBuf::from);
@@ -332,7 +332,7 @@ fn prob_dist_to_labels_3d(
     dist: Vec<f32>,
     prob_threshold: f32,
     nms_threshold: f32,
-    anisotropy: [f64; 3],
+    anisotropy: [f32; 3],
     pad_shape: Vec<usize>,
     src_shape: [usize; 3],
 ) -> Result<Array3<u64>, ImgalError> {

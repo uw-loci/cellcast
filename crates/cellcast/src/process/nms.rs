@@ -117,7 +117,7 @@ pub fn polygon_nms(
 pub fn polyhedron_nms(
     polyhedron_dist: ArrayView2<f32>,
     polyhedron_pnts: ArrayView2<f32>,
-    anisotropy: [f64; 3],
+    anisotropy: [f32; 3],
     n_polys: usize,
     n_rays: usize,
     threshold: f32,

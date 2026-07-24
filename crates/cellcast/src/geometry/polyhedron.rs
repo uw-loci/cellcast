@@ -1,5 +1,5 @@
 use std::array;
-use std::f64::consts::PI;
+use std::f32::consts::PI;
 
 use imgal::prelude::*;
 use imgal::spatial::convex_hull::quickhull_3d;
@@ -29,7 +29,7 @@ pub fn bbox_intersect_vol(bbox_a: &[i32; 6], bbox_b: &[i32; 6]) -> f32 {
 #[inline]
 pub fn bounding_inner_radius_iso(
     distances: ArrayView1<f32>,
-    gs_vertices: ArrayView2<f64>,
+    gs_vertices: ArrayView2<f32>,
     gs_faces: ArrayView2<usize>,
     anisotropy: [f32; 3],
 ) -> f32 {
@@ -41,25 +41,25 @@ pub fn bounding_inner_radius_iso(
         let a = {
             let dist = distances[i_a];
             [
-                anisotropy[0] * dist * gs_vertices[[i_a, 0]] as f32,
-                anisotropy[1] * dist * gs_vertices[[i_a, 1]] as f32,
-                anisotropy[2] * dist * gs_vertices[[i_a, 2]] as f32,
+                anisotropy[0] * dist * gs_vertices[[i_a, 0]],
+                anisotropy[1] * dist * gs_vertices[[i_a, 1]],
+                anisotropy[2] * dist * gs_vertices[[i_a, 2]],
             ]
         };
         let b = {
             let dist = distances[i_b];
             [
-                anisotropy[0] * dist * gs_vertices[[i_b, 0]] as f32,
-                anisotropy[1] * dist * gs_vertices[[i_b, 1]] as f32,
-                anisotropy[2] * dist * gs_vertices[[i_b, 2]] as f32,
+                anisotropy[0] * dist * gs_vertices[[i_b, 0]],
+                anisotropy[1] * dist * gs_vertices[[i_b, 1]],
+                anisotropy[2] * dist * gs_vertices[[i_b, 2]],
             ]
         };
         let c = {
             let dist = distances[i_c];
             [
-                anisotropy[0] * dist * gs_vertices[[i_c, 0]] as f32,
-                anisotropy[1] * dist * gs_vertices[[i_c, 1]] as f32,
-                anisotropy[2] * dist * gs_vertices[[i_c, 2]] as f32,
+                anisotropy[0] * dist * gs_vertices[[i_c, 0]],
+                anisotropy[1] * dist * gs_vertices[[i_c, 1]],
+                anisotropy[2] * dist * gs_vertices[[i_c, 2]],
             ]
         };
         // compute the edge vectors and cross product
@@ -86,14 +86,14 @@ pub fn bounding_outer_radius(distances: ArrayView1<f32>) -> f32 {
 #[inline]
 pub fn bounding_outer_radius_iso(
     distances: ArrayView1<f32>,
-    gs_vertices: ArrayView2<f64>,
+    gs_vertices: ArrayView2<f32>,
     anisotropy: [f32; 3],
 ) -> f32 {
     let radius = (0..distances.len()).fold(0.0_f32, |acc, i| {
         let dist = distances[i];
-        let z = anisotropy[0] * dist * gs_vertices[[i, 0]] as f32;
-        let y = anisotropy[1] * dist * gs_vertices[[i, 1]] as f32;
-        let x = anisotropy[2] * dist * gs_vertices[[i, 2]] as f32;
+        let z = anisotropy[0] * dist * gs_vertices[[i, 0]];
+        let y = anisotropy[1] * dist * gs_vertices[[i, 1]];
+        let x = anisotropy[2] * dist * gs_vertices[[i, 2]];
         acc.max(z * z + y * y + x * x)
     });
     radius.sqrt()
@@ -171,22 +171,23 @@ pub fn estimate_anisotropy(bboxes: &[[i32; 6]], n_polys: usize) -> [f32; 3] {
 ///
 /// * `Ok((Array2<f64>, Array2<usize>))`: The golden spiral 3D convex hull
 ///   vertices and triangular face indices.
-#[inline]
+#[inline(always)]
 pub fn golden_spiral(
     n_points: usize,
-    anisotropy: Option<[f64; 3]>,
-) -> Result<(Array2<f64>, Array2<usize>), ImgalError> {
-    let anisotropy = Array1::from_iter(anisotropy.unwrap_or([1.0_f64; 3]));
-    let golden_angle = (3.0 - 5.0_f64.sqrt()) * PI;
-    let phi = Array1::from_iter(0..n_points).mapv(|v| v as f64 * golden_angle);
+    anisotropy: Option<[f32; 3]>,
+) -> Result<(Array2<f32>, Array2<usize>), ImgalError> {
+    let anisotropy = anisotropy.unwrap_or([1.0; 3]);
+    let aniso = ArrayView1::from(&anisotropy);
+    let golden_angle = (3.0 - 5.0_f32.sqrt()) * PI;
+    let phi = Array1::from_iter(0..n_points).mapv(|v| v as f32 * golden_angle);
     let z = Array1::linspace(-1.0, 1.0, n_points);
-    let rho = z.mapv(|v| (1.0_f64 - v * v).sqrt());
+    let rho = z.mapv(|v| (1.0_f32 - v * v).sqrt());
     let a = &rho * phi.mapv(|v| v.sin());
     let b = &rho * phi.mapv(|v| v.cos());
     let ax = Axis(1);
     let points = stack(ax, &[z.view(), a.view(), b.view()])
         .expect("Failed to create Golden spiral point cloud.");
-    let points = points / anisotropy;
+    let points = points / aniso;
     let (mut verts, faces) = quickhull_3d(&points, None)?;
     let norms = verts.map_axis(ax, |r| r.dot(&r).sqrt());
     verts /= &norms.insert_axis(ax);
@@ -338,7 +339,7 @@ pub fn overlap_polyhedron_mask(
 pub fn polyhedron_bbox(
     distances: ArrayView1<f32>,
     center: ArrayView1<f32>,
-    gs_vertices: ArrayView2<f64>,
+    gs_vertices: ArrayView2<f32>,
 ) -> [i32; 6] {
     let mut z1 = i32::MAX;
     let mut y1 = i32::MAX;
@@ -350,9 +351,9 @@ pub fn polyhedron_bbox(
     let cen_y = center[1];
     let cen_x = center[2];
     distances.iter().enumerate().for_each(|(i, &d)| {
-        let z = (cen_z + d * gs_vertices[[i, 0]] as f32).round_ties_even() as i32;
-        let y = (cen_y + d * gs_vertices[[i, 1]] as f32).round_ties_even() as i32;
-        let x = (cen_x + d * gs_vertices[[i, 2]] as f32).round_ties_even() as i32;
+        let z = (cen_z + d * gs_vertices[[i, 0]]).round_ties_even() as i32;
+        let y = (cen_y + d * gs_vertices[[i, 1]]).round_ties_even() as i32;
+        let x = (cen_x + d * gs_vertices[[i, 2]]).round_ties_even() as i32;
         z1 = z1.min(z);
         y1 = y1.min(y);
         x1 = x1.min(x);
@@ -386,16 +387,16 @@ pub fn polyhedron_bbox(
 pub fn polyhedron_verts(
     distances: ArrayView1<f32>,
     center: ArrayView1<f32>,
-    gs_vertices: ArrayView2<f64>,
+    gs_vertices: ArrayView2<f32>,
 ) -> Array2<f32> {
     let n_rays = distances.len();
     distances
         .iter()
         .enumerate()
         .fold(Array2::<f32>::zeros((n_rays, 3)), |mut acc, (i, &d)| {
-            acc[[i, 0]] = center[0] + d * gs_vertices[[i, 0]] as f32;
-            acc[[i, 1]] = center[1] + d * gs_vertices[[i, 1]] as f32;
-            acc[[i, 2]] = center[2] + d * gs_vertices[[i, 2]] as f32;
+            acc[[i, 0]] = center[0] + d * gs_vertices[[i, 0]];
+            acc[[i, 1]] = center[1] + d * gs_vertices[[i, 1]];
+            acc[[i, 2]] = center[2] + d * gs_vertices[[i, 2]];
             acc
         })
 }
@@ -421,7 +422,7 @@ pub fn polyhedron_verts(
 #[inline]
 pub fn polyhedron_vol(
     distances: ArrayView1<f32>,
-    gs_vertices: ArrayView2<f64>,
+    gs_vertices: ArrayView2<f32>,
     gs_faces: ArrayView2<usize>,
 ) -> Result<f32, ImgalError> {
     let origin = [0.0_f32; 3];
@@ -433,27 +434,27 @@ pub fn polyhedron_vol(
                 let i = tri[0];
                 let di = distances[i];
                 [
-                    di * gs_vertices[[i, 0]] as f32,
-                    di * gs_vertices[[i, 1]] as f32,
-                    di * gs_vertices[[i, 2]] as f32,
+                    di * gs_vertices[[i, 0]],
+                    di * gs_vertices[[i, 1]],
+                    di * gs_vertices[[i, 2]],
                 ]
             };
             let b: [f32; 3] = {
                 let i = tri[1];
                 let di = distances[i];
                 [
-                    di * gs_vertices[[i, 0]] as f32,
-                    di * gs_vertices[[i, 1]] as f32,
-                    di * gs_vertices[[i, 2]] as f32,
+                    di * gs_vertices[[i, 0]],
+                    di * gs_vertices[[i, 1]],
+                    di * gs_vertices[[i, 2]],
                 ]
             };
             let c: [f32; 3] = {
                 let i = tri[2];
                 let di = distances[i];
                 [
-                    di * gs_vertices[[i, 0]] as f32,
-                    di * gs_vertices[[i, 1]] as f32,
-                    di * gs_vertices[[i, 2]] as f32,
+                    di * gs_vertices[[i, 0]],
+                    di * gs_vertices[[i, 1]],
+                    di * gs_vertices[[i, 2]],
                 ]
             };
             let v = tetrahedron_volume(&a, &b, &c, &origin)? as f32;

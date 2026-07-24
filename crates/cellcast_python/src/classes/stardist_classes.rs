@@ -221,7 +221,7 @@ impl PyStarDist3D {
     #[pyo3(signature = (weights_path=None, anisotropy=None, gpu=None))]
     pub fn init_fluo(
         weights_path: Option<&str>,
-        anisotropy: Option<Vec<f64>>,
+        anisotropy: Option<Vec<f32>>,
         gpu: Option<bool>,
     ) -> PyResult<Self> {
         let anisotropy = anisotropy.as_deref();
