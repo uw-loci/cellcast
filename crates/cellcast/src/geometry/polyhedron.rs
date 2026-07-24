@@ -75,13 +75,6 @@ pub fn bounding_inner_radius_iso(
     })
 }
 
-/// Get the outer bounding radius (*i.e.* the maximum distance ray). Note that
-/// the polyhedron fits inside a sphere of this radius.
-#[inline]
-pub fn bounding_outer_radius(distances: ArrayView1<f32>) -> f32 {
-    distances.iter().fold(0.0_f32, |acc, v| v.max(acc))
-}
-
 /// TODO
 #[inline]
 pub fn bounding_outer_radius_iso(

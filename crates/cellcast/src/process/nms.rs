@@ -8,8 +8,8 @@ use rayon::prelude::*;
 
 use crate::geometry::polygon::{area_intersection, build_polygons, check_bbox_intersect};
 use crate::geometry::polyhedron::{
-    bbox_intersect_vol, bounding_inner_radius_iso, bounding_outer_radius,
-    bounding_outer_radius_iso, convex_hull_intersection_vol, estimate_anisotropy, golden_spiral,
+    bbox_intersect_vol, bounding_inner_radius_iso, bounding_outer_radius_iso,
+    convex_hull_intersection_vol, estimate_anisotropy, golden_spiral,
     golden_spiral_intersection_vol, overlap_polyhedron_mask, polyhedron_bbox, polyhedron_to_mask,
     polyhedron_verts, polyhedron_vol, sphere_intersect_volume_iso,
 };
@@ -134,7 +134,7 @@ pub fn polyhedron_nms(
             // SAFE: this unwrap is safe because we know that the parameters are
             // valid lengths here
             let vol = polyhedron_vol(cur_dist, verts, faces).unwrap();
-            let ro = bounding_outer_radius(cur_dist);
+            let ro = max(cur_dist, Some(1)).unwrap();
             (bbox, vol, ro)
         })
         .collect();
