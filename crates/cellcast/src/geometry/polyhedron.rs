@@ -1,4 +1,3 @@
-use std::array;
 use std::f32::consts::PI;
 
 use imgal::prelude::*;
@@ -21,7 +20,7 @@ use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, concatenate, stack};
 /// # Returns
 ///
 /// * `f32`: The intersection volume of bounding box `a` and `b`.
-#[inline]
+#[inline(always)]
 pub fn bbox_intersect_vol(bbox_a: &[i32; 6], bbox_b: &[i32; 6]) -> f32 {
     let wz = (bbox_a[1].min(bbox_b[1]) - bbox_a[0].max(bbox_b[0])).max(0) as f32;
     let wy = (bbox_a[3].min(bbox_b[3]) - bbox_a[2].max(bbox_b[2])).max(0) as f32;
@@ -62,31 +61,36 @@ pub fn bounding_inner_radius_iso(
 ) -> f32 {
     let eps = 1e-10;
     (0..gs_faces.dim().0).fold(f32::MAX, |acc, i| {
-        let i_a = gs_faces[[i, 0]];
-        let i_b = gs_faces[[i, 1]];
-        let i_c = gs_faces[[i, 2]];
+        let face = gs_faces.row(i);
+        let i_a = face[0];
+        let i_b = face[1];
+        let i_c = face[2];
+        let verts_a = gs_vertices.row(i_a);
+        let verts_b = gs_vertices.row(i_b);
+        let verts_c = gs_vertices.row(i_c);
+        let [anz, any, anx] = anisotropy;
         let a = {
             let dist = distances[i_a];
             [
-                anisotropy[0] * dist * gs_vertices[[i_a, 0]],
-                anisotropy[1] * dist * gs_vertices[[i_a, 1]],
-                anisotropy[2] * dist * gs_vertices[[i_a, 2]],
+                anz * dist * verts_a[0],
+                any * dist * verts_a[1],
+                anx * dist * verts_a[2],
             ]
         };
         let b = {
             let dist = distances[i_b];
             [
-                anisotropy[0] * dist * gs_vertices[[i_b, 0]],
-                anisotropy[1] * dist * gs_vertices[[i_b, 1]],
-                anisotropy[2] * dist * gs_vertices[[i_b, 2]],
+                anz * dist * verts_b[0],
+                any * dist * verts_b[1],
+                anx * dist * verts_b[2],
             ]
         };
         let c = {
             let dist = distances[i_c];
             [
-                anisotropy[0] * dist * gs_vertices[[i_c, 0]],
-                anisotropy[1] * dist * gs_vertices[[i_c, 1]],
-                anisotropy[2] * dist * gs_vertices[[i_c, 2]],
+                anz * dist * verts_c[0],
+                any * dist * verts_c[1],
+                anx * dist * verts_c[2],
             ]
         };
         // compute the edge vectors and cross product
@@ -122,16 +126,19 @@ pub fn bounding_inner_radius_iso(
 /// # Returns
 ///
 /// * `f32`: The outer (circum) scaled radius.
+#[inline(always)]
 pub fn bounding_outer_radius_iso(
     distances: ArrayView1<f32>,
     gs_vertices: ArrayView2<f32>,
     anisotropy: [f32; 3],
 ) -> f32 {
+    let [anz, any, anx] = anisotropy;
     let radius = (0..distances.len()).fold(0.0_f32, |acc, i| {
         let dist = distances[i];
-        let z = anisotropy[0] * dist * gs_vertices[[i, 0]];
-        let y = anisotropy[1] * dist * gs_vertices[[i, 1]];
-        let x = anisotropy[2] * dist * gs_vertices[[i, 2]];
+        let verts = gs_vertices.row(i);
+        let z = anz * dist * verts[0];
+        let y = any * dist * verts[1];
+        let x = anx * dist * verts[2];
         acc.max(z * z + y * y + x * x)
     });
     radius.sqrt()
@@ -174,14 +181,28 @@ pub fn convex_hull_intersection_vol(
     let hs_b = hull_to_halfspace(&hull_verts_b, &hull_faces_b, None)?;
     let hs = concatenate(Axis(0), &[hs_a.view(), hs_b.view()])
         .expect("Failed to stack halfspaces into array.");
-    let in_pnt: [f64; 3] = array::from_fn(|i| 0.5 * (center_a[i] + center_b[i]) as f64);
+    let in_pnt = [
+        0.5 * (center_a[0] + center_b[0]) as f64,
+        0.5 * (center_a[1] + center_b[1]) as f64,
+        0.5 * (center_a[2] + center_b[2]) as f64,
+    ];
     let (inter_verts, inter_faces) = halfspace_intersection(&hs, &in_pnt, None)?;
     let n_if = inter_faces.dim().0;
+    let [pz, py, px] = in_pnt;
     Ok((0..n_if).fold(0.0_f64, |acc, i| {
-        let [a_idx, b_idx, c_idx] = array::from_fn(|j| inter_faces[[i, j]]);
-        let [az, ay, ax] = array::from_fn(|j| inter_verts[[a_idx, j]] - in_pnt[j]);
-        let [bz, by, bx] = array::from_fn(|j| inter_verts[[b_idx, j]] - in_pnt[j]);
-        let [cz, cy, cx] = array::from_fn(|j| inter_verts[[c_idx, j]] - in_pnt[j]);
+        let face = inter_faces.row(i);
+        let inter_verts_a = inter_verts.row(face[0]);
+        let inter_verts_b = inter_verts.row(face[1]);
+        let inter_verts_c = inter_verts.row(face[2]);
+        let az = inter_verts_a[0] - pz;
+        let ay = inter_verts_a[1] - py;
+        let ax = inter_verts_a[2] - px;
+        let bz = inter_verts_b[0] - pz;
+        let by = inter_verts_b[1] - py;
+        let bx = inter_verts_b[2] - px;
+        let cz = inter_verts_c[0] - pz;
+        let cy = inter_verts_c[1] - py;
+        let cx = inter_verts_c[2] - px;
         let cross_z = bx * cy - by * cx;
         let cross_y = bz * cx - bx * cz;
         let cross_x = by * cz - bz * cy;
@@ -200,7 +221,7 @@ pub fn convex_hull_intersection_vol(
 /// # Returns
 ///
 /// * `[f32; 3]`: The estimated average anisotropy.
-#[inline]
+#[inline(always)]
 pub fn estimate_anisotropy(bboxes: &[[i32; 6]], n_polys: usize) -> [f32; 3] {
     let eps = 1e-10;
     let avg_aniso: [f32; 3] = (0..n_polys).fold([0.0_f32; 3], |mut acc, i| {
@@ -278,7 +299,7 @@ pub fn golden_spiral(
 /// * `Ok(f64)`: The intersection volume of polyhedron `a` and `b`.
 /// * `Err(ImgalError)`: If intersection halfspaces is `< 4`. If the halfspace
 ///   intersection interior point is not 3D.
-#[inline]
+#[inline(always)]
 pub fn golden_spiral_intersection_vol(
     vertices_a: ArrayView2<f32>,
     vertices_b: ArrayView2<f32>,
@@ -294,9 +315,10 @@ pub fn golden_spiral_intersection_vol(
         0.5 * (center_a[2] + center_b[2]) as f64,
     ];
     (0..n_gsf).for_each(|i| {
-        let a_idx = gs_faces[[i, 0]];
-        let b_idx = gs_faces[[i, 1]];
-        let c_idx = gs_faces[[i, 2]];
+        let face = gs_faces.row(i);
+        let a_idx = face[0];
+        let b_idx = face[1];
+        let c_idx = face[2];
         // SAFE: safe because points a, b and c are all length 3
         let hs_a = face_to_halfspace(
             vertices_a.row(a_idx),
@@ -315,19 +337,21 @@ pub fn golden_spiral_intersection_vol(
     });
     let (inter_verts, inter_faces) = halfspace_intersection(&hs_stack, &in_pnt, None)?;
     let n_if = inter_faces.dim().0;
+    let [pz, py, px] = in_pnt;
     Ok((0..n_if).fold(0.0_f64, |acc, i| {
-        let a_idx = inter_faces[[i, 0]];
-        let b_idx = inter_faces[[i, 1]];
-        let c_idx = inter_faces[[i, 2]];
-        let az = inter_verts[[a_idx, 0]] - in_pnt[0];
-        let ay = inter_verts[[a_idx, 1]] - in_pnt[1];
-        let ax = inter_verts[[a_idx, 2]] - in_pnt[2];
-        let bz = inter_verts[[b_idx, 0]] - in_pnt[0];
-        let by = inter_verts[[b_idx, 1]] - in_pnt[1];
-        let bx = inter_verts[[b_idx, 2]] - in_pnt[2];
-        let cz = inter_verts[[c_idx, 0]] - in_pnt[0];
-        let cy = inter_verts[[c_idx, 1]] - in_pnt[1];
-        let cx = inter_verts[[c_idx, 2]] - in_pnt[2];
+        let face = inter_faces.row(i);
+        let inter_verts_a = inter_verts.row(face[0]);
+        let inter_verts_b = inter_verts.row(face[1]);
+        let inter_verts_c = inter_verts.row(face[2]);
+        let az = inter_verts_a[0] - pz;
+        let ay = inter_verts_a[1] - py;
+        let ax = inter_verts_a[2] - px;
+        let bz = inter_verts_b[0] - pz;
+        let by = inter_verts_b[1] - py;
+        let bx = inter_verts_b[2] - px;
+        let cz = inter_verts_c[0] - pz;
+        let cy = inter_verts_c[1] - py;
+        let cx = inter_verts_c[2] - px;
         let cross_z = bx * cy - by * cx;
         let cross_y = bz * cx - bx * cz;
         let cross_x = by * cz - bz * cy;
@@ -393,9 +417,7 @@ pub fn overlap_polyhedron_mask(
                 query[1] = by + y as f32;
                 query[2] = bx + x as f32;
                 let query_view = ArrayView1::from(&query);
-                if inside_polyhedron(vertices, faces, center, query_view, None)
-                    .unwrap_or(false)
-                {
+                if inside_polyhedron(vertices, faces, center, query_view, None).unwrap_or(false) {
                     count += 1.0;
                     if count > overlap_threshold {
                         return count;
@@ -441,9 +463,10 @@ pub fn polyhedron_bbox(
     let cen_y = center[1];
     let cen_x = center[2];
     distances.iter().enumerate().for_each(|(i, &d)| {
-        let z = (cen_z + d * gs_vertices[[i, 0]]).round_ties_even() as i32;
-        let y = (cen_y + d * gs_vertices[[i, 1]]).round_ties_even() as i32;
-        let x = (cen_x + d * gs_vertices[[i, 2]]).round_ties_even() as i32;
+        let vert = gs_vertices.row(i);
+        let z = (cen_z + d * vert[0]).round_ties_even() as i32;
+        let y = (cen_y + d * vert[1]).round_ties_even() as i32;
+        let x = (cen_x + d * vert[2]).round_ties_even() as i32;
         z1 = z1.min(z);
         y1 = y1.min(y);
         x1 = x1.min(x);
@@ -473,20 +496,25 @@ pub fn polyhedron_bbox(
 ///
 /// * `Array2<f32>`: A 2D array of shape `(n_rays, 3)` containing the polyhedron
 ///   scaled vertices.
-#[inline]
+#[inline(always)]
 pub fn polyhedron_verts(
     distances: ArrayView1<f32>,
     center: ArrayView1<f32>,
     gs_vertices: ArrayView2<f32>,
 ) -> Array2<f32> {
     let n_rays = distances.len();
+    let cz = center[0];
+    let cy = center[1];
+    let cx = center[2];
     distances
         .iter()
         .enumerate()
         .fold(Array2::<f32>::zeros((n_rays, 3)), |mut acc, (i, &d)| {
-            acc[[i, 0]] = center[0] + d * gs_vertices[[i, 0]];
-            acc[[i, 1]] = center[1] + d * gs_vertices[[i, 1]];
-            acc[[i, 2]] = center[2] + d * gs_vertices[[i, 2]];
+            let gs_verts = gs_vertices.row(i);
+            let mut poly_verts = acc.row_mut(i);
+            poly_verts[0] = cz + d * gs_verts[0];
+            poly_verts[1] = cy + d * gs_verts[1];
+            poly_verts[2] = cx + d * gs_verts[2];
             acc
         })
 }
@@ -509,7 +537,7 @@ pub fn polyhedron_verts(
 /// # Returns
 ///
 /// * `f32`: The volume of the polyhedron.
-#[inline]
+#[inline(always)]
 pub fn polyhedron_vol(
     distances: ArrayView1<f32>,
     gs_vertices: ArrayView2<f32>,
@@ -624,7 +652,7 @@ pub fn polyhedron_to_mask(
 /// # Returns
 ///
 /// * `f32`: The intersection volume between spheres `a` and `b`.
-#[inline]
+#[inline(always)]
 pub fn sphere_intersect_volume_iso(
     center_a: ArrayView1<f32>,
     center_b: ArrayView1<f32>,
