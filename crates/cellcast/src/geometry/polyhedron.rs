@@ -216,6 +216,11 @@ pub fn golden_spiral_intersection_vol(
 ) -> Result<f64, ImgalError> {
     let n_gsf = gs_faces.dim().0;
     let mut hs_stack = Array2::<f64>::zeros((n_gsf * 2, 4));
+    let in_pnt = [
+        0.5 * (center_a[0] + center_b[0]) as f64,
+        0.5 * (center_a[1] + center_b[1]) as f64,
+        0.5 * (center_a[2] + center_b[2]) as f64,
+    ];
     (0..n_gsf).for_each(|i| {
         let a_idx = gs_faces[[i, 0]];
         let b_idx = gs_faces[[i, 1]];
@@ -236,11 +241,6 @@ pub fn golden_spiral_intersection_vol(
         hs_stack.row_mut(i * 2).assign(&hs_a);
         hs_stack.row_mut(i * 2 + 1).assign(&hs_b);
     });
-    let in_pnt = [
-        0.5 * (center_a[0] + center_b[0]) as f64,
-        0.5 * (center_a[1] + center_b[1]) as f64,
-        0.5 * (center_b[2] + center_b[2]) as f64,
-    ];
     let (inter_verts, inter_faces) = halfspace_intersection(&hs_stack, &in_pnt, None)?;
     let n_if = inter_faces.dim().0;
     Ok((0..n_if).fold(0.0_f64, |acc, i| {
