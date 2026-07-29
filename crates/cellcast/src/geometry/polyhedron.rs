@@ -7,7 +7,11 @@ use imgal::spatial::geometry::{inside_polyhedron, tetrahedron_volume};
 use imgal::spatial::halfspace::{face_to_halfspace, halfspace_intersection, hull_to_halfspace};
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, concatenate, stack};
 
-/// Compute the intersection volume of two axis-aligned 3D bounding boxes.
+/// Compute the inersection volume of two 3D bounding boxes.
+///
+/// # Description
+///
+/// Computes the intersection volume of two axis-aligned 3D bounding boxes.
 ///
 /// # Arguments
 ///
@@ -25,8 +29,31 @@ pub fn bbox_intersect_vol(bbox_a: &[i32; 6], bbox_b: &[i32; 6]) -> f32 {
     wz * wy * wx
 }
 
-/// TODO
-#[inline]
+/// Compute the inscribed (inner) radius of a polyhedron with anisotropic
+/// scaling.
+///
+/// # Description
+///
+/// Computes the minimum distance from the origin to the planes defined by
+/// the triangular faces of the polyhedron after applying `anisotropy` to the
+/// vertices (*i.e.* `anisotropy * distances * gs_vertices`). This value is
+/// the radius of the largest sphere centred at the origin that fits inside
+/// the anisotropically scaled polyhedron.
+///
+/// # Arguments
+///
+/// * `distances`: The polyhedron distances corresponding to each `gs_vertices`
+///   direction.
+/// * `gs_faces`: The golden spiral unit sphere triangular face indices with
+///   shape `(n_triangles, 3)`.
+/// * `gs_vertices`: The golden spiral unit sphere vertices with shape
+///   `(n_points, 3)`.
+/// * `anisotropy`: The 1D anisotropy array.
+///
+/// # Returns
+///
+/// * `f32`: The inscribed (inner) scaled radius.
+#[inline(always)]
 pub fn bounding_inner_radius_iso(
     distances: ArrayView1<f32>,
     gs_vertices: ArrayView2<f32>,
@@ -75,8 +102,26 @@ pub fn bounding_inner_radius_iso(
     })
 }
 
-/// TODO
-#[inline]
+/// Compute the outer (circum) radius of a polyhedron with anisotropic
+/// scaling.
+///
+/// # Description
+///
+/// Computes the maximum Euclidean distance of the anisotropically scaled
+/// polyhedron vertices from the origin (i.e. `anisotropy * distances *
+/// gs_vertices`) and returns its square root. This is the radius of the
+/// smallest sphere centred at the origin that contains the scaled vertices.
+///
+/// # Arguments
+///
+/// * `distances`: The polyhedron distances corresponding to each `gs_vertices`
+///   direction.
+/// * `gs_vertices`: Unit sphere vertices of shape `(n_points, 3)`.
+/// * `anisotropy`: The 1D anisotropy array.
+///
+/// # Returns
+///
+/// * `f32`: The outer (circum) scaled radius.
 pub fn bounding_outer_radius_iso(
     distances: ArrayView1<f32>,
     gs_vertices: ArrayView2<f32>,
@@ -92,8 +137,31 @@ pub fn bounding_outer_radius_iso(
     radius.sqrt()
 }
 
-/// TODO
-#[inline]
+/// Compute the intersection volume of two convex hulls.
+///
+/// # Description
+///
+/// Computes the intersection volume of between two sets of vertices, `a` and
+/// `b`, by creating convex hulls and converting each hull to a halfspace
+/// representation. The halfspaces are combined and the halfspace intersection
+/// computed and its volume returned. The interior point for the halfspace
+/// intersection is chosen as the midpoint of `center_a` and `center_b`.
+///
+/// # Arguments
+///
+/// * `vertices_a`: Vertices of polyhedron `a`.
+/// * `vertices_b`: Vertices of polyhedron `b`.
+/// * `center_a`: The center point of polyhedron `a` (used to compute an
+///   interior point for the halfspace intersection).
+/// * `center_b`: The center point of polyhedron `b`.
+///
+/// # Returns
+///
+/// * `Ok(f64)`: The intersection volume of polyhedron `a` and `b`.
+/// * `Err(ImgalError)`: If `vertices_a` or `vertices_b` is empty or contains
+///   less than 4 ponits. If `center_a` and `center_b` do not have length
+///   equal to `3`.
+#[inline(always)]
 pub fn convex_hull_intersection_vol(
     vertices_a: ArrayView2<f32>,
     vertices_b: ArrayView2<f32>,
@@ -187,6 +255,10 @@ pub fn golden_spiral(
     Ok((verts, faces))
 }
 
+/// Compute the overlap intersection volume.
+///
+/// # Description
+///
 /// Computes the overlap volume of two convex hulls by intersecting their face
 /// halfspaces and summing the volume of the result intersection hull. This
 /// function assumes the Golden Spiral faces describe the polyhedrons `a` and
@@ -264,7 +336,32 @@ pub fn golden_spiral_intersection_vol(
     }))
 }
 
-/// TODO
+/// Count the number of voxels in a mask that fall inside a polyhedron.
+///
+/// # Description
+///
+/// Counts the number of voxels within a mask (marked `true`) that fall inside
+/// the given polyhedron by testing if a voxel with `inside_polyhedron`.
+///
+/// # Arguments
+///
+/// * `vertices`: The polyhedron vertices with shape `(n_vertices, 3)`.
+/// * `faces`: The polyhedron triangular face indices with shape
+///   `(n_triangles, 3)`.
+/// * `center`: The centre point of the polyhedron.
+/// * `mask`: A boolean slice of length `nz * ny * nx` indicating which
+///   voxels to test.
+/// * `bbox`: The bounding box coordinates in
+///   `[z_min, z_max, y_min, y_max, x_min, x_max]` order.
+/// * `nz`: The z axis bounding box length.
+/// * `ny`: The y axis bounding box length.
+/// * `nx`: The x axis bounding box length.
+/// * `overlap_threshold`: The overlap count threshold.
+///
+/// # Returns
+///
+/// * `f32`: The number of mask voxels that lie inside the polyhedron that are
+///   below the `overlap_threshold`.
 #[inline(always)]
 pub fn overlap_polyhedron_mask(
     vertices: ArrayView2<f32>,
@@ -456,18 +553,29 @@ pub fn polyhedron_vol(
         .abs())
 }
 
-/// TODO
+/// Render a polyhedron into a boolean voxel mask.
+///
+/// # Description
+///
+/// Renders the given polyhedron into a 1D boolean mask of lengh `nz * ny * nx`,
+/// associated with the `bbox`. Each voxel in `bbox` is tested to determine if
+/// it lies inside the polyhedron.
 ///
 /// # Arguments
 ///
-/// * `bbox`: The bounding box.
-/// * `nz`: The Z-axis bounding box size (*i.e.* depth).
-/// * `ny`: The Y-axis bounding box size (*i.e.* height).
-/// * `nx`: The X-axis bounding box size (*i.e.* width).
+/// * `vertices`: The polyhedron vertices with shape `(n_vertices, 3)`.
+/// * `gs_faces`: The triangular face indices with shape `(n_triangles, 3)`.
+/// * `center`: The center point of the polyhedron.
+/// * `bbox`: The bounding box coordinates in
+///   `[z_min, z_max, y_min, y_max, x_min, x_max]` order.
+/// * `nz`: The z axis bounding box length.
+/// * `ny`: The y axis bounding box length.
+/// * `nx`: The x axis bounding box length.
 ///
 /// # Returns
 ///
-/// * `Vec<bool>`:
+/// * `Vec<bool>`: A boolean mask of length `nz * ny * nx` where `true`
+///   indicates the voxel centre lies inside the polyhedron.
 #[inline(always)]
 pub fn polyhedron_to_mask(
     vertices: ArrayView2<f32>,
@@ -498,8 +606,11 @@ pub fn polyhedron_to_mask(
     });
     render
 }
-
-/// Compute the intersection volume of two spheres with isotropic distance. If
+/// Compute the intersection volume of two spheres.
+///
+/// # Description
+///
+/// Computes the intersection volume of two spheres with isotropic distance. If
 /// the two spheres do not intersect the returned volume is `0.0`.
 ///
 /// # Arguments
