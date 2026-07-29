@@ -2,8 +2,7 @@ use imgal::prelude::*;
 use imgal::spatial::convex_hull::quickhull_3d;
 use imgal::spatial::geometry::inside_polyhedron;
 use imgal::spatial::halfspace::{hull_to_halfspace, inside_halfspace_interior};
-use ndarray::{Array1, Array3, ArrayView1, ArrayView2, ArrayViewMut3, Axis, indices, s};
-use rayon::prelude::*;
+use ndarray::{Array1, Array3, ArrayView1, ArrayView2, ArrayViewMut3, Axis, s};
 
 use crate::geometry::polyhedron::{golden_spiral, polyhedron_bbox, polyhedron_verts};
 
