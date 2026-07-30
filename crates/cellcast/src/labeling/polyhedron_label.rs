@@ -6,7 +6,33 @@ use ndarray::{Array1, Array3, ArrayView1, ArrayView2, ArrayViewMut3, Axis, s};
 
 use crate::geometry::polyhedron::{golden_spiral, polyhedron_bbox, polyhedron_verts};
 
-/// TODO
+/// Convert distance representation polyhedra into a labelled 3D volume.
+///
+/// # Description
+///
+/// Converts distance representation polyhedra into a labelled 3D volume of the
+/// given shape. Each polyhedron is rendered inside an axis-alixed voxel
+/// bounding box.
+///
+/// # Arguments
+///
+/// * `polyhedron_dist`: Input radial distance array with shape
+///   `(n_polys, n_rays)` containing the radial distances from polygon centers
+///   to their boundaries at each ray angle. This array must be pre-sorted in
+///   descending order by polygon probability.
+/// * `polyhedron_pnts`: Input polyhedron points array with shape `(n_polys, 3)`
+///   containing the (pln, row, col) coordinates of polyhedron centers. This
+///   array must be pre-sorted in descending order by polygon probability.
+/// * `polyhedron_prob`: Input polyhedron probabilites with shape `(n_polys,)`.
+/// * `prob_threshold`: Minimum probability to include a polyhedron.
+/// * `anisotropy`: The 1D anisotropy array.
+/// * `shape`: Output label volume shape `[nz, ny, nx]`.
+///
+/// # Returns
+///
+/// * `Ok(Array3<u64>)`: A label volume where `0` denotes background and
+///   positive `> 0` values denote each polyhedron's id.
+/// * `Err(ImgalError)`: If any of the input arrays are empty.
 pub fn distance_polyhedron_to_label(
     polyhedron_dist: ArrayView2<f32>,
     polyhedron_pnts: ArrayView2<f32>,
