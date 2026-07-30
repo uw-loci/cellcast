@@ -239,8 +239,12 @@ pub fn estimate_anisotropy(bboxes: &[[i32; 6]], n_polys: usize) -> [f32; 3] {
     ]
 }
 
-/// Create a golden spiral unit sphere. The unit sphere is used to determine
-/// which direction a ray points.
+/// Create a golden spiral unit sphere
+///
+/// # Description
+///
+/// Creates a golden spiral unit sphere which is used to determine the direction
+/// a ray points.
 ///
 /// # Arguments
 ///
