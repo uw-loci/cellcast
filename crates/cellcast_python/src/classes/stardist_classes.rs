@@ -21,7 +21,7 @@ impl PyStarDist2D {
     ///     weights_path: The path to custom StarDist2D weights in burnpack (`.bpk`)
     ///         format. If `None` then the versatile fluo pretrained weights are
     ///         used.
-    ///     gpu: If `true`, the configured GPU backend is used. If `false` then the
+    ///     gpu: If `True`, the configured GPU backend is used. If `False` then the
     ///         configured CPU backend is used.
     ///
     /// Returns:
@@ -48,7 +48,7 @@ impl PyStarDist2D {
     /// Args:
     ///     weights_path: The path to custom StarDist2D weights in burnpack (`.bpk`)
     ///         format. If `None` then the versatile HE pretrained weights are used.
-    ///     gpu: If `true`, the configured GPU backend is used. If `false` then the
+    ///     gpu: If `True`, the configured GPU backend is used. If `False` then the
     ///         configured CPU backend is used.
     ///
     /// Returns:
@@ -131,7 +131,31 @@ impl PyStarDist2D {
         }
     }
 
-    /// TODO
+/// Predict instance segmentation labels with the StarDist2D HE model.
+///
+/// Performs model inference with the StarDist2D HE model, returning instance
+/// segmentations of star-convex shapes.
+///
+/// Args:
+///     data: The input 3D image, where the third dimension is the channel axis.
+///     pmin: The minimum percentage to linear percentile normalize the input
+///         image. If `None`, then `pmin = 1.0`.
+///     pmax: The maximum percentage to linear percentile normalize the input
+///         image. If `None`, then `pmax = 99.8`.
+///     prob_threshold: The object/polygon probability threshold. If `None`,
+///         then `prob_threshold == 0.6924782541382084`.
+///     nms_threshold: The non-maximum suppression (NMS) threshold. If `None`,
+///         then `nms_threshold == 0.3`.
+///     axis: The channel axis. If `None` then `axis == 2`.
+///
+/// Returns:
+///     The StarDist2D HE model instance segmentation label image.
+///
+/// Errors:
+///     If `pmin` and/or `pmax` are outside of range `0.0` to `1.0.`
+///
+/// Reference
+///     <https://doi.org/10.1007/978-3-030-00934-2_30>
     #[pyo3(signature = (data, pmin=None, pmax=None, prob_threshold=None, nms_threshold=None, axis=None))]
     pub fn predict_he<'py>(
         &self,
@@ -216,7 +240,28 @@ pub struct PyStarDist3D(StarDist3D);
 
 #[pymethods]
 impl PyStarDist3D {
-    /// TODO
+    /// Initialize a StarDist3D fluo model.
+    ///
+    /// Initializes a StarDist3D fluo model using the versatile fluo pretrained
+    /// weights or custom weights. A StarDist3D model can be initialized on either
+    /// the GPU or CPU, but not both concurrently. The model is pre-warmed with as
+    /// part of the initializtion process.
+    ///
+    /// Args:
+    ///     weights_path: The path to custom StarDist3D weights in burnpack (`.bpk`)
+    ///         format. If `None` then the versatile fluo pretrained weights are
+    ///         used.
+    ///     anisotropy: The anisotropy the model was trained with for all three
+    ///         axes. If `None` then anisotropy of `[2.0, 1.0, 1.0]` is used.
+    ///     gpu: If `True`, the configured GPU backend is used. If `false` then the
+    ///         configured CPU backend is used.
+    ///
+    /// Returns:
+    ///     An initialized StarDist3D fluo model.
+    ///
+    /// Errors:
+    ///     If the requested model can not be initialized. If
+    ///     `anisotropy.len() != 3`.
     #[staticmethod]
     #[pyo3(signature = (weights_path=None, anisotropy=None, gpu=None))]
     pub fn init_fluo(
@@ -232,7 +277,32 @@ impl PyStarDist3D {
         ))
     }
 
-    /// TODO
+    /// Predict instance segmentation labels with the StarDist3D fluo model.
+    ///
+    /// Performs model inference with the StarDist3D fluo model, returning instance
+    /// segmentations of star-convex shapes.
+    ///
+    /// Args:
+    ///     data: The input 3D image.
+    ///     pmin: The minimum percentage to linear percentile normalize the input
+    ///         image. If `None`, then `pmin = 1.0`.
+    ///     pmax: The maximum percentage to linear percentile normalize the input
+    ///         image. If `None`, then `pmax = 99.8`.
+    ///     prob_threshold: The object/polyhedron probability threshold. If `None`,
+    ///         then `prob_threshold == 0.7079326182611463`.
+    ///     nms_threshold: The non-maximum suppression (NMS) threshold. If `None`,
+    ///         then `nms_threshold == 0.3`.
+    ///     axis: The `pln` or `z` axis. If `None` then `axis == 0`.
+    ///
+    /// Returns
+    ///     The StarDist3D fluo model instance segmentation label image.
+    ///
+    /// Errors:
+    ///     If `pmin` and/or `pmax` are outside of range `0.0` to `1.0.` If
+    ///     `axis >= 3`.
+    ///
+    /// Reference
+    ///     <https://doi.org/10.1109/WACV45572.2020.9093435>
     #[pyo3(signature = (data, pmin=None, pmax=None, prob_threshold=None, nms_threshold=None, axis=None))]
     pub fn predict_fluo<'py>(
         &self,
