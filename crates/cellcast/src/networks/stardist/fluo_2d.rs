@@ -53,7 +53,24 @@ impl<B: Backend> Default for Model<B> {
 }
 
 impl<B: Backend> Model<B> {
-    /// TODO
+    /// Initialize the model on a specific device, optionally from a weights file.
+    ///
+    /// # Description
+    ///
+    /// Create a `Model` whose parameters are placed on `device`. If
+    /// `weights_path` is `Some(path)` the model weights are loaded from the
+    /// specified burnpack file via `from_file`. If `None` the default model
+    /// is returned (the default may download and load pretrained weights).
+    ///
+    /// # Arguments
+    ///
+    /// * `device`: The backend device to initialise the model on.
+    /// * `weights_path`: Optional path to a burnpack weights file.
+    ///
+    /// # Returns
+    ///
+    /// * `Self`: A `Model` with parameters placed on `device`. Panics if the
+    ///   weight download or load fails.
     pub fn init(device: &B::Device, weights_path: Option<PathBuf>) -> Self {
         match weights_path {
             Some(wp) => Self::from_file(wp.to_str().unwrap(), device),
@@ -61,7 +78,24 @@ impl<B: Backend> Model<B> {
         }
     }
 
-    /// Load model weights from a burnpack file.
+    /// Load model weights from a burnpack file into a newly constructed model.
+    ///
+    /// # Description
+    ///
+    /// Constructs a fresh `Model` on `device` (using `Self::new`) and loads
+    /// parameters from the provided burnpack file. The file is opened with
+    /// `BurnpackStore::from_file` and applied to the model via
+    /// `load_from`. The function will panic if the burnpack cannot be
+    /// read or the snapshot cannot be applied.
+    ///
+    /// # Arguments
+    ///
+    /// * `file`: Path to a burnpack file containing model weights.
+    /// * `device`: The backend device to initialise the model on.
+    ///
+    /// # Returns
+    ///
+    /// * `Self`: A `Model` with weights loaded from `file` on `device`.
     pub fn from_file(file: &str, device: &B::Device) -> Self {
         let mut model = Self::new(device);
         let mut store = BurnpackStore::from_file(file);
