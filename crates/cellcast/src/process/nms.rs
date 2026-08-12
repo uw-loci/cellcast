@@ -150,7 +150,7 @@ pub fn polyhedron_nms(
     let max_dist = max(&rad_out, None)?;
     let kdtree = KDTree::build(&polyhedron_pnts);
     let suppressed: Vec<AtomicBool> = (0..n_polys).map(|_| AtomicBool::new(false)).collect();
-    (0..n_polys.saturating_sub(1)).for_each(|i| {
+    (0..n_polys.saturating_sub(1)).into_par_iter().for_each(|i| {
         if suppressed[i].load(Ordering::Relaxed) {
             return;
         }
