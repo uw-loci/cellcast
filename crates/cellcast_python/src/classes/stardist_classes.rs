@@ -131,31 +131,31 @@ impl PyStarDist2D {
         }
     }
 
-/// Predict instance segmentation labels with the StarDist2D HE model.
-///
-/// Performs model inference with the StarDist2D HE model, returning instance
-/// segmentations of star-convex shapes.
-///
-/// Args:
-///     data: The input 3D image, where the third dimension is the channel axis.
-///     pmin: The minimum percentage to linear percentile normalize the input
-///         image. If `None`, then `pmin = 1.0`.
-///     pmax: The maximum percentage to linear percentile normalize the input
-///         image. If `None`, then `pmax = 99.8`.
-///     prob_threshold: The object/polygon probability threshold. If `None`,
-///         then `prob_threshold == 0.6924782541382084`.
-///     nms_threshold: The non-maximum suppression (NMS) threshold. If `None`,
-///         then `nms_threshold == 0.3`.
-///     axis: The channel axis. If `None` then `axis == 2`.
-///
-/// Returns:
-///     The StarDist2D HE model instance segmentation label image.
-///
-/// Errors:
-///     If `pmin` and/or `pmax` are outside of range `0.0` to `1.0.`
-///
-/// Reference
-///     <https://doi.org/10.1007/978-3-030-00934-2_30>
+    /// Predict instance segmentation labels with the StarDist2D HE model.
+    ///
+    /// Performs model inference with the StarDist2D HE model, returning instance
+    /// segmentations of star-convex shapes.
+    ///
+    /// Args:
+    ///     data: The input 3D image, where the third dimension is the channel axis.
+    ///     pmin: The minimum percentage to linear percentile normalize the input
+    ///         image. If `None`, then `pmin = 1.0`.
+    ///     pmax: The maximum percentage to linear percentile normalize the input
+    ///         image. If `None`, then `pmax = 99.8`.
+    ///     prob_threshold: The object/polygon probability threshold. If `None`,
+    ///         then `prob_threshold == 0.6924782541382084`.
+    ///     nms_threshold: The non-maximum suppression (NMS) threshold. If `None`,
+    ///         then `nms_threshold == 0.3`.
+    ///     axis: The channel axis. If `None` then `axis == 2`.
+    ///
+    /// Returns:
+    ///     The StarDist2D HE model instance segmentation label image.
+    ///
+    /// Errors:
+    ///     If `pmin` and/or `pmax` are outside of range `0.0` to `1.0.`
+    ///
+    /// Reference
+    ///     <https://doi.org/10.1007/978-3-030-00934-2_30>
     #[pyo3(signature = (data, pmin=None, pmax=None, prob_threshold=None, nms_threshold=None, axis=None))]
     pub fn predict_he<'py>(
         &self,

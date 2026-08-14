@@ -24,7 +24,7 @@ const NMS_THRESHOLD: f64 = 0.3;
 type CpuConfigBackend = CpuBackend<f32, i32>;
 type GpuConfigBackend = GpuBackend<f32, i32>;
 
-/// Backend variants for a `StarDist3Dl` model.
+/// Backend variants for a `StarDist3D` model.
 ///
 /// This enum tracks the possible StarDist3D model variants for the `fluo` model
 /// initialized on the CPU or GPU.
