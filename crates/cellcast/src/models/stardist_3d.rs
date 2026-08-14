@@ -281,7 +281,9 @@ impl StarDist3D {
                 StarDist3DModels::FluoGpu(m) => {
                     let device = Default::default();
                     let tensor = Tensor::<GpuConfigBackend, 5>::from_data(td, &device);
-                    let _ = m.forward(tensor, (32, 64, 64));
+                    let (p, d) = m.forward(tensor, (32, 64, 64));
+                    let _ = p.into_data();
+                    let _ = d.into_data();
                     Ok(())
                 }
                 _ => {
@@ -296,7 +298,9 @@ impl StarDist3D {
                 StarDist3DModels::FluoCpu(m) => {
                     let device = Default::default();
                     let tensor = Tensor::<CpuConfigBackend, 5>::from_data(td, &device);
-                    let _ = m.forward(tensor, (32, 64, 64));
+                    let (p, d) = m.forward(tensor, (32, 64, 64));
+                    let _ = p.into_data();
+                    let _ = d.into_data();
                     Ok(())
                 }
                 _ => {

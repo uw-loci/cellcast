@@ -396,7 +396,9 @@ impl StarDist2D {
                 StarDist2DModels::FluoGpu(m) => {
                     let device = Default::default();
                     let tensor = Tensor::<GpuConfigBackend, 4>::from_data(td, &device);
-                    let _ = m.forward(tensor, (128, 128));
+                    let (p, d) = m.forward(tensor, (128, 128));
+                    let _ = p.into_data();
+                    let _ = d.into_data();
                     Ok(())
                 }
                 _ => {
@@ -411,7 +413,9 @@ impl StarDist2D {
                 StarDist2DModels::FluoCpu(m) => {
                     let device = Default::default();
                     let tensor = Tensor::<CpuConfigBackend, 4>::from_data(td, &device);
-                    let _ = m.forward(tensor, (128, 128));
+                    let (p, d) = m.forward(tensor, (128, 128));
+                    let _ = p.into_data();
+                    let _ = d.into_data();
                     Ok(())
                 }
                 _ => {
@@ -444,7 +448,9 @@ impl StarDist2D {
                 StarDist2DModels::HeGpu(m) => {
                     let device = Default::default();
                     let tensor = Tensor::<GpuConfigBackend, 4>::from_data(td, &device);
-                    let _ = m.forward(tensor, (128, 128));
+                    let (p, d) = m.forward(tensor, (128, 128));
+                    let _ = p.into_data();
+                    let _ = d.into_data();
                     Ok(())
                 }
                 _ => {
@@ -459,7 +465,9 @@ impl StarDist2D {
                 StarDist2DModels::HeCpu(m) => {
                     let device = Default::default();
                     let tensor = Tensor::<CpuConfigBackend, 4>::from_data(td, &device);
-                    let _ = m.forward(tensor, (128, 128));
+                    let (p, d) = m.forward(tensor, (128, 128));
+                    let _ = p.into_data();
+                    let _ = d.into_data();
                     Ok(())
                 }
                 _ => {
