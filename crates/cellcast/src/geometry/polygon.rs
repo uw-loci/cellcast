@@ -21,12 +21,11 @@ pub struct Polygon2D {
     pub vertices: Vec<(f32, f32)>,
 }
 
-/// Compute the intersection area of two 2-dimensional polygons.
+/// Compute the intersection area of two 2D polygons.
 ///
 /// # Description
 ///
-/// Computes the intersection (_i.e._ overlapping) area of two 2-dimensional
-/// polygons.
+/// Computes the intersection (*i.e.* overlapping) area of two 2D polygons.
 ///
 /// # Arguments
 ///
@@ -46,12 +45,12 @@ pub fn area_intersection(vertices_a: &[(f32, f32)], vertices_b: &[(f32, f32)]) -
     inter.unsigned_area()
 }
 
-/// Create a vector of 2-dimensional polygons.
+/// Create a vector of 2D polygons.
 ///
 /// # Description
 ///
-/// Creates a vector of 2-dimensional polygons from radial distances and the
-/// associated polygon centers.
+/// Creates a vector of 2D polygons from radial distances and the associated
+/// polygon centers.
 ///
 /// # Arguments
 ///

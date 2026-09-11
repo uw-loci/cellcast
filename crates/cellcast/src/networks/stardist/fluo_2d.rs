@@ -53,24 +53,24 @@ impl<B: Backend> Default for Model<B> {
 }
 
 impl<B: Backend> Model<B> {
-    /// Initialize the model on a specific device, optionally from a weights file.
+    /// Initialize the model on the specified device.
     ///
     /// # Description
     ///
-    /// Create a `Model` whose parameters are placed on `device`. If
-    /// `weights_path` is `Some(path)` the model weights are loaded from the
-    /// specified burnpack file via `from_file`. If `None` the default model
-    /// is returned (the default may download and load pretrained weights).
+    /// Initializes a `Model` on the specified `device`. If `weights_path` is
+    /// `Some(path)` the model weights are loaded from the given burnpack file. If
+    /// `None` then default pre-trained model weights are used (downloaded if no
+    /// on system cache is found).
     ///
     /// # Arguments
     ///
-    /// * `device`: The backend device to initialise the model on.
+    /// * `device`: The backend device to initialize the `Model` on.
     /// * `weights_path`: Optional path to a burnpack weights file.
     ///
     /// # Returns
     ///
-    /// * `Self`: A `Model` with parameters placed on `device`. Panics if the
-    ///   weight download or load fails.
+    /// * `Self`: The initialized `Model` on `device`. Panics if the weight download
+    ///   or load fails.
     pub fn init(device: &B::Device, weights_path: Option<PathBuf>) -> Self {
         match weights_path {
             Some(wp) => Self::from_file(wp.to_str().unwrap(), device),
@@ -82,20 +82,18 @@ impl<B: Backend> Model<B> {
     ///
     /// # Description
     ///
-    /// Constructs a fresh `Model` on `device` (using `Self::new`) and loads
-    /// parameters from the provided burnpack file. The file is opened with
-    /// `BurnpackStore::from_file` and applied to the model via
-    /// `load_from`. The function will panic if the burnpack cannot be
-    /// read or the snapshot cannot be applied.
+    /// Loads model weights from a given burnpack file into a new `Model` on the
+    /// specified `device`.
     ///
     /// # Arguments
     ///
-    /// * `file`: Path to a burnpack file containing model weights.
-    /// * `device`: The backend device to initialise the model on.
+    /// * `file`: The path to a burnpack file containing model weights.
+    /// * `device`: The backend device to initialize the `Model` on.
     ///
     /// # Returns
     ///
-    /// * `Self`: A `Model` with weights loaded from `file` on `device`.
+    /// * `Self`: The initialized `Model` on `device`. Panics if the weights
+    ///   download or load fails.
     pub fn from_file(file: &str, device: &B::Device) -> Self {
         let mut model = Self::new(device);
         let mut store = BurnpackStore::from_file(file);

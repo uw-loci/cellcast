@@ -56,15 +56,15 @@ impl StarDist2D {
     ///
     /// Initializes a StarDist2D fluo model using the versatile fluo pretrained
     /// weights or custom weights. A StarDist2D model can be initialized on either
-    /// the GPU or CPU, but not both concurrently. The model is pre-warmed with as
-    /// part of the initializtion process.
+    /// the GPU or CPU, but not both concurrently. The model is pre-warmed as part
+    /// of the initializtion process.
     ///
     /// # Arguments
     ///
     /// * `weights_path`: The path to custom StarDist2D weights in burnpack (`.bpk`)
     ///   format. If `None` then the versatile fluo pretrained weights are used.
-    /// * `gpu`: If `true`, the configured GPU backend is used. If `false` then the
-    ///   configured CPU backend is used.
+    /// * `gpu`: If `true`, the GPU backend is used. If `false` then the CPU backend
+    ///   is used.
     ///
     /// # Returns
     ///
@@ -103,15 +103,15 @@ impl StarDist2D {
     ///
     /// Initializes a StarDist2D Fluo model using the versatile HE pretrained
     /// weights or custom weights. A StarDist2D model can be initialized on either
-    /// the GPU or CPU, but not both concurrently. The model is pre-warmed with as
-    /// part of the initializtion process.
+    /// the GPU or CPU, but not both concurrently. The model is pre-warmed as part
+    /// of the initializtion process.
     ///
     /// # Arguments
     ///
     /// * `weights_path`: The path to custom StarDist2D weights in burnpack (`.bpk`)
     ///   format. If `None` then the versatile HE pretrained weights are used.
-    /// * `gpu`: If `true`, the configured GPU backend is used. If `false` then the
-    ///   configured CPU backend is used.
+    /// * `gpu`: If `true`, the GPU backend is used. If `false` then the CPU backend
+    ///   is used.
     ///
     /// # Returns
     ///

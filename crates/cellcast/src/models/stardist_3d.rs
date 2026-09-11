@@ -53,8 +53,8 @@ impl StarDist3D {
     ///
     /// Initializes a StarDist3D fluo model using the versatile fluo pretrained
     /// weights or custom weights. A StarDist3D model can be initialized on either
-    /// the GPU or CPU, but not both concurrently. The model is pre-warmed with as
-    /// part of the initializtion process.
+    /// the GPU or CPU, but not both concurrently. The model is pre-warmed as part
+    /// of the initializtion process.
     ///
     /// # Arguments
     ///
@@ -62,8 +62,8 @@ impl StarDist3D {
     ///   format. If `None` then the versatile fluo pretrained weights are used.
     /// * `anisotropy`: The anisotropy the model was trained with for all three
     ///   axes. If `None` then anisotropy of `[2.0, 1.0, 1.0]` is used.
-    /// * `gpu`: If `true`, the configured GPU backend is used. If `false` then the
-    ///   configured CPU backend is used.
+    /// * `gpu`: If `true`, the GPU backend is used. If `false` then the CPU backend
+    ///   is used.
     ///
     /// # Returns
     ///
@@ -330,7 +330,8 @@ impl StarDist3D {
 ///
 /// # Returns
 ///
-/// * `Array2<u64>`: The instance segmentation label image.
+/// * `Ok(Array2<u64>)`: The instance segmentation label image.
+/// * `Err(ImgalError)`: If any of the input arrays are empty.
 fn prob_dist_to_labels_3d(
     prob: Vec<f32>,
     dist: Vec<f32>,

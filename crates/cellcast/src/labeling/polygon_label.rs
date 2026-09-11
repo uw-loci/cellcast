@@ -23,7 +23,7 @@ use ndarray::{Array2, Array3, ArrayView1, ArrayView2, Axis};
 ///   `(n_polys, n_rays)`.
 /// * `polygon_prob`: A 1D array of polygon probabilites with shape
 ///   `(n_polys,)`.
-/// * `polygon_pos`: A 2D array of polygon center positions with shape
+/// * `polygon_pnts`: A 2D array of polygon center points with shape
 ///   `(n_polys, 2)`. The dimension order expected is (row, col).
 /// * `shape`: The shape of the output label image.
 /// * `scale`: Optional scaling factor for each axis. If `None` then no scaling
@@ -114,8 +114,7 @@ fn inside_polygon(
 ///
 /// * `polygon_dist`: A 2D array of radial polygon distances with shape
 ///   `(n_polys, n_rays)`.
-/// * `polygon_prob`: A 1D array of polygon probabilites with shape
-///   `(n_polys,)`.
+/// * `polygon_pnts`: A 2D array of polygon center points.
 /// * `n_polys`: The number of polygons.
 /// * `n_rays`: The number of ray angles.
 /// * `scale`: The scaling factor per axis. If `None` then no scaling is
