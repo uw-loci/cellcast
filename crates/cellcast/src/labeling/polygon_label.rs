@@ -36,7 +36,7 @@ use ndarray::{Array2, Array3, ArrayView1, ArrayView2, Axis};
 pub fn distance_polygon_to_label(
     polygon_dist: ArrayView2<f32>,
     polygon_prob: ArrayView1<f32>,
-    polygon_pos: ArrayView2<usize>,
+    polygon_pnts: ArrayView2<usize>,
     shape: (usize, usize),
     scale: Option<(f32, f32)>,
 ) -> Array2<u64> {
@@ -47,12 +47,12 @@ pub fn distance_polygon_to_label(
     sorted_inds.sort_by(|&a, &b| polygon_prob[a].partial_cmp(&polygon_prob[b]).unwrap());
     let poly_ax = Axis(0);
     let polygon_dist = polygon_dist.select(poly_ax, &sorted_inds);
-    let polygon_pos = polygon_pos.select(poly_ax, &sorted_inds);
+    let polygon_pnts = polygon_pnts.select(poly_ax, &sorted_inds);
     // convert radial distances and point positions from polar to cartesian
     // coordinates and render the label image with original indices as labels
     let poly_coords = radial_dist_to_coords_2d(
         polygon_dist.view(),
-        polygon_pos.view(),
+        polygon_pnts.view(),
         n_polys,
         n_rays,
         scale,
@@ -128,7 +128,7 @@ fn inside_polygon(
 #[inline]
 fn radial_dist_to_coords_2d(
     polygon_dist: ArrayView2<f32>,
-    polygon_pos: ArrayView2<usize>,
+    polygon_pnts: ArrayView2<usize>,
     n_polys: usize,
     n_rays: usize,
     scale: Option<(f32, f32)>,
@@ -141,8 +141,8 @@ fn radial_dist_to_coords_2d(
         .collect();
     let mut coords = Array3::<f32>::zeros((n_polys, n_rays, 2));
     (0..n_polys).for_each(|p| {
-        let poly_y = polygon_pos[[p, 0]] as f32;
-        let poly_x = polygon_pos[[p, 1]] as f32;
+        let poly_y = polygon_pnts[[p, 0]] as f32;
+        let poly_x = polygon_pnts[[p, 1]] as f32;
         (0..n_rays).for_each(|r| {
             let d = polygon_dist[[p, r]];
             let a = angles[r];

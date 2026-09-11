@@ -519,27 +519,27 @@ fn prob_dist_to_labels_2d(
     let valid_mask = valid_mask.into_dimensionality::<Ix2>().unwrap();
     // collect all valid (row, col) positions to avoid iterating the mask
     // repeatedly
-    let valid_pos: Vec<(usize, usize)> = valid_mask
+    let valid_pnts: Vec<(usize, usize)> = valid_mask
         .indexed_iter()
         .filter(|&((_, _), &v)| v)
         .map(|((r, c), _)| (r, c))
         .collect();
-    let flat_pos = valid_pos.iter().flat_map(|&(r, c)| [r, c]).collect();
-    let mut valid_pos = Array2::from_shape_vec((valid_pos.len(), 2), flat_pos).unwrap();
+    let flat_pos = valid_pnts.iter().flat_map(|&(r, c)| [r, c]).collect();
+    let mut valid_pnts = Array2::from_shape_vec((valid_pnts.len(), 2), flat_pos).unwrap();
     // filter probabilities and distances with valid indices, removing invalid
     // positions
     let mut valid_prob =
-        Array1::from_iter(valid_pos.axis_iter(Axis(0)).map(|v| prob_arr[[v[0], v[1]]]));
-    let mut valid_dist = Array2::<f32>::zeros((valid_pos.dim().0, N_RAYS));
+        Array1::from_iter(valid_pnts.axis_iter(Axis(0)).map(|v| prob_arr[[v[0], v[1]]]));
+    let mut valid_dist = Array2::<f32>::zeros((valid_pnts.dim().0, N_RAYS));
     (0..N_RAYS).for_each(|n| {
-        valid_pos.axis_iter(Axis(0)).enumerate().for_each(|(i, v)| {
+        valid_pnts.axis_iter(Axis(0)).enumerate().for_each(|(i, v)| {
             valid_dist[[i, n]] = dist_arr[[v[0], v[1], n]];
         });
     });
     // scale each valid position by 2 and collect the valid indices of positions
     // inside of the source image dimensions (used for point filtering)
-    valid_pos.mapv_inplace(|v| v * 2);
-    let valid_inds: Vec<usize> = valid_pos
+    valid_pnts.mapv_inplace(|v| v * 2);
+    let valid_inds: Vec<usize> = valid_pnts
         .axis_iter(Axis(0))
         .enumerate()
         .filter_map(|(i, v)| {
@@ -552,10 +552,10 @@ fn prob_dist_to_labels_2d(
         .collect();
     // remove invalid indices (if there are any) from dist, prob and pos
     let poly_ax = Axis(0);
-    if valid_pos.len() > valid_inds.len() {
+    if valid_pnts.len() > valid_inds.len() {
         valid_dist = valid_dist.select(poly_ax, &valid_inds);
         valid_prob = valid_prob.select(poly_ax, &valid_inds);
-        valid_pos = valid_pos.select(poly_ax, &valid_inds);
+        valid_pnts = valid_pnts.select(poly_ax, &valid_inds);
     }
     // get the indices that would sort probs in descending order
     let n_polys = valid_prob.len();
@@ -563,11 +563,11 @@ fn prob_dist_to_labels_2d(
     sorted_poly_inds.sort_by(|&a, &b| valid_prob[b].partial_cmp(&valid_prob[a]).unwrap());
     // sort dist, prob and pos arrays with prob descending order indices
     let poly_dist = valid_dist.select(poly_ax, &sorted_poly_inds);
-    let poly_pos = valid_pos.select(poly_ax, &sorted_poly_inds);
+    let poly_pnts = valid_pnts.select(poly_ax, &sorted_poly_inds);
     // perform non-maximum supression (NMS) and obtain indices of valid polygons
     let valid_poly_inds = polygon_nms(
         poly_dist.view(),
-        poly_pos.view(),
+        poly_pnts.view(),
         n_polys,
         N_RAYS,
         nms_threshold,
@@ -581,19 +581,19 @@ fn prob_dist_to_labels_2d(
     // filter dist, prob and pos arrays with for valid polygons after NMS
     let poly_dist = poly_dist.select(poly_ax, &valid_poly_inds);
     let poly_prob = valid_prob.select(poly_ax, &valid_poly_inds);
-    let poly_pos = poly_pos.select(poly_ax, &valid_poly_inds);
+    let poly_pnts = poly_pnts.select(poly_ax, &valid_poly_inds);
     // filter dist, prob and pos arrays by probability threshold
     let valid_prob_inds: Vec<usize> = (0..poly_prob.len())
         .filter(|&i| poly_prob[i] > prob_threshold)
         .collect();
     let poly_dist = poly_dist.select(poly_ax, &valid_prob_inds);
     let poly_prob = poly_prob.select(poly_ax, &valid_prob_inds);
-    let poly_pos = poly_pos.select(poly_ax, &valid_prob_inds);
+    let poly_pnts = poly_pnts.select(poly_ax, &valid_prob_inds);
     // convert radial distances and polygons to labels
     labeling::distance_polygon_to_label(
         poly_dist.view(),
         poly_prob.view(),
-        poly_pos.view(),
+        poly_pnts.view(),
         (src_shape.0, src_shape.1),
         None,
     )
