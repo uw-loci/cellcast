@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "cellcast"
-version = "0.2.1.dev0"
+version = "0.3.0"
 description = "A recast of cell segmentation models built on the Burn deep learning framework."
 authors = [{ name = "cellcast developers" }]
 license = {text = "Unlicense OR MIT"}
@@ -19,7 +19,6 @@ classifiers = [
     "Operating System :: Unix",
     "Operating System :: MacOS",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -32,7 +31,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Image Processing",
 ]
 
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 dependencies = [
     "numpy",
 ]
