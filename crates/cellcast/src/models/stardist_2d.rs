@@ -528,13 +528,19 @@ fn prob_dist_to_labels_2d(
     let mut valid_pnts = Array2::from_shape_vec((valid_pnts.len(), 2), flat_pos).unwrap();
     // filter probabilities and distances with valid indices, removing invalid
     // positions
-    let mut valid_prob =
-        Array1::from_iter(valid_pnts.axis_iter(Axis(0)).map(|v| prob_arr[[v[0], v[1]]]));
+    let mut valid_prob = Array1::from_iter(
+        valid_pnts
+            .axis_iter(Axis(0))
+            .map(|v| prob_arr[[v[0], v[1]]]),
+    );
     let mut valid_dist = Array2::<f32>::zeros((valid_pnts.dim().0, N_RAYS));
     (0..N_RAYS).for_each(|n| {
-        valid_pnts.axis_iter(Axis(0)).enumerate().for_each(|(i, v)| {
-            valid_dist[[i, n]] = dist_arr[[v[0], v[1], n]];
-        });
+        valid_pnts
+            .axis_iter(Axis(0))
+            .enumerate()
+            .for_each(|(i, v)| {
+                valid_dist[[i, n]] = dist_arr[[v[0], v[1], n]];
+            });
     });
     // scale each valid position by 2 and collect the valid indices of positions
     // inside of the source image dimensions (used for point filtering)
