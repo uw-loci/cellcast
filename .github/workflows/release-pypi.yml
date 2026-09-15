@@ -43,12 +43,12 @@ jobs:
             name: macos-aarch64
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
-          python-version: '3.11'  # Just for running maturin
+          python-version: '3.13'  # Just for running maturin
 
       - name: Build wheels
         uses: PyO3/maturin-action@v1
@@ -59,7 +59,7 @@ jobs:
           manylinux: ${{ matrix.platform.target == 'aarch64-unknown-linux-gnu' && '2_28' || 'auto' }}
 
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wheels-${{ matrix.platform.name }}
           path: dist
@@ -69,7 +69,7 @@ jobs:
     name: Build source distribution
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Build sdist
         uses: PyO3/maturin-action@v1
@@ -78,7 +78,7 @@ jobs:
           args: --out dist --manifest-path crates/cellcast_python/Cargo.toml
 
       - name: Upload sdist
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sdist
           path: dist
@@ -92,7 +92,7 @@ jobs:
     
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: '*'
           path: dist
@@ -127,7 +127,7 @@ jobs:
 
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: '*'
           path: dist
