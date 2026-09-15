@@ -5,7 +5,7 @@ use ndarray::{Ix2, Ix3, arr2};
 use cellcast::models::{StarDist2D, StarDist3D};
 
 const SHAPE_2D: [usize; 2] = [128, 128];
-const SHAPE_3D: [usize; 3] = [64, 128, 128];
+const SHAPE_3D: [usize; 3] = [10, 64, 64];
 const GPU: bool = true;
 
 fn bench_stardist_2d(c: &mut Criterion) {
