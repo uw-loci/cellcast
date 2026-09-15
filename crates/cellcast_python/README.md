@@ -24,7 +24,7 @@ The `cellcast` Python package currently supports the following architectures:
 | macOS            | intel, arm64         |
 | Windows          | x86-64               |
 
-Cellcast is compatible with Python `>=3.7` and requires *only* `NumPy`.
+Cellcast is compatible with Python `>=3.8` and requires *only* `NumPy`.
 
 ### cellcast from PyPI
 
@@ -65,23 +65,23 @@ compile optimized binaries (note that compilation time may take upwards of 10 mi
 
 ### Using cellcast
 
-Once cellcast has been installed, `cellcast` will be available to import. The example below
-demonstrates how to use cellcast and the StarDist 2D versatile fluo segmentation model with
-Python. Note that this example assumes you have access to 2D data and `tifffile` installed
-in your Python environment with cellcast:
+The following example demonstrates how to use cellcast's StarDist2D model in Python with fetched *versatile fluo* pretrained weights (note: here we
+assume you have your data in a 2D NumPy array):
 
 ```python
-import cellcast.models.stardist_2d as sd
-from tifffile import imread
+import cellcast.models.StarDist2D as StarDist2D
 
-# load 2D data for inference
-data_2d = imread("path/to/data_2d.tif")
-
-# run stardist inference and produce instance segmentations
-labels = sd.predict_versatile_fluo(data, gpu=True)
+# assuming "data" is a 2D NumPy array
+sd = StarDist2D.init_fluo(gpu=True)
+labels = sd.predict_fluo(data)
 ```
 
-Run `help()` on the `predict_versatile_fluo()` function to see the full function signature and default values. 
+Run `help()` on the `predict_fluo()` function to see the full function signature and default values. To initialize a model with custom weights, provide
+the path to the weights in burnpack format (`.bpk`) when creating a model instance.
+
+```python
+sd = StarDist2D.init_fluo("path/to/custom_weights.bpk", True)
+```
 
 ## License
 

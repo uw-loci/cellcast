@@ -19,50 +19,41 @@ To use cellcast in your Rust project add it to your crate's dependencies and imp
 
 ```toml
 [dependencies]
-cellcast = "0.2.0"
+cellcast = "0.3.0"
 ```
 
-The example below demonstrates how to use cellcast and the StarDist 2D versatile fluo segmentation model with Rust.
-This example assumes you have the appropriate dependencies and helper functions to load your data as an `Array2<T>` type:
+The following examples demonstrate how to use cellcast's StarDist2D model in Rust with fetched *versatile fluo* pretrained
+and custom weights. Each supported cell segmentation model in cellcast is configured and initialized via it's model struct
+in the imported from the `models` module. If no `weights_path` is provided then the model's published pretrained weights
+are downloaded and cached (note that the the cache weights are ideally used if present instead of downloading):
 
 ```rust
+use cellcast::CellcastError;
+use cellcast::models::StarDist2D;
 use ndarray::Array2;
-use cellcast::models::stardist_2d::predict_versatile_fluo;
 
-fn main() {
-  let data_2d = load_image("/path/to/data_2d.tif");
-  let labels = predict_versatile_fluo(&data, Some(1.0), Some(99.8), None, None, True);
+fn main() -> Result<(), CellcastError>{
+  let data = get_image("path/to/data.tif");
+  // initialize a StarDist2D fluo model with fetched weights on the GPU
+  let sd = StarDist2D::init_fluo(None, true)?;
+  // run the model on the input data with default settings
+  let labels = sd.predict_fluo(&data, None, None, None, None);
 }
 
-fn load_image(path: &str) -> Array2<u16> {
-  // your logic to read/load from a file here
+fn get_image(papth: &str) -> Array2<u16> {
+  // your logic to get image data as an array.
 }
 ```
 
-*Note: `T` here can be any numeric value (*i.e.* `u8`, `i32`, `f64`).*
-
-## Building from source
-
-You can build the cellcast core library with:
-
-```bash
-$ cargo build
-```
-
-This will compile a cellcast *without optimizations*. Pass the `--release` flag to compile an *optimized* release version (note that compilation time may take upwards
-of 10 minutes). Because cellcast is a library, compiling it on it's own isn't very useful. However being able to successfully compile cellcast on your own computer
-means that you can change the backend from `Wgpu` to whatever other [supported Burn backend](https://github.com/Tracel-AI/burn?tab=readme-ov-file#supported-backends)
-you want. Recompiling cellcast with a *different* backend may allow you to take advantage of hardware specific optimizations not available to the `Wgpu` backend.
-
-The release version of cellcast uses the `NdArrayBackend` and `WgpuBackend` for CPU and GPU compute respectively. The CPU and GPU backends are defined in the `backend.rs`
-file in the `config` module. 
+To initialize a model with custom weights, provide the path to the weights in burnpack format (`.bpk`) when creating a model
+instance.
 
 ```rust
-pub(crate) type CpuBackend<E, I> = NdArray<E, I>;
-pub(crate) type GpuBackend<E, I> = Wgpu<E, I>;
+let sd = StarDist2D::init_fluo("path/to/custom_weights.bpk", true)?;
 ```
 
-Change the `Wgpu` and/or `NdArray` Burn backends here and recompile cellcast to change the project's backend.
+See the [burn-store](https://github.com/tracel-ai/burn/tree/main/crates/burn-store) and the
+[burn-onnx](https://github.com/tracel-ai/burn-onnx) crates for more details.
 
 ## License
 

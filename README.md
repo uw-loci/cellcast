@@ -33,6 +33,7 @@ are downloaded and cached (note that the the cache weights are ideally used if p
 ```rust
 use cellcast::CellcastError;
 use cellcast::models::StarDist2D;
+use ndarray::Array2;
 
 fn main() -> Result<(), CellcastError>{
   let data = get_image("path/to/data.tif");
@@ -74,7 +75,7 @@ The `cellcast` Python package currently supports the following architectures:
 | macOS            | intel, arm64         |
 | Windows          | x86-64               |
 
-Cellcast is compatible with Python `>=3.7` and requires *only* `NumPy`.
+Cellcast is compatible with Python `>=3.8` and requires *only* `NumPy`.
 
 The following example demonstrates how to use cellcast's StarDist2D model in Python with fetched *versatile fluo* pretrained weights (note: here we
 assume you have your data in a 2D NumPy array):
@@ -87,7 +88,12 @@ sd = StarDist2D.init_fluo(gpu=True)
 labels = sd.predict_fluo(data)
 ```
 
-Run `help()` on the `predict_fluo()` function to see the full function signature and default values. 
+Run `help()` on the `predict_fluo()` function to see the full function signature and default values. To initialize a model with custom weights, provide
+the path to the weights in burnpack format (`.bpk`) when creating a model instance.
+
+```python
+sd = StarDist2D.init_fluo("path/to/custom_weights.bpk", True)
+```
 
 ## Building from source
 
@@ -97,20 +103,17 @@ You can build the entire cellcast project from the root of this repository with:
 $ cargo build
 ```
 
-This will compile a cellcast *without optimizations*. Pass the `--release` flag to compile an *optimized* release version (note that compilation time may take upwards
-of 10 minutes). Because cellcast is a library, compiling it on it's own isn't very useful. However being able to successfully compile cellcast on your own computer
-means that you can change the backend from `Wgpu` to whatever other [supported Burn backend](https://github.com/Tracel-AI/burn?tab=readme-ov-file#supported-backends)
-you want. Recompiling cellcast with a *different* backend may allow you to take advantage of hardware specific optimizations not available to the `Wgpu` backend.
-
-The release version of cellcast uses the `NdArrayBackend` and `WgpuBackend` for CPU and GPU compute respectively. The CPU and GPU backends are defined in the `backend.rs`
-file in the `config` module. 
+This will compile cellcast *without optimizations*. Pass the `--release` flag to compile an *optimized* release version (note that compilation time may take upwards
+of 5 to 10 minutes, depending on your hardware). Compiling cellcast on your own allows you to change the backend from `Wgpu` to another that may better align with
+your hardware, such as the `cuda` backend for nVidia GPUs. To change the CPU and/or GPU backends, edit the `backend.rs` file. For example, the configuration below
+will compile cellcast with the `cuda` backend:
 
 ```rust
-pub(crate) type CpuBackend<E, I> = NdArray<E, I>;
-pub(crate) type GpuBackend<E, I> = Wgpu<E, I>;
-```
+use burn::backend::{Flex, Cuda};
 
-Change the `Wgpu` and/or `NdArray` Burn backends here and recompile cellcast to change the project's backend.
+pub(crate) type CpuBackend<E, I> = Flex<E, I>;
+pub(crate) type GpuBackend<E, I> = Cuda<E, I>;
+```
 
 ### Build `cellcast_python` from source
 
