@@ -57,7 +57,7 @@ pub fn polygon_nms(
     // iterate through each polygon and skip already suppressed polygons
     // the key here is that each polygon's probability is encoded in it's order
     // as it was sorted in descending order (highest prob first)
-    (0..n_polys.saturating_sub(1)).for_each(|i| {
+    (0..n_polys.saturating_sub(1)).into_par_iter().for_each(|i| {
         if suppressed[i].load(Ordering::Relaxed) {
             return;
         }

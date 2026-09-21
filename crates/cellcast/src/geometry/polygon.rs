@@ -7,7 +7,6 @@ use std::f32::consts::PI;
 
 use geo::{Area, BooleanOps, LineString, Polygon};
 use ndarray::ArrayView2;
-use rayon::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct Polygon2D {
@@ -76,7 +75,7 @@ pub fn build_polygons(
     // construct the NMS polygon vector
     let angle_step = 2.0 * PI / n_rays as f32;
     let polygons: Vec<Polygon2D> = (0..n_polys)
-        .into_par_iter()
+        .into_iter()
         .map(|p| {
             // get the current polygon center, set up the vars and bounding box
             let py = pos[[p, 0]] as f32;
