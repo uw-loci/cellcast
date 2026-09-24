@@ -3,6 +3,9 @@ members = [
   "crates/cellcast",
   "crates/cellcast_python"
 ]
+exclude = [
+  "tools/onnx_to_burn"
+]
 resolver = "3"
 
 [profile.dev]

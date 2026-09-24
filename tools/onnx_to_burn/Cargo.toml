@@ -1,0 +1,9 @@
+[package]
+name = "onnx_to_burn"
+version = "0.1.0"
+authors = ["cellcast developers"]
+license = "Unlicense OR MIT"
+edition = "2024"
+
+[dependencies]
+burn-onnx = "0.21.0"
