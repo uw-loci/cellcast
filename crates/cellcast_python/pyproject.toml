@@ -40,3 +40,7 @@ dependencies = [
 dev = [
     "maturin",
 ]
+
+[tool.maturin]
+# Include our custom __init__.py
+python-source = "python"

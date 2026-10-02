@@ -65,7 +65,7 @@ compile optimized binaries (note that compilation time may take upwards of 10 mi
 
 ### Using cellcast
 
-The following example demonstrates how to use cellcast's StarDist2D model in Python with fetched *versatile fluo* pretrained weights (note: here we
+The following example demonstrates how to use cellcast's StarDist2D model in Python with fetched *versatile fluo* pre-trained weights (note: here we
 assume you have your data in a 2D NumPy array):
 
 ```python

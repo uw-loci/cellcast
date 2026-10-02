@@ -52,7 +52,7 @@ const SHAPE_2D: [usize; 2] = [128, 128];
 const SHAPE_3D: [usize; 3] = [8, 64, 64];
 
 /// Tests that `predict_fluo` returns the expected results with the "versatile"
-/// pretrained weights for a simulated dataset of 20 blobs. This test asserts
+/// pre-trained weights for a simulated dataset of 20 blobs. This test asserts
 /// the number of blobs found and their size.
 #[test]
 fn stardist_2d_predict_fluo_expected_results() -> Result<(), CellcastError> {
@@ -94,7 +94,7 @@ fn stardist_2d_predict_fluo_expected_results() -> Result<(), CellcastError> {
 }
 
 /// Tests that `predict_fluo` returns the expected results with the "3D_demo"
-/// pretrained weights for a simulated dataset of 9 blobs in 3D. This test
+/// pre-trained weights for a simulated dataset of 9 blobs in 3D. This test
 /// asserts the number of blobs found and their size.
 #[test]
 fn stardist_3d_predict_fluo_expected_results() -> Result<(), CellcastError> {

@@ -57,28 +57,31 @@ pub fn polygon_nms(
     // iterate through each polygon and skip already suppressed polygons
     // the key here is that each polygon's probability is encoded in it's order
     // as it was sorted in descending order (highest prob first)
-    (0..n_polys.saturating_sub(1)).into_par_iter().for_each(|i| {
-        if suppressed[i].load(Ordering::Relaxed) {
-            return;
-        }
-        let query = [polygon_pnts[[i, 0]], polygon_pnts[[i, 1]]];
-        let radius = (max_dist + polygons[i].dist) as f64;
-        let neighbors = kdtree.search_for_indices(&query, radius).unwrap();
-        neighbors.par_iter().for_each(|&j| {
-            if j <= i || suppressed[j].load(Ordering::Relaxed) {
+    (0..n_polys.saturating_sub(1))
+        .into_par_iter()
+        .for_each(|i| {
+            if suppressed[i].load(Ordering::Relaxed) {
                 return;
             }
-            if !check_bbox_intersect(&polygons[i].bbox, &polygons[j].bbox) {
-                return;
-            }
-            let poly_area_inter = area_intersection(&polygons[i].vertices, &polygons[j].vertices);
-            let min_area = polygons[i].area.min(polygons[j].area) + 1e-10;
-            let overlap = poly_area_inter / min_area;
-            if overlap > threshold {
-                suppressed[j].store(true, Ordering::Relaxed);
-            }
+            let query = [polygon_pnts[[i, 0]], polygon_pnts[[i, 1]]];
+            let radius = (max_dist + polygons[i].dist) as f64;
+            let neighbors = kdtree.search_for_indices(&query, radius).unwrap();
+            neighbors.par_iter().for_each(|&j| {
+                if j <= i || suppressed[j].load(Ordering::Relaxed) {
+                    return;
+                }
+                if !check_bbox_intersect(&polygons[i].bbox, &polygons[j].bbox) {
+                    return;
+                }
+                let poly_area_inter =
+                    area_intersection(&polygons[i].vertices, &polygons[j].vertices);
+                let min_area = polygons[i].area.min(polygons[j].area) + 1e-10;
+                let overlap = poly_area_inter / min_area;
+                if overlap > threshold {
+                    suppressed[j].store(true, Ordering::Relaxed);
+                }
+            });
         });
-    });
     suppressed
         .iter()
         .map(|v| !v.load(Ordering::Relaxed))

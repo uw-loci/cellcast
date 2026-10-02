@@ -39,7 +39,7 @@ enum StarDist2DModels {
 
 /// A StarDist2D instance segmentation model.
 ///
-/// Initializes a StarDist2D instance segmentation model with pretrained or
+/// An initialized StarDist2D instance segmentation model with pre-trained or
 /// custom weights for 2D fluorescence (`fluo`) or H&E-stained (`he`) images.
 /// The model runs on either a CPU or GPU backend as determined at
 /// initialization time.
@@ -54,7 +54,7 @@ impl StarDist2D {
     ///
     /// # Description
     ///
-    /// Initializes a StarDist2D fluo model using the versatile fluo pretrained
+    /// Initializes a StarDist2D fluo model using the versatile fluo pre-trained
     /// weights or custom weights. A StarDist2D model can be initialized on either
     /// the GPU or CPU, but not both concurrently. The model is pre-warmed as part
     /// of the initializtion process.
@@ -62,7 +62,7 @@ impl StarDist2D {
     /// # Arguments
     ///
     /// * `weights_path`: The path to custom StarDist2D weights in burnpack (`.bpk`)
-    ///   format. If `None` then the versatile fluo pretrained weights are used.
+    ///   format. If `None` then the versatile fluo pre-trained weights are used.
     /// * `gpu`: If `true`, the GPU backend is used. If `false` then the CPU backend
     ///   is used.
     ///
@@ -101,7 +101,7 @@ impl StarDist2D {
     ///
     /// # Description
     ///
-    /// Initializes a StarDist2D Fluo model using the versatile HE pretrained
+    /// Initializes a StarDist2D Fluo model using the versatile HE pre-trained
     /// weights or custom weights. A StarDist2D model can be initialized on either
     /// the GPU or CPU, but not both concurrently. The model is pre-warmed as part
     /// of the initializtion process.
@@ -109,7 +109,7 @@ impl StarDist2D {
     /// # Arguments
     ///
     /// * `weights_path`: The path to custom StarDist2D weights in burnpack (`.bpk`)
-    ///   format. If `None` then the versatile HE pretrained weights are used.
+    ///   format. If `None` then the versatile HE pre-trained weights are used.
     /// * `gpu`: If `true`, the GPU backend is used. If `false` then the CPU backend
     ///   is used.
     ///

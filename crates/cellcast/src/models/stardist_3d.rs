@@ -36,7 +36,7 @@ enum StarDist3DModels {
 
 /// A StarDist3D instance segmentation model.
 ///
-/// Initializes a StarDist3D instance segmentation model with pretrained or
+/// An initialized StarDist3D instance segmentation model with pre-trained or
 /// custom weights for 3D volumetric fluorescence (`fluo`) images. The model
 /// runs on either a CPU or GPU backend as determined at initialization time.
 #[derive(Debug)]
@@ -51,7 +51,7 @@ impl StarDist3D {
     ///
     /// # Description
     ///
-    /// Initializes a StarDist3D fluo model using the versatile fluo pretrained
+    /// Initializes a StarDist3D fluo model using the versatile fluo pre-trained
     /// weights or custom weights. A StarDist3D model can be initialized on either
     /// the GPU or CPU, but not both concurrently. The model is pre-warmed as part
     /// of the initializtion process.
@@ -59,7 +59,7 @@ impl StarDist3D {
     /// # Arguments
     ///
     /// * `weights_path`: The path to custom StarDist3D weights in burnpack (`.bpk`)
-    ///   format. If `None` then the versatile fluo pretrained weights are used.
+    ///   format. If `None` then the versatile fluo pre-trained weights are used.
     /// * `anisotropy`: The anisotropy the model was trained with for all three
     ///   axes. If `None` then anisotropy of `[2.0, 1.0, 1.0]` is used.
     /// * `gpu`: If `true`, the GPU backend is used. If `false` then the CPU backend

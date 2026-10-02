@@ -1,1 +1,9 @@
 target/
+
+# maturin develop artifacts written into the python source tree
+crates/cellcast_python/python/**/__pycache__/
+crates/cellcast_python/python/**/*.pyd
+crates/cellcast_python/python/cellcast/cellcast.abi3.*
+
+# stub generation output
+crates/cellcast_python/stubs/

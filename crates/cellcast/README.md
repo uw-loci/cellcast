@@ -22,9 +22,9 @@ To use cellcast in your Rust project add it to your crate's dependencies and imp
 cellcast = "0.3.0"
 ```
 
-The following examples demonstrate how to use cellcast's StarDist2D model in Rust with fetched *versatile fluo* pretrained
+The following examples demonstrate how to use cellcast's StarDist2D model in Rust with fetched *versatile fluo* pre-trained
 and custom weights. Each supported cell segmentation model in cellcast is configured and initialized via it's model struct
-in the imported from the `models` module. If no `weights_path` is provided then the model's published pretrained weights
+in the imported from the `models` module. If no `weights_path` is provided then the model's published pre-trained weights
 are downloaded and cached (note that the the cache weights are ideally used if present instead of downloading):
 
 ```rust
