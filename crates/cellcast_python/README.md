@@ -69,7 +69,7 @@ The following example demonstrates how to use cellcast's StarDist2D model in Pyt
 assume you have your data in a 2D NumPy array):
 
 ```python
-import cellcast.models.StarDist2D as StarDist2D
+from cellcast.models import StarDist2D
 
 # assuming "data" is a 2D NumPy array
 sd = StarDist2D.init_fluo(gpu=True)
