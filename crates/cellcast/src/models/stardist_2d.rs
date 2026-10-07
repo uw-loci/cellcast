@@ -70,7 +70,7 @@ impl StarDist2D {
     pub fn init_fluo(weights_path: Option<&str>, gpu: bool) -> Result<Self, CellcastError> {
         let weights_path = weights_path.map(PathBuf::from);
         if gpu {
-            let device = GPU_DEVICE.get().expect("Failed to initialize the GPU.");
+            let device = GPU_DEVICE.get().expect(GPU_INIT_FAIL_MSG);
             let sd = Self {
                 model: StarDist2DModels::FluoGpu(fluo_2d::Model::init(
                     device,
@@ -81,7 +81,7 @@ impl StarDist2D {
             sd.warm_up_fluo()?;
             Ok(sd)
         } else {
-            let device = CPU_DEVICE.get().expect("Failed to initialize the CPU.");
+            let device = CPU_DEVICE.get().expect(CPU_INIT_FAIL_MSG);
             let sd = Self {
                 model: StarDist2DModels::FluoCpu(fluo_2d::Model::init(
                     device,
@@ -117,23 +117,17 @@ impl StarDist2D {
     pub fn init_he(weights_path: Option<&str>, gpu: bool) -> Result<Self, CellcastError> {
         let weights_path = weights_path.map(PathBuf::from);
         if gpu {
-            let device = GPU_DEVICE.get().expect("Failed to initialize the GPU");
+            let device = GPU_DEVICE.get().expect(GPU_INIT_FAIL_MSG);
             let sd = Self {
-                model: StarDist2DModels::HeGpu(he_2d::Model::init(
-                    device,
-                    weights_path.clone(),
-                )),
+                model: StarDist2DModels::HeGpu(he_2d::Model::init(device, weights_path.clone())),
                 gpu,
             };
             sd.warm_up_he()?;
             Ok(sd)
         } else {
-            let device = CPU_DEVICE.get().expect("Failed to initialize the CPU.");
+            let device = CPU_DEVICE.get().expect(CPU_INIT_FAIL_MSG);
             let sd = Self {
-                model: StarDist2DModels::HeCpu(he_2d::Model::init(
-                    device,
-                    weights_path.clone(),
-                )),
+                model: StarDist2DModels::HeCpu(he_2d::Model::init(device, weights_path.clone())),
                 gpu,
             };
             sd.warm_up_he()?;
@@ -208,11 +202,11 @@ impl StarDist2D {
         if self.gpu {
             match &self.model {
                 StarDist2DModels::FluoGpu(m) => {
-                    let device = GPU_DEVICE.get().expect("Failed to initialize the GPU.");
+                    let device = GPU_DEVICE.get().expect(GPU_INIT_FAIL_MSG);
                     let tensor = Tensor::<4>::from_data(td, device);
                     let (p, d) = m.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
-                    prob = p.into_data().try_into_vec().expect("Failed to retrieve data from the GPU.");
-                    dist = d.into_data().try_into_vec().expect("Failed to retrieve data from the GPU.");
+                    prob = p.into_data().try_into_vec().expect(GPU_RETRIEVE_FAIL_MSG);
+                    dist = d.into_data().try_into_vec().expect(GPU_RETRIEVE_FAIL_MSG);
                 }
                 _ => {
                     return Err(ImgalError::InvalidGeneric {
@@ -227,8 +221,8 @@ impl StarDist2D {
                     let device = CPU_DEVICE.get().expect("Failed to initialize the CPU.");
                     let tensor = Tensor::<4>::from_data(td, device);
                     let (p, d) = m.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
-                    prob = p.into_data().try_into_vec().expect("Failed to retrieve data from the CPU.");
-                    dist = d.into_data().try_into_vec().expect("Failed to retrieve data from the CPU.");
+                    prob = p.into_data().try_into_vec().expect(CPU_RETRIEVE_FAIL_MSG);
+                    dist = d.into_data().try_into_vec().expect(CPU_RETRIEVE_FAIL_MSG);
                 }
                 _ => {
                     return Err(ImgalError::InvalidGeneric {
@@ -336,8 +330,8 @@ impl StarDist2D {
                     let device = GPU_DEVICE.get().expect("Failed to initialize the GPU.");
                     let tensor = Tensor::<4>::from_data(td, device);
                     let (p, d) = m.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
-                    prob = p.into_data().try_into_vec().expect("Failed to retrieve data from the GPU.");
-                    dist = d.into_data().try_into_vec().expect("Failed to retrieve data from the GPU.");
+                    prob = p.into_data().try_into_vec().expect(GPU_RETRIEVE_FAIL_MSG);
+                    dist = d.into_data().try_into_vec().expect(GPU_RETRIEVE_FAIL_MSG);
                 }
                 _ => {
                     return Err(ImgalError::InvalidGeneric {
@@ -352,8 +346,8 @@ impl StarDist2D {
                     let device = CPU_DEVICE.get().expect("Failed to initialize the CPU.");
                     let tensor = Tensor::<4>::from_data(td, device);
                     let (p, d) = m.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
-                    prob = p.into_data().try_into_vec().expect("Failed to retrieve data from the CPU.");
-                    dist = d.into_data().try_into_vec().expect("Failed to retrieve data from the CPU.");
+                    prob = p.into_data().try_into_vec().expect(CPU_RETRIEVE_FAIL_MSG);
+                    dist = d.into_data().try_into_vec().expect(CPU_RETRIEVE_FAIL_MSG);
                 }
                 _ => {
                     return Err(ImgalError::InvalidGeneric {
@@ -391,7 +385,7 @@ impl StarDist2D {
         if self.gpu {
             match &self.model {
                 StarDist2DModels::FluoGpu(m) => {
-                    let device = GPU_DEVICE.get().expect("Failed to initialize the GPU.");
+                    let device = GPU_DEVICE.get().expect(GPU_INIT_FAIL_MSG);
                     let tensor = Tensor::<4>::from_data(td, device);
                     let (p, d) = m.forward(tensor, (128, 128));
                     let _ = p.into_data();
@@ -408,7 +402,7 @@ impl StarDist2D {
         } else {
             match &self.model {
                 StarDist2DModels::FluoCpu(m) => {
-                    let device = CPU_DEVICE.get().expect("Failed to initialize the CPU.");
+                    let device = CPU_DEVICE.get().expect(CPU_INIT_FAIL_MSG);
                     let tensor = Tensor::<4>::from_data(td, device);
                     let (p, d) = m.forward(tensor, (128, 128));
                     let _ = p.into_data();
@@ -443,7 +437,7 @@ impl StarDist2D {
         if self.gpu {
             match &self.model {
                 StarDist2DModels::HeGpu(m) => {
-                    let device = GPU_DEVICE.get().expect("Failed to initialize the GPU.");
+                    let device = GPU_DEVICE.get().expect(GPU_INIT_FAIL_MSG);
                     let tensor = Tensor::<4>::from_data(td, device);
                     let (p, d) = m.forward(tensor, (128, 128));
                     let _ = p.into_data();
@@ -460,7 +454,7 @@ impl StarDist2D {
         } else {
             match &self.model {
                 StarDist2DModels::HeCpu(m) => {
-                    let device = CPU_DEVICE.get().expect("Failed to initialize the CPU.");
+                    let device = CPU_DEVICE.get().expect(CPU_INIT_FAIL_MSG);
                     let tensor = Tensor::<4>::from_data(td, device);
                     let (p, d) = m.forward(tensor, (128, 128));
                     let _ = p.into_data();
