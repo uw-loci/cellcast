@@ -15,36 +15,35 @@ use crate::config::weights::VERSATILE_FLUO_2D_URL;
 use crate::utils::fetch;
 
 #[derive(Module, Debug)]
-pub struct Model<B: Backend> {
-    conv2d1: Conv2d<B>,
-    conv2d2: Conv2d<B>,
+pub struct Model {
+    conv2d1: Conv2d,
+    conv2d2: Conv2d,
     maxpool2d1: MaxPool2d,
-    conv2d3: Conv2d<B>,
-    conv2d4: Conv2d<B>,
+    conv2d3: Conv2d,
+    conv2d4: Conv2d,
     maxpool2d2: MaxPool2d,
-    conv2d5: Conv2d<B>,
-    conv2d6: Conv2d<B>,
+    conv2d5: Conv2d,
+    conv2d6: Conv2d,
     maxpool2d3: MaxPool2d,
-    conv2d7: Conv2d<B>,
-    conv2d8: Conv2d<B>,
+    conv2d7: Conv2d,
+    conv2d8: Conv2d,
     maxpool2d4: MaxPool2d,
-    conv2d9: Conv2d<B>,
-    conv2d10: Conv2d<B>,
-    conv2d11: Conv2d<B>,
-    conv2d12: Conv2d<B>,
-    conv2d13: Conv2d<B>,
-    conv2d14: Conv2d<B>,
-    conv2d15: Conv2d<B>,
-    conv2d16: Conv2d<B>,
-    conv2d17: Conv2d<B>,
-    conv2d18: Conv2d<B>,
-    conv2d19: Conv2d<B>,
-    phantom: core::marker::PhantomData<B>,
+    conv2d9: Conv2d,
+    conv2d10: Conv2d,
+    conv2d11: Conv2d,
+    conv2d12: Conv2d,
+    conv2d13: Conv2d,
+    conv2d14: Conv2d,
+    conv2d15: Conv2d,
+    conv2d16: Conv2d,
+    conv2d17: Conv2d,
+    conv2d18: Conv2d,
+    conv2d19: Conv2d,
     #[module(skip)]
-    device: B::Device,
+    device: Device,
 }
 
-impl<B: Backend> Default for Model<B> {
+impl Default for Model {
     fn default() -> Self {
         let weights_path = fetch::fetch_weights(VERSATILE_FLUO_2D_URL, false)
             .expect("Failed to download the stardist_2d_versatile_fluo weights.");
@@ -52,7 +51,7 @@ impl<B: Backend> Default for Model<B> {
     }
 }
 
-impl<B: Backend> Model<B> {
+impl Model {
     /// Initialize the model on the specified device.
     ///
     /// # Description
@@ -71,7 +70,7 @@ impl<B: Backend> Model<B> {
     ///
     /// * `Self`: The initialized `Model` on `device`. Panics if the weight download
     ///   or load fails.
-    pub fn init(device: &B::Device, weights_path: Option<PathBuf>) -> Self {
+    pub fn init(device: &Device, weights_path: Option<PathBuf>) -> Self {
         match weights_path {
             Some(wp) => Self::from_file(wp.to_str().unwrap(), device),
             None => Self::default(),
@@ -94,7 +93,7 @@ impl<B: Backend> Model<B> {
     ///
     /// * `Self`: The initialized `Model` on `device`. Panics if the weights
     ///   download or load fails.
-    pub fn from_file(file: &str, device: &B::Device) -> Self {
+    pub fn from_file(file: &str, device: &Device) -> Self {
         let mut model = Self::new(device);
         let mut store = BurnpackStore::from_file(file);
         model
@@ -104,9 +103,9 @@ impl<B: Backend> Model<B> {
     }
 }
 
-impl<B: Backend> Model<B> {
+impl Model {
     #[allow(unused_variables)]
-    pub fn new(device: &B::Device) -> Self {
+    pub fn new(device: &Device) -> Self {
         let conv2d1 = Conv2dConfig::new([1, 32], [3, 3])
             .with_stride([1, 1])
             .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
@@ -284,13 +283,12 @@ impl<B: Backend> Model<B> {
             conv2d17,
             conv2d18,
             conv2d19,
-            phantom: core::marker::PhantomData,
             device: device.clone(),
         }
     }
 
     #[allow(clippy::let_and_return, clippy::approx_constant)]
-    pub fn forward(&self, input: Tensor<B, 4>, shape: (i32, i32)) -> (Tensor<B, 4>, Tensor<B, 4>) {
+    pub fn forward(&self, input: Tensor<4>, shape: (i32, i32)) -> (Tensor<4>, Tensor<4>) {
         let relu4_out1 = {
             let conv2d1_out1 = self.conv2d1.forward(input);
             let relu1_out1 = burn::tensor::activation::relu(conv2d1_out1);
@@ -324,11 +322,11 @@ impl<B: Backend> Model<B> {
             burn::tensor::activation::relu(conv2d10_out1)
         };
         let relu12_out1 = {
-            let unsqueeze1_out1: Tensor<B, 5> = relu10_out1.unsqueeze_dims(&[3]);
+            let unsqueeze1_out1: Tensor<5> = relu10_out1.unsqueeze_dims(&[3]);
             let tile1_out1 = unsqueeze1_out1.repeat(&[1, 1, 1, 2, 1]);
             let transpose1_out1 = tile1_out1.permute([0, 2, 3, 4, 1]);
             let reshape2_out1 = transpose1_out1.reshape([1, shape.0 / 8, shape.1 / 16, 128]);
-            let unsqueeze2_out1: Tensor<B, 5> = reshape2_out1.unsqueeze_dims(&[3]);
+            let unsqueeze2_out1: Tensor<5> = reshape2_out1.unsqueeze_dims(&[3]);
             let tile2_out1 = unsqueeze2_out1.repeat(&[1, 1, 1, 2, 1]);
             let reshape3_out1 = tile2_out1.reshape([1, shape.0 / 8, shape.1 / 8, 128]);
             let transpose2_out1 = reshape3_out1.permute([0, 3, 1, 2]);
@@ -339,11 +337,11 @@ impl<B: Backend> Model<B> {
             burn::tensor::activation::relu(conv2d12_out1)
         };
         let relu14_out1 = {
-            let unsqueeze3_out1: Tensor<B, 5> = relu12_out1.unsqueeze_dims(&[3]);
+            let unsqueeze3_out1: Tensor<5> = relu12_out1.unsqueeze_dims(&[3]);
             let tile3_out1 = unsqueeze3_out1.repeat(&[1, 1, 1, 2, 1]);
             let transpose3_out1 = tile3_out1.permute([0, 2, 3, 4, 1]);
             let reshape4_out1 = transpose3_out1.reshape([1, shape.0 / 4, shape.1 / 8, 64]);
-            let unsqueeze4_out1: Tensor<B, 5> = reshape4_out1.unsqueeze_dims(&[3]);
+            let unsqueeze4_out1: Tensor<5> = reshape4_out1.unsqueeze_dims(&[3]);
             let tile4_out1 = unsqueeze4_out1.repeat(&[1, 1, 1, 2, 1]);
             let reshape5_out1 = tile4_out1.reshape([1, shape.0 / 4, shape.1 / 4, 64]);
             let transpose4_out1 = reshape5_out1.permute([0, 3, 1, 2]);
@@ -354,11 +352,11 @@ impl<B: Backend> Model<B> {
             burn::tensor::activation::relu(conv2d14_out1)
         };
         let relu16_out1 = {
-            let unsqueeze5_out1: Tensor<B, 5> = relu14_out1.unsqueeze_dims(&[3]);
+            let unsqueeze5_out1: Tensor<5> = relu14_out1.unsqueeze_dims(&[3]);
             let tile5_out1 = unsqueeze5_out1.repeat(&[1, 1, 1, 2, 1]);
             let transpose5_out1 = tile5_out1.permute([0, 2, 3, 4, 1]);
             let reshape6_out1 = transpose5_out1.reshape([1, shape.0 / 2, shape.1 / 4, 32]);
-            let unsqueeze6_out1: Tensor<B, 5> = reshape6_out1.unsqueeze_dims(&[3]);
+            let unsqueeze6_out1: Tensor<5> = reshape6_out1.unsqueeze_dims(&[3]);
             let tile6_out1 = unsqueeze6_out1.repeat(&[1, 1, 1, 2, 1]);
             let reshape7_out1 = tile6_out1.reshape([1, shape.0 / 2, shape.1 / 2, 32]);
             let transpose6_out1 = reshape7_out1.permute([0, 3, 1, 2]);

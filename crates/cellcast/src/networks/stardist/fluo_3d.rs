@@ -13,31 +13,30 @@ use crate::config::weights::DEMO_3D_URL;
 use crate::utils::fetch;
 
 #[derive(Module, Debug)]
-pub struct Model<B: Backend> {
-    conv3d1: Conv3d<B>,
-    conv3d2: Conv3d<B>,
-    conv3d3: Conv3d<B>,
-    conv3d4: Conv3d<B>,
-    conv3d5: Conv3d<B>,
-    conv3d6: Conv3d<B>,
-    conv3d7: Conv3d<B>,
-    conv3d8: Conv3d<B>,
-    conv3d9: Conv3d<B>,
-    conv3d10: Conv3d<B>,
-    conv3d11: Conv3d<B>,
-    conv3d12: Conv3d<B>,
-    conv3d13: Conv3d<B>,
-    conv3d14: Conv3d<B>,
-    conv3d15: Conv3d<B>,
-    conv3d16: Conv3d<B>,
-    conv3d17: Conv3d<B>,
-    conv3d18: Conv3d<B>,
-    phantom: core::marker::PhantomData<B>,
+pub struct Model {
+    conv3d1: Conv3d,
+    conv3d2: Conv3d,
+    conv3d3: Conv3d,
+    conv3d4: Conv3d,
+    conv3d5: Conv3d,
+    conv3d6: Conv3d,
+    conv3d7: Conv3d,
+    conv3d8: Conv3d,
+    conv3d9: Conv3d,
+    conv3d10: Conv3d,
+    conv3d11: Conv3d,
+    conv3d12: Conv3d,
+    conv3d13: Conv3d,
+    conv3d14: Conv3d,
+    conv3d15: Conv3d,
+    conv3d16: Conv3d,
+    conv3d17: Conv3d,
+    conv3d18: Conv3d,
     #[module(skip)]
-    device: B::Device,
+    device: Device,
 }
 
-impl<B: Backend> Default for Model<B> {
+impl Default for Model {
     fn default() -> Self {
         let weights_path = fetch::fetch_weights(DEMO_3D_URL, false)
             .expect("Failed to download the stardist_3d_demo weights.");
@@ -45,7 +44,7 @@ impl<B: Backend> Default for Model<B> {
     }
 }
 
-impl<B: Backend> Model<B> {
+impl Model {
     /// Initialize the model on the specified device.
     ///
     /// # Description
@@ -64,7 +63,7 @@ impl<B: Backend> Model<B> {
     ///
     /// * `Self`: The initialized `Model` on `device`. Panics if the weight download
     ///   or load fails.
-    pub fn init(device: &B::Device, weights_path: Option<PathBuf>) -> Self {
+    pub fn init(device: &Device, weights_path: Option<PathBuf>) -> Self {
         match weights_path {
             Some(wp) => Self::from_file(wp.to_str().unwrap(), device),
             None => Self::default(),
@@ -87,7 +86,7 @@ impl<B: Backend> Model<B> {
     ///
     /// * `Self`: The initialized `Model` on `device`. Panics if the weights download
     ///   or load fails.
-    pub fn from_file(file: &str, device: &B::Device) -> Self {
+    pub fn from_file(file: &str, device: &Device) -> Self {
         let mut model = Self::new(device);
         let mut store = BurnpackStore::from_file(file);
         model
@@ -97,9 +96,9 @@ impl<B: Backend> Model<B> {
     }
 }
 
-impl<B: Backend> Model<B> {
+impl Model {
     #[allow(unused_variables)]
-    pub fn new(device: &B::Device) -> Self {
+    pub fn new(device: &Device) -> Self {
         let conv3d1 = Conv3dConfig::new([1, 32], [7, 7, 7])
             .with_stride([1, 1, 1])
             .with_padding(PaddingConfig3d::Explicit(3, 3, 3))
@@ -245,17 +244,12 @@ impl<B: Backend> Model<B> {
             conv3d16,
             conv3d17,
             conv3d18,
-            phantom: core::marker::PhantomData,
             device: device.clone(),
         }
     }
 
     #[allow(clippy::let_and_return, clippy::approx_constant)]
-    pub fn forward(
-        &self,
-        input: Tensor<B, 5>,
-        shape: (i32, i32, i32),
-    ) -> (Tensor<B, 5>, Tensor<B, 5>) {
+    pub fn forward(&self, input: Tensor<5>, shape: (i32, i32, i32)) -> (Tensor<5>, Tensor<5>) {
         let conv3d1_out1 = self.conv3d1.forward(input);
         let conv3d2_out1 = self.conv3d2.forward(conv3d1_out1);
         let relu1_out1 = {
