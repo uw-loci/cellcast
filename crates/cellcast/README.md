@@ -55,6 +55,35 @@ let sd = StarDist2D::init_fluo("path/to/custom_weights.bpk", true)?;
 See the [burn-store](https://github.com/tracel-ai/burn/tree/main/crates/burn-store) and the
 [burn-onnx](https://github.com/tracel-ai/burn-onnx) crates for more details.
 
+## Building from source
+
+You can build the entire cellcast project from the root of this repository with:
+
+```bash
+$ cargo build
+```
+
+This will compile cellcast *without optimizations*. Pass the `--release` flag to compile an *optimized* release version (note that compilation time may take upwards
+of 5 to 10 minutes, depending on your hardware). Compiling cellcast on your own allows you to change the backend from `Wgpu` to another that may better align with
+your hardware, such as the `cuda` backend for nVidia GPUs. To change the CPU and/or GPU backends, edit the `device.rs` file. For example, the configuration below
+will compile cellcast with the `cuda` backend:
+
+First add `cuda` to the features list for the `burn` dependency in the `crates/cellcast/Cargo.toml`:
+
+```toml
+[dependencies]
+burn = { version = "0.22.0", features = ["tui", "train", "cuda", "flex"], default-features = false}
+...
+```
+
+Then edit the `device.rs` file and call the cuda backend instead of the WebGPU backend:
+
+```rust
+GPU_DEVICE.get_or_init(|| Device::cuda(0));
+```
+
+Recompile your Rust project to use the cellcast with the CUDA backend.
+
 ## License
 
 Cellcast *itself* is a dual-licensed project with your choice of:

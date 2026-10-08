@@ -8,7 +8,7 @@ use imgal::transform::pad::reflect_pad;
 use ndarray::{Array1, Array2, Array3, Array4, ArrayBase, AsArray, Axis, Ix3, ViewRepr};
 
 use crate::CellcastError;
-use crate::config::backend::{CpuBackend, GpuBackend};
+use crate::config::device::*;
 use crate::labeling::distance_polyhedron_to_label;
 use crate::networks::stardist::fluo_3d;
 use crate::process::nms::polyhedron_nms;
@@ -21,17 +21,14 @@ const PMAX: f64 = 99.8;
 const PROB_THRESHOLD: f64 = 0.7079326182611463;
 const NMS_THRESHOLD: f64 = 0.3;
 
-type CpuConfigBackend = CpuBackend<f32, i32>;
-type GpuConfigBackend = GpuBackend<f32, i32>;
-
 /// Backend variants for a `StarDist3D` model.
 ///
 /// This enum tracks the possible StarDist3D model variants for the `fluo` model
 /// initialized on the CPU or GPU.
 #[derive(Debug)]
 enum StarDist3DModels {
-    FluoCpu(fluo_3d::Model<CpuConfigBackend>),
-    FluoGpu(fluo_3d::Model<GpuConfigBackend>),
+    FluoCpu(fluo_3d::Model),
+    FluoGpu(fluo_3d::Model),
 }
 
 /// A StarDist3D instance segmentation model.
@@ -87,10 +84,11 @@ impl StarDist3D {
         }
         let anisotropy = [anisotropy[0], anisotropy[1], anisotropy[2]];
         if gpu {
-            let device = Default::default();
+            init_gpu();
+            let device = GPU_DEVICE.get().expect(GPU_INIT_FAIL_MSG);
             let sd = Self {
-                model: StarDist3DModels::FluoGpu(fluo_3d::Model::<GpuConfigBackend>::init(
-                    &device,
+                model: StarDist3DModels::FluoGpu(fluo_3d::Model::init(
+                    device,
                     weights_path.clone(),
                 )),
                 anisotropy,
@@ -99,10 +97,11 @@ impl StarDist3D {
             sd.warm_up_fluo()?;
             Ok(sd)
         } else {
-            let device = Default::default();
+            init_cpu();
+            let device = CPU_DEVICE.get().expect(CPU_INIT_FAIL_MSG);
             let sd = Self {
-                model: StarDist3DModels::FluoCpu(fluo_3d::Model::<CpuConfigBackend>::init(
-                    &device,
+                model: StarDist3DModels::FluoCpu(fluo_3d::Model::init(
+                    device,
                     weights_path.clone(),
                 )),
                 anisotropy,
@@ -201,20 +200,14 @@ impl StarDist3D {
         if self.gpu {
             match &self.model {
                 StarDist3DModels::FluoGpu(m) => {
-                    let device = Default::default();
-                    let tensor = Tensor::<GpuConfigBackend, 5>::from_data(td, &device);
+                    let device = GPU_DEVICE.get().expect(GPU_INIT_FAIL_MSG);
+                    let tensor = Tensor::<5>::from_data(td, device);
                     let (p, d) = m.forward(
                         tensor,
                         (plns as i32, pad_shape[0] as i32, pad_shape[1] as i32),
                     );
-                    prob = p
-                        .into_data()
-                        .into_vec()
-                        .expect("Failed to copy StarDist3D probabiliates from the output tensor.");
-                    dist = d
-                        .into_data()
-                        .into_vec()
-                        .expect("Failed to copy StarDist3D distances from the output tensor.");
+                    prob = p.into_data().try_into_vec().expect(GPU_RETRIEVE_FAIL_MSG);
+                    dist = d.into_data().try_into_vec().expect(GPU_RETRIEVE_FAIL_MSG);
                 }
                 _ => {
                     return Err(ImgalError::InvalidGeneric {
@@ -226,20 +219,14 @@ impl StarDist3D {
         } else {
             match &self.model {
                 StarDist3DModels::FluoCpu(m) => {
-                    let device = Default::default();
-                    let tensor = Tensor::<CpuConfigBackend, 5>::from_data(td, &device);
+                    let device = CPU_DEVICE.get().expect(CPU_INIT_FAIL_MSG);
+                    let tensor = Tensor::<5>::from_data(td, device);
                     let (p, d) = m.forward(
                         tensor,
                         (plns as i32, pad_shape[0] as i32, pad_shape[1] as i32),
                     );
-                    prob = p
-                        .into_data()
-                        .into_vec()
-                        .expect("Failed to copy StarDist3D probabiliates from the output tensor.");
-                    dist = d
-                        .into_data()
-                        .into_vec()
-                        .expect("Failed to copy StarDist3D distances from the output tensor.");
+                    prob = p.into_data().try_into_vec().expect(CPU_RETRIEVE_FAIL_MSG);
+                    dist = d.into_data().try_into_vec().expect(CPU_RETRIEVE_FAIL_MSG);
                 }
                 _ => {
                     return Err(ImgalError::InvalidGeneric {
@@ -279,8 +266,8 @@ impl StarDist3D {
         if self.gpu {
             match &self.model {
                 StarDist3DModels::FluoGpu(m) => {
-                    let device = Default::default();
-                    let tensor = Tensor::<GpuConfigBackend, 5>::from_data(td, &device);
+                    let device = GPU_DEVICE.get().expect(GPU_INIT_FAIL_MSG);
+                    let tensor = Tensor::<5>::from_data(td, device);
                     let (p, d) = m.forward(tensor, (32, 64, 64));
                     let _ = p.into_data();
                     let _ = d.into_data();
@@ -296,8 +283,8 @@ impl StarDist3D {
         } else {
             match &self.model {
                 StarDist3DModels::FluoCpu(m) => {
-                    let device = Default::default();
-                    let tensor = Tensor::<CpuConfigBackend, 5>::from_data(td, &device);
+                    let device = CPU_DEVICE.get().expect(CPU_INIT_FAIL_MSG);
+                    let tensor = Tensor::<5>::from_data(td, device);
                     let (p, d) = m.forward(tensor, (32, 64, 64));
                     let _ = p.into_data();
                     let _ = d.into_data();

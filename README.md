@@ -105,27 +105,24 @@ $ cargo build
 
 This will compile cellcast *without optimizations*. Pass the `--release` flag to compile an *optimized* release version (note that compilation time may take upwards
 of 5 to 10 minutes, depending on your hardware). Compiling cellcast on your own allows you to change the backend from `Wgpu` to another that may better align with
-your hardware, such as the `cuda` backend for nVidia GPUs. To change the CPU and/or GPU backends, edit the `backend.rs` file. For example, the configuration below
+your hardware, such as the `cuda` backend for nVidia GPUs. To change the CPU and/or GPU backends, edit the `device.rs` file. For example, the configuration below
 will compile cellcast with the `cuda` backend:
 
 First add `cuda` to the features list for the `burn` dependency in the `crates/cellcast/Cargo.toml`:
 
 ```toml
 [dependencies]
-burn = { version = "0.21.0", features = ["tui", "train", "cuda", "flex"], default-features = false}
+burn = { version = "0.22.0", features = ["tui", "train", "cuda", "flex"], default-features = false}
 ...
 ```
 
-Then edit the `backend.rs` file and change `Wgpu` to `Cuda`:
+Then edit the `device.rs` file and call the cuda backend instead of the WebGPU backend:
 
 ```rust
-use burn::backend::{Flex, Cuda};
-
-pub(crate) type CpuBackend<E, I> = Flex<E, I>;
-pub(crate) type GpuBackend<E, I> = Cuda<E, I>;
+GPU_DEVICE.get_or_init(|| Device::cuda(0));
 ```
 
-Recompile your Rust project or `cellcast_python` to use the celclast with the CUDA backend.
+Recompile your Rust project or `cellcast_python` to use the cellcast with the CUDA backend.
 
 ### Build `cellcast_python` from source
 
