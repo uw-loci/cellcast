@@ -45,9 +45,7 @@ pub struct Model {
 
 impl Default for Model {
     fn default() -> Self {
-        let weights_path = fetch::fetch_weights(VERSATILE_FLUO_2D_URL, false)
-            .expect("Failed to download the stardist_2d_versatile_fluo weights.");
-        Self::from_file(weights_path.to_str().unwrap(), &Default::default())
+        Self::init(&Default::default(), None)
     }
 }
 
@@ -73,7 +71,11 @@ impl Model {
     pub fn init(device: &Device, weights_path: Option<PathBuf>) -> Self {
         match weights_path {
             Some(wp) => Self::from_file(wp.to_str().unwrap(), device),
-            None => Self::default(),
+            None => {
+                let weights_path = fetch::fetch_weights(VERSATILE_FLUO_2D_URL, false)
+                    .expect("Failed to download the stardist_2d_versatile_fluo weights.");
+                Self::from_file(weights_path.to_str().unwrap(), device)
+            }
         }
     }
 
