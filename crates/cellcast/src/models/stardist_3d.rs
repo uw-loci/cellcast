@@ -8,7 +8,7 @@ use imgal::transform::pad::reflect_pad;
 use ndarray::{Array1, Array2, Array3, Array4, ArrayBase, AsArray, Axis, Ix3, ViewRepr};
 
 use crate::CellcastError;
-use crate::config::backend::*;
+use crate::config::device::*;
 use crate::labeling::distance_polyhedron_to_label;
 use crate::networks::stardist::fluo_3d;
 use crate::process::nms::polyhedron_nms;

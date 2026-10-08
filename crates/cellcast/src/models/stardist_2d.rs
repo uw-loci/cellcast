@@ -8,7 +8,7 @@ use imgal::transform::pad::reflect_pad;
 use ndarray::{Array1, Array2, Array3, ArrayBase, AsArray, Axis, Ix2, Ix3, ViewRepr};
 
 use crate::CellcastError;
-use crate::config::backend::*;
+use crate::config::device::*;
 use crate::labeling;
 use crate::networks::stardist::{fluo_2d, he_2d};
 use crate::process::nms::polygon_nms;
