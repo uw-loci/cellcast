@@ -84,6 +84,7 @@ impl StarDist3D {
         }
         let anisotropy = [anisotropy[0], anisotropy[1], anisotropy[2]];
         if gpu {
+            init_gpu();
             let device = GPU_DEVICE.get().expect(GPU_INIT_FAIL_MSG);
             let sd = Self {
                 model: StarDist3DModels::FluoGpu(fluo_3d::Model::init(
@@ -96,6 +97,7 @@ impl StarDist3D {
             sd.warm_up_fluo()?;
             Ok(sd)
         } else {
+            init_cpu();
             let device = CPU_DEVICE.get().expect(CPU_INIT_FAIL_MSG);
             let sd = Self {
                 model: StarDist3DModels::FluoCpu(fluo_3d::Model::init(

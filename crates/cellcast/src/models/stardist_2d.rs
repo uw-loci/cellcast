@@ -70,6 +70,7 @@ impl StarDist2D {
     pub fn init_fluo(weights_path: Option<&str>, gpu: bool) -> Result<Self, CellcastError> {
         let weights_path = weights_path.map(PathBuf::from);
         if gpu {
+            init_gpu();
             let device = GPU_DEVICE.get().expect(GPU_INIT_FAIL_MSG);
             let sd = Self {
                 model: StarDist2DModels::FluoGpu(fluo_2d::Model::init(
@@ -81,6 +82,7 @@ impl StarDist2D {
             sd.warm_up_fluo()?;
             Ok(sd)
         } else {
+            init_cpu();
             let device = CPU_DEVICE.get().expect(CPU_INIT_FAIL_MSG);
             let sd = Self {
                 model: StarDist2DModels::FluoCpu(fluo_2d::Model::init(
@@ -117,6 +119,7 @@ impl StarDist2D {
     pub fn init_he(weights_path: Option<&str>, gpu: bool) -> Result<Self, CellcastError> {
         let weights_path = weights_path.map(PathBuf::from);
         if gpu {
+            init_gpu();
             let device = GPU_DEVICE.get().expect(GPU_INIT_FAIL_MSG);
             let sd = Self {
                 model: StarDist2DModels::HeGpu(he_2d::Model::init(device, weights_path.clone())),
@@ -125,6 +128,7 @@ impl StarDist2D {
             sd.warm_up_he()?;
             Ok(sd)
         } else {
+            init_cpu();
             let device = CPU_DEVICE.get().expect(CPU_INIT_FAIL_MSG);
             let sd = Self {
                 model: StarDist2DModels::HeCpu(he_2d::Model::init(device, weights_path.clone())),
