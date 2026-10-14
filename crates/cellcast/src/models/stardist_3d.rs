@@ -75,12 +75,13 @@ impl StarDist3D {
         let weights_path = weights_path.map(PathBuf::from);
         let anisotropy = anisotropy.unwrap_or(&[2.0, 1.0, 1.0]);
         if anisotropy.len() != 3 {
-            return Err(ImgalError::InvalidArrayLengthExpected {
-                arr_name: "anisotropy",
-                expected: 3,
-                got: anisotropy.len(),
-            })
-            .map_err(CellcastError::Imgal);
+            return Err(CellcastError::Imgal(
+                ImgalError::InvalidArrayLengthExpected {
+                    arr_name: "anisotropy",
+                    expected: 3,
+                    got: anisotropy.len(),
+                },
+            ));
         }
         let anisotropy = [anisotropy[0], anisotropy[1], anisotropy[2]];
         if gpu {
@@ -157,11 +158,10 @@ impl StarDist3D {
     {
         let axis = axis.unwrap_or(0);
         if axis >= 3 {
-            return Err(ImgalError::InvalidAxis {
+            return Err(CellcastError::Imgal(ImgalError::InvalidAxis {
                 axis_idx: axis,
                 dim_len: 3,
-            })
-            .map_err(CellcastError::Imgal);
+            }));
         }
         let data: ArrayBase<ViewRepr<&'a T>, Ix3> = data.into();
         let pmin = pmin.unwrap_or(PMIN);
@@ -210,10 +210,9 @@ impl StarDist3D {
                     dist = read_tensor(d);
                 }
                 _ => {
-                    return Err(ImgalError::InvalidGeneric {
-                        msg: "No initialized StarDist3D Fluo GPU model found.",
-                    })
-                    .map_err(CellcastError::Imgal);
+                    return Err(CellcastError::Imgal(ImgalError::InvalidGeneric {
+                        msg: "No initialized StarDist2D Fluo GPU model found.",
+                    }));
                 }
             }
         } else {
@@ -229,10 +228,9 @@ impl StarDist3D {
                     dist = read_tensor(d);
                 }
                 _ => {
-                    return Err(ImgalError::InvalidGeneric {
-                        msg: "No initialized StarDist3D Fluo CPU model found.",
-                    })
-                    .map_err(CellcastError::Imgal);
+                    return Err(CellcastError::Imgal(ImgalError::InvalidGeneric {
+                        msg: "No initialized StarDist2D Fluo CPU model found.",
+                    }));
                 }
             }
         }
@@ -273,12 +271,9 @@ impl StarDist3D {
                     let _ = d.into_data();
                     Ok(())
                 }
-                _ => {
-                    return Err(ImgalError::InvalidGeneric {
-                        msg: "No initialized StarDist3D Fluo GPU model found.",
-                    })
-                    .map_err(CellcastError::Imgal);
-                }
+                _ => Err(CellcastError::Imgal(ImgalError::InvalidGeneric {
+                    msg: "No initialized StarDist2D Fluo GPU model found.",
+                })),
             }
         } else {
             match &self.model {
@@ -290,12 +285,9 @@ impl StarDist3D {
                     let _ = d.into_data();
                     Ok(())
                 }
-                _ => {
-                    return Err(ImgalError::InvalidGeneric {
-                        msg: "No initialized StarDist2D Fluo CPU model found.",
-                    })
-                    .map_err(CellcastError::Imgal);
-                }
+                _ => Err(CellcastError::Imgal(ImgalError::InvalidGeneric {
+                    msg: "No initialized StarDist2D Fluo CPU model found.",
+                })),
             }
         }
     }
