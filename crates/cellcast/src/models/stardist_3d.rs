@@ -206,8 +206,8 @@ impl StarDist3D {
                         tensor,
                         (plns as i32, pad_shape[0] as i32, pad_shape[1] as i32),
                     );
-                    prob = p.into_data().try_into_vec().expect(GPU_RETRIEVE_FAIL_MSG);
-                    dist = d.into_data().try_into_vec().expect(GPU_RETRIEVE_FAIL_MSG);
+                    prob = read_tensor(p);
+                    dist = read_tensor(d);
                 }
                 _ => {
                     return Err(ImgalError::InvalidGeneric {
@@ -225,8 +225,8 @@ impl StarDist3D {
                         tensor,
                         (plns as i32, pad_shape[0] as i32, pad_shape[1] as i32),
                     );
-                    prob = p.into_data().try_into_vec().expect(CPU_RETRIEVE_FAIL_MSG);
-                    dist = d.into_data().try_into_vec().expect(CPU_RETRIEVE_FAIL_MSG);
+                    prob = read_tensor(p);
+                    dist = read_tensor(d);
                 }
                 _ => {
                     return Err(ImgalError::InvalidGeneric {
