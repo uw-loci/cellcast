@@ -15,7 +15,7 @@ pub(crate) const DEVICE_RETRIEVE_FAIL_MSG: &str =
 /// This function initializes or fetches thte CPU device.
 #[inline(always)]
 pub(crate) fn init_cpu() {
-    CPU_DEVICE.get_or_init(|| Device::flex());
+    CPU_DEVICE.get_or_init(Device::flex);
 }
 
 /// Initialize or fetch the GPU device.
