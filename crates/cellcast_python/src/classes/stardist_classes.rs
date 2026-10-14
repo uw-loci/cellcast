@@ -283,7 +283,6 @@ impl PyStarDist3D {
         let anisotropy = anisotropy.as_deref();
         Ok(Self(
             StarDist3D::init_fluo(weights_path, anisotropy, gpu.unwrap_or(true))
-                .map(|output| output)
                 .map_err(cellcast_error_to_pyerr)?,
         ))
     }
