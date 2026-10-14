@@ -374,8 +374,8 @@ fn prob_dist_to_labels_3d(
     // inside of the source image dimensions (used for point filtering)
     let poly_ax = Axis(0);
     valid_pnts.axis_iter_mut(poly_ax).for_each(|mut v| {
-        v[1] = v[1] * 2;
-        v[2] = v[2] * 2;
+        v[1] *= 2;
+        v[2] *= 2;
     });
     let valid_inds: Vec<usize> = valid_pnts
         .axis_iter(poly_ax)
