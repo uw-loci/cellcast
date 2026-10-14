@@ -91,7 +91,6 @@ pub fn distance_polyhedron_to_label(
             let pnt = [z_min + p.0, y_min + p.1, x_min + p.2];
             if inside_halfspace_interior(&kernel_hs, &pnt, true, Some(1)).unwrap() {
                 *v = ids[i];
-                return;
             } else if inside_halfspace_interior(&convex_hs, &pnt, true, Some(1)).unwrap()
                 && inside_polyhedron(
                     &cur_poly_verts,
@@ -104,7 +103,6 @@ pub fn distance_polyhedron_to_label(
             {
                 *v = ids[i];
             } else {
-                return;
             }
         });
         Ok(())
