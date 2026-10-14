@@ -22,7 +22,7 @@ To use cellcast in your Rust project add it to your crate's dependencies and imp
 
 ```toml
 [dependencies]
-cellcast = "0.3.1"
+cellcast = "0.3.2"
 ```
 
 The following examples demonstrate how to use cellcast's StarDist2D model in Rust with fetched *versatile fluo* pre-trained
