@@ -141,7 +141,7 @@ pub fn polyhedron_nms(
             (bbox, vol, ro)
         })
         .collect();
-    let aniso = estimate_anisotropy(&bboxes.as_slice(), n_polys);
+    let aniso = estimate_anisotropy(bboxes.as_slice(), n_polys);
     let (rad_in_iso, rad_out_iso): (Vec<f32>, Vec<f32>) = (0..n_polys)
         .map(|i| {
             let cur_dist = polyhedron_dist.row(i);
@@ -151,7 +151,7 @@ pub fn polyhedron_nms(
         })
         .collect();
     let max_dist = max(&rad_out, None)?;
-    let kdtree = KDTree::build(&polyhedron_pnts);
+    let kdtree = KDTree::build(polyhedron_pnts);
     let suppressed: Vec<AtomicBool> = (0..n_polys).map(|_| AtomicBool::new(false)).collect();
     (0..n_polys.saturating_sub(1))
         .into_par_iter()
@@ -164,7 +164,7 @@ pub fn polyhedron_nms(
             let cur_bbox = bboxes[i];
             let cur_poly_verts = polyhedron_verts(cur_dist, cur_pnt, verts);
             let search_rad = (max_dist + rad_out[i]) as f64;
-            let neighbors = kdtree.search_for_indices(&cur_pnt, search_rad).unwrap();
+            let neighbors = kdtree.search_for_indices(cur_pnt, search_rad).unwrap();
             let nz = (cur_bbox[1] - cur_bbox[0] + 1) as usize;
             let ny = (cur_bbox[3] - cur_bbox[2] + 1) as usize;
             let nx = (cur_bbox[5] - cur_bbox[4] + 1) as usize;
