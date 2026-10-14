@@ -94,11 +94,11 @@ pub fn bounding_inner_radius_iso(
             ]
         };
         // compute the edge vectors and cross product
-        let (baz, bay, bax) = (b[0] - a[0], b[1] - a[1], b[2] - a[2]);
-        let (caz, cay, cax) = (c[0] - a[0], c[1] - a[1], c[2] - a[2]);
-        let nz = bax * cay - bay * cax;
-        let ny = baz * cax - bax * caz;
-        let nx = bay * caz - baz * cay;
+        let (abz, aby, abx) = (b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+        let (acz, acy, acx) = (c[0] - a[0], c[1] - a[1], c[2] - a[2]);
+        let nz = abx * acy - aby * acx;
+        let ny = abz * acx - abx * acz;
+        let nx = aby * acz - abz * acy;
         let norm = 1.0 / (nz * nz + ny * ny + nx * nx).sqrt().max(eps);
         let (nz, ny, nx) = (nz * norm, ny * norm, nx * norm);
         let dist = a[0] * nz + a[1] * ny + a[2] * nx;
@@ -670,17 +670,16 @@ pub fn sphere_intersect_volume_iso(
     let dist_iso = (dz * dz + dy * dy + dx * dx).sqrt();
     let rad_min = radius_a.min(radius_b);
     let rad_max = radius_a.max(radius_b);
-    let pi = PI as f32;
     if dist_iso > radius_a + radius_b {
         return 0.0;
     }
     if rad_max >= dist_iso + rad_min - 1e-10 {
-        return pi * 4.0 / 3.0 * rad_min * rad_min * rad_min;
+        return PI * 4.0 / 3.0 * rad_min * rad_min * rad_min;
     }
     let t = (radius_a + radius_b - dist_iso) / (2.0 * dist_iso);
     let h1 = (radius_b - radius_a + dist_iso) * t;
     let h2 = (radius_a - radius_b + dist_iso) * t;
-    let vol_a = pi / 3.0 * h1 * h1 * (3.0 * radius_a - h1);
-    let vol_b = pi / 3.0 * h2 * h2 * (3.0 * radius_b - h2);
+    let vol_a = PI / 3.0 * h1 * h1 * (3.0 * radius_a - h1);
+    let vol_b = PI / 3.0 * h2 * h2 * (3.0 * radius_b - h2);
     (vol_a + vol_b) / (anisotropy[0] * anisotropy[1] * anisotropy[2])
 }

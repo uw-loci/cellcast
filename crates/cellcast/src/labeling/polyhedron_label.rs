@@ -82,7 +82,6 @@ pub fn distance_polyhedron_to_label(
             return Ok(());
         }
         let cur_poly_verts = polyhedron_verts(cur_dist, cur_pnt, gs_verts.view());
-        let cur_pnt = cur_pnt.mapv(|v| v as f32);
         let hull = quickhull_3d(&cur_poly_verts, None)?;
         let convex_hs = hull_to_halfspace(&hull.0, &hull.1, None)?;
         let kernel_hs = hull_to_halfspace(&cur_poly_verts, &gs_faces, None)?;
