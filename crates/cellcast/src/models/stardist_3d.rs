@@ -348,6 +348,10 @@ fn prob_dist_to_labels_3d(
         .filter(|&((_, _, _), &v)| v)
         .map(|((p, r, c), _)| (p, r, c))
         .collect();
+    if valid_pnts.is_empty() {
+        let [p, r, c] = src_shape;
+        return Ok(Array3::<u64>::zeros((p, r, c)));
+    }
     let flat_pnts = valid_pnts.iter().flat_map(|&(p, r, c)| [p, r, c]).collect();
     let mut valid_pnts = Array2::from_shape_vec((valid_pnts.len(), 3), flat_pnts).unwrap();
     // filter probabilities and distances with valid indices, removing invalid
