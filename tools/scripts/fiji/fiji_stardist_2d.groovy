@@ -2,8 +2,8 @@
 #@ String (label="Model:", choices={"Versatile Fluo", "Versatile HE"}, style="listBox") model
 #@ Double (label="Percentile minimum:", value=1.0, style="format:0.00", min=0.00, max=100.00, stepSize=1.0, description="minimum percentile value for normalization") pmin
 #@ Double (label="Percentile maximum:", value=99.8, sytle="format:0.00", min=0.00, max=1.00, stepSize=1.0, description="maximum percentile value for normalization") pmax
-#@ Double (value=0.479, style="format:0.000", min=0.000, max=1.000, stepSize=0.1, description="Polygon probability threshold") prob_threshold
-#@ Double (value=0.3, style="format:0.00", min=0.00, max=1.00, stepSize=0.1, description="Non-Maximum Suppression threshold") nms_threshold
+#@ Double (label="Probability threshold:", value=0.479, style="format:0.000", min=0.000, max=1.000, stepSize=0.1, description="Polygon probability threshold") prob_threshold
+#@ Double (label="NMS threshold:", value=0.3, style="format:0.00", min=0.00, max=1.00, stepSize=0.1, description="Non-Maximum Suppression threshold") nms_threshold
 #@ Boolean (label="GPU", value=true, description="Set True for GPU inference via WebGPU, False for CPU inference") gpu
 #@output Img labels
 
@@ -17,7 +17,7 @@ def share_as_ndarray(img):
     shared.ndarray()[:] = img
     return shared
 
-import cellcast.models.StarDist2D as StarDist2D
+from cellcast.models import StarDist2D
 if model == "Versatile Fluo":
 	sd = StarDist2D.init_fluo(gpu=gpu)
 	labels = sd.predict_fluo(
@@ -40,7 +40,7 @@ share_as_ndarray(labels)
 """
 
 println("== BUILDING ENVIRONMENT ==")
-env = Appose.uv().include("cellcast==0.3.0").name("cellcast").logDebug().build()
+env = Appose.uv().include("cellcast==0.3.2").name("cellcast").logDebug().build()
 println("Environment build complete: ${env.base()}")
 
 // Conversion functions: ImgLib2 Img <-> Appose NDArray
