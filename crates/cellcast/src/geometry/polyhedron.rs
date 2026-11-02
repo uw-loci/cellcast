@@ -20,7 +20,7 @@ use ndarray::{Array1, Array2, ArrayView1, ArrayView2, Axis, concatenate, stack};
 /// # Returns
 ///
 /// * `f32`: The intersection volume of bounding box `a` and `b`.
-#[inline(always)]
+#[inline]
 pub fn bbox_intersect_vol(bbox_a: &[i32; 6], bbox_b: &[i32; 6]) -> f32 {
     let wz = (bbox_a[1].min(bbox_b[1]) - bbox_a[0].max(bbox_b[0])).max(0) as f32;
     let wy = (bbox_a[3].min(bbox_b[3]) - bbox_a[2].max(bbox_b[2])).max(0) as f32;
@@ -52,7 +52,6 @@ pub fn bbox_intersect_vol(bbox_a: &[i32; 6], bbox_b: &[i32; 6]) -> f32 {
 /// # Returns
 ///
 /// * `f32`: The inscribed (inner) scaled radius.
-#[inline(always)]
 pub fn bounding_inner_radius_iso(
     distances: ArrayView1<f32>,
     gs_vertices: ArrayView2<f32>,
@@ -126,7 +125,6 @@ pub fn bounding_inner_radius_iso(
 /// # Returns
 ///
 /// * `f32`: The outer (circum) scaled radius.
-#[inline(always)]
 pub fn bounding_outer_radius_iso(
     distances: ArrayView1<f32>,
     gs_vertices: ArrayView2<f32>,
@@ -168,7 +166,6 @@ pub fn bounding_outer_radius_iso(
 /// * `Err(ImgalError)`: If `vertices_a` or `vertices_b` is empty or contains
 ///   less than 4 ponits. If `center_a` and `center_b` do not have length
 ///   equal to `3`.
-#[inline(always)]
 pub fn convex_hull_intersection_vol(
     vertices_a: ArrayView2<f32>,
     vertices_b: ArrayView2<f32>,
@@ -257,7 +254,6 @@ pub fn estimate_anisotropy(bboxes: &[[i32; 6]], n_polys: usize) -> [f32; 3] {
 ///
 /// * `Ok((Array2<f64>, Array2<usize>))`: The golden spiral 3D convex hull
 ///   vertices and triangular face indices.
-#[inline(always)]
 pub fn golden_spiral(
     n_points: usize,
     anisotropy: Option<[f32; 3]>,
@@ -303,7 +299,6 @@ pub fn golden_spiral(
 /// * `Ok(f64)`: The intersection volume of polyhedron `a` and `b`.
 /// * `Err(ImgalError)`: If intersection halfspaces is `< 4`. If the halfspace
 ///   intersection interior point is not 3D.
-#[inline(always)]
 pub fn golden_spiral_intersection_vol(
     vertices_a: ArrayView2<f32>,
     vertices_b: ArrayView2<f32>,
@@ -390,7 +385,6 @@ pub fn golden_spiral_intersection_vol(
 ///
 /// * `f32`: The number of mask voxels that lie inside the polyhedron that are
 ///   below the `overlap_threshold`.
-#[inline(always)]
 pub fn overlap_polyhedron_mask(
     vertices: ArrayView2<f32>,
     faces: ArrayView2<usize>,
@@ -451,7 +445,6 @@ pub fn overlap_polyhedron_mask(
 ///
 /// * `[i32; 6]`: The bounding box coordinates in
 ///   `[z_min, z_max, y_min, y_max, x_min, x_max]` order.
-#[inline(always)]
 pub fn polyhedron_bbox(
     distances: ArrayView1<f32>,
     center: ArrayView1<f32>,
@@ -500,7 +493,6 @@ pub fn polyhedron_bbox(
 ///
 /// * `Array2<f32>`: A 2D array of shape `(n_rays, 3)` containing the polyhedron
 ///   scaled vertices.
-#[inline(always)]
 pub fn polyhedron_verts(
     distances: ArrayView1<f32>,
     center: ArrayView1<f32>,
@@ -541,7 +533,6 @@ pub fn polyhedron_verts(
 /// # Returns
 ///
 /// * `f32`: The volume of the polyhedron.
-#[inline(always)]
 pub fn polyhedron_vol(
     distances: ArrayView1<f32>,
     gs_vertices: ArrayView2<f32>,
@@ -608,7 +599,6 @@ pub fn polyhedron_vol(
 ///
 /// * `Vec<bool>`: A boolean mask of length `nz * ny * nx` where `true`
 ///   indicates the voxel centre lies inside the polyhedron.
-#[inline(always)]
 pub fn polyhedron_to_mask(
     vertices: ArrayView2<f32>,
     gs_faces: ArrayView2<usize>,
@@ -656,7 +646,6 @@ pub fn polyhedron_to_mask(
 /// # Returns
 ///
 /// * `f32`: The intersection volume between spheres `a` and `b`.
-#[inline(always)]
 pub fn sphere_intersect_volume_iso(
     center_a: ArrayView1<f32>,
     center_b: ArrayView1<f32>,

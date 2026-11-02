@@ -85,7 +85,6 @@ pub fn distance_polygon_to_label(
 ///
 /// * `bool`: Returns `true`, if `row` and `col` are inside the polygon. Returns
 ///   `false` if they are not.
-#[inline]
 fn inside_polygon(
     row: usize,
     col: usize,
@@ -125,7 +124,6 @@ fn inside_polygon(
 /// * `Array3<f32>`: The polar distance coordinates in Cartesian form. The
 ///   output array has shape `(p, r, D)`. Where `p` is the polygon, `r` is the
 ///   ray and `D` is the dimension.
-#[inline]
 fn radial_dist_to_coords_2d(
     polygon_dist: ArrayView2<f32>,
     polygon_pnts: ArrayView2<usize>,
@@ -166,7 +164,6 @@ fn radial_dist_to_coords_2d(
 ///
 /// * `(Vec<usize>, Vec<usize>)`: A tuple of row and col vectors indicating
 ///   which pixels are valid for polygon drawing.
-#[inline]
 fn render_polygon_2d(
     row_coords: &[f32],
     col_coords: &[f32],

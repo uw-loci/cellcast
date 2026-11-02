@@ -13,7 +13,6 @@ pub(crate) const DEVICE_RETRIEVE_FAIL_MSG: &str =
 /// Initialize or fetch the CPU device.
 ///
 /// This function initializes or fetches thte CPU device.
-#[inline(always)]
 pub(crate) fn init_cpu() {
     CPU_DEVICE.get_or_init(Device::flex);
 }
@@ -21,7 +20,6 @@ pub(crate) fn init_cpu() {
 /// Initialize or fetch the GPU device.
 ///
 /// This function initializes or fetches the GPU device.
-#[inline(always)]
 pub(crate) fn init_gpu() {
     GPU_DEVICE.get_or_init(|| Device::wgpu(Default::default()));
 }
@@ -30,7 +28,6 @@ pub(crate) fn init_gpu() {
 ///
 /// This function reads any Tensor and checks for out-of-memory (OOM) errors
 /// exiting gracefully with less scary error message.
-#[inline(always)]
 pub(crate) fn read_tensor<const D: usize>(tensor: Tensor<D>) -> Vec<f32> {
     match tensor.try_into_data() {
         Ok(data) => data

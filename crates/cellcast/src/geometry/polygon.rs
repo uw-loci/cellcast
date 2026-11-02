@@ -34,7 +34,6 @@ pub struct Polygon2D {
 /// # Returns
 ///
 /// * `f32`: The intersection area of polygons `a` and `b`.
-#[inline(always)]
 pub fn area_intersection(vertices_a: &[(f32, f32)], vertices_b: &[(f32, f32)]) -> f32 {
     let line_a: LineString<f32> = vertices_a.to_vec().into();
     let line_b: LineString<f32> = vertices_b.to_vec().into();
@@ -64,7 +63,6 @@ pub fn area_intersection(vertices_a: &[(f32, f32)], vertices_b: &[(f32, f32)]) -
 ///
 /// * `Vec<Polygon2D>`: A vector of NMS polygons to be used for geo-spatial
 ///   compute.
-#[inline(always)]
 pub fn build_polygons(
     dist: ArrayView2<f32>,
     pos: ArrayView2<usize>,
@@ -128,7 +126,7 @@ pub fn build_polygons(
 ///
 /// * `bool`: Returns `true` if the bounding boxes overlap, `false` if they do
 ///   not.
-#[inline(always)]
+#[inline]
 pub fn check_bbox_intersect(a: &(f32, f32, f32, f32), b: &(f32, f32, f32, f32)) -> bool {
     b.0 <= a.1 && a.0 <= b.1 && b.2 <= a.3 && a.2 <= b.3
 }
@@ -138,7 +136,7 @@ pub fn check_bbox_intersect(a: &(f32, f32, f32, f32), b: &(f32, f32, f32, f32)) 
 /// # Reference
 ///
 /// <https://en.wikipedia.org/wiki/Shoelace_formula>
-#[inline(always)]
+#[inline]
 fn polygon_area(vertices: &[(f32, f32)], n_rays: usize) -> f32 {
     let area = (0..n_rays).fold(0.0, |acc, i| {
         let j = (i + 1) % n_rays;
