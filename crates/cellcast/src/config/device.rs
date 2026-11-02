@@ -1,7 +1,7 @@
 use std::sync::OnceLock;
 
 use burn::Tensor;
-use burn::tensor::Device;
+use burn::prelude::*;
 
 pub(crate) static CPU_DEVICE: OnceLock<Device> = OnceLock::new();
 pub(crate) static GPU_DEVICE: OnceLock<Device> = OnceLock::new();
