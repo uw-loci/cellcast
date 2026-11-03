@@ -43,6 +43,14 @@ pub struct Model {
     device: Device,
 }
 
+#[derive(Config, Debug)]
+pub struct ModelConfig {
+    num_classes: usize,
+    hidden_size: usize,
+    #[config(default = "0.5")]
+    dropout: f64,
+}
+
 impl Default for Model {
     fn default() -> Self {
         Self::init(&Default::default(), None)
