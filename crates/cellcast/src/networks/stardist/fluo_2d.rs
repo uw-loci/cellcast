@@ -103,9 +103,8 @@ impl Model {
             .expect("Failed to load the StarDist2D Fluo model weights burnpack file.");
         model
     }
-}
 
-impl Model {
+    /// TODO
     #[allow(unused_variables)]
     pub fn new(device: &Device) -> Self {
         let conv2d1 = Conv2dConfig::new([1, 32], [3, 3])
@@ -289,6 +288,7 @@ impl Model {
         }
     }
 
+    /// TODO
     #[allow(clippy::let_and_return, clippy::approx_constant)]
     pub fn forward(&self, input: Tensor<4>, shape: (i32, i32)) -> (Tensor<4>, Tensor<4>) {
         let relu4_out1 = {
