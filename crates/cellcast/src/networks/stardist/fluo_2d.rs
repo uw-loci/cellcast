@@ -40,8 +40,6 @@ pub struct Model {
     conv2d17: Conv2d,
     conv2d18: Conv2d,
     conv2d19: Conv2d,
-    #[module(skip)]
-    device: Device,
 }
 
 /// TODO
@@ -379,7 +377,6 @@ impl ModelConfig {
                 .with_groups(1)
                 .with_bias(true)
                 .init(device),
-            device: device.clone(),
         }
     }
 }
