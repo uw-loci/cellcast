@@ -4,4 +4,6 @@
 //! networks have been converted into Rust from ONNX using the `burn-onnx`
 //! crate, followed by manual modification to fit cellcast's needs.
 
-pub mod stardist;
+pub(crate) mod stardist;
+
+pub use stardist::fluo_2d::StarDist2DFluoModelConfig;

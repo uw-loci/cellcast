@@ -11,7 +11,7 @@ mod error;
 mod geometry;
 mod labeling;
 pub mod models;
-mod networks;
+pub mod networks;
 mod process;
 mod utils;
 pub use error::CellcastError;
