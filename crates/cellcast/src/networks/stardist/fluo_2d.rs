@@ -14,7 +14,7 @@ use burn_store::ModuleSnapshot;
 use crate::config::weights::VERSATILE_FLUO_2D_URL;
 use crate::utils::fetch;
 
-/// TODO
+/// A StarDist2D fluo model.
 #[derive(Module, Debug)]
 pub struct Model {
     conv2d1: Conv2d,
@@ -42,9 +42,11 @@ pub struct Model {
     conv2d19: Conv2d,
 }
 
-/// TODO
+/// A StarDist2D fluo model configuration.
+///
+/// Use this struct to construct new networks for model training.
 #[derive(Config, Debug)]
-pub struct ModelConfig {
+pub struct StarDist2DFluoModelConfig {
     #[config(default = "32")]
     n_rays: usize,
     #[config(default = "[3, 3]")]
@@ -106,7 +108,7 @@ impl Model {
     /// * `Self`: The initialized `Model` on `device`. Panics if the weights
     ///   download or load fails.
     pub fn from_file(file: &str, device: &Device) -> Self {
-        let mut model = ModelConfig::new().init(device);
+        let mut model = StarDist2DFluoModelConfig::new().init(device);
         let mut store = BurnpackStore::from_file(file);
         model
             .load_from(&mut store)
@@ -114,7 +116,22 @@ impl Model {
         model
     }
 
-    /// TODO
+    /// Perform a forward pass on the input tensor.
+    ///
+    /// # Description
+    ///
+    /// Performs forward propagation through the StarDist2D fluo model using the
+    /// input tensor.
+    ///
+    /// # Arguments
+    ///
+    /// * `input`: The input tensor.
+    /// * `shape`: The shape of the input tensor.
+    /// * `n_rays`: The number of rays.
+    ///
+    /// # Returns
+    ///
+    /// * `(Tensor<4>, Tensor<4>)`: The probability and distance output tensors.
     #[allow(clippy::let_and_return, clippy::approx_constant)]
     pub fn forward(
         &self,
@@ -210,20 +227,20 @@ impl Model {
     }
 }
 
-impl ModelConfig {
-    /// Initialize a StarDist2D model with the given configuration.
+impl StarDist2DFluoModelConfig {
+    /// Create a StarDist2D model with the given configuration.
     ///
     /// # Description
     ///
-    /// todo
+    /// Creates a configured StarDist2D model on the initialized CPU or GPU.
     ///
     /// # Arguments
     ///
-    /// * `device`: The initialized GPU device.
+    /// * `device`: The initialized CPU or GPU device.
     ///
     /// # Returns
     ///
-    /// * `Model`: The initialized network/model.
+    /// * `Model`: The model.
     pub fn init(&self, device: &Device) -> Model {
         Model {
             conv2d1: Conv2dConfig::new([1, self.n_rays], self.kernel_size)
