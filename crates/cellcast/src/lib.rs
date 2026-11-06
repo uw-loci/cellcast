@@ -7,6 +7,7 @@
 //! This crate is still under active development and it's API is not stable.
 
 mod config;
+pub mod data;
 mod error;
 mod geometry;
 mod labeling;
