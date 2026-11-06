@@ -96,9 +96,8 @@ impl Model {
             .expect("Failed to load burnpack file");
         model
     }
-}
 
-impl Model {
+    /// TODO
     #[allow(unused_variables)]
     pub fn new(device: &Device) -> Self {
         let conv3d1 = Conv3dConfig::new([1, 32], [7, 7, 7])
@@ -250,6 +249,7 @@ impl Model {
         }
     }
 
+    /// TODO
     #[allow(clippy::let_and_return, clippy::approx_constant)]
     pub fn forward(&self, input: Tensor<5>, shape: (i32, i32, i32)) -> (Tensor<5>, Tensor<5>) {
         let conv3d1_out1 = self.conv3d1.forward(input);
