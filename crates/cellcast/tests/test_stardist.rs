@@ -66,7 +66,7 @@ fn stardist_2d_predict_fluo_expected_results() -> Result<(), CellcastError> {
         None,
     )?;
     let data = data.into_dimensionality::<Ix2>().unwrap();
-    let sd = StarDist2D::init_fluo(None, false)?;
+    let sd = StarDist2D::init_fluo(None, true)?;
     let labels = sd.predict_fluo(&data, None, None, None, None)?;
     let rcm = roi_cloud_map(&labels, None);
     assert_eq!(rcm.len(), 20);
@@ -108,7 +108,7 @@ fn stardist_3d_predict_fluo_expected_results() -> Result<(), CellcastError> {
         None,
     )?;
     let data = data.into_dimensionality::<Ix3>().unwrap();
-    let sd = StarDist3D::init_fluo(None, None, false)?;
+    let sd = StarDist3D::init_fluo(None, None, true)?;
     let labels = sd.predict_fluo(&data, None, None, None, None, None)?;
     let rcm = roi_cloud_map(&labels, None);
     assert_eq!(rcm.len(), 9);
