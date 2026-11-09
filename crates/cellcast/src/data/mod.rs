@@ -1,5 +1,3 @@
 //! TODO
 
-mod stardist_batcher;
-
-pub use stardist_batcher::*;
+pub mod stardist_data;
