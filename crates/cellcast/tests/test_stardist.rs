@@ -66,30 +66,34 @@ fn stardist_2d_predict_fluo_expected_results() -> Result<(), CellcastError> {
         None,
     )?;
     let data = data.into_dimensionality::<Ix2>().unwrap();
-    let sd = StarDist2D::init_fluo(None, false)?;
-    let labels = sd.predict_fluo(&data, None, None, None, None)?;
-    let rcm = roi_cloud_map(&labels, None);
-    assert_eq!(rcm.len(), 20);
-    assert_eq!(rcm.get(&1).expect("ROI 1 not foud.").dim().0, 244);
-    assert_eq!(rcm.get(&2).expect("ROI 2 not foud.").dim().0, 109);
-    assert_eq!(rcm.get(&3).expect("ROI 3 not foud.").dim().0, 359);
-    assert_eq!(rcm.get(&4).expect("ROI 4 not foud.").dim().0, 62);
-    assert_eq!(rcm.get(&5).expect("ROI 5 not foud.").dim().0, 79);
-    assert_eq!(rcm.get(&6).expect("ROI 6 not foud.").dim().0, 376);
-    assert_eq!(rcm.get(&7).expect("ROI 7 not foud.").dim().0, 141);
-    assert_eq!(rcm.get(&8).expect("ROI 8 not foud.").dim().0, 167);
-    assert_eq!(rcm.get(&9).expect("ROI 9 not foud.").dim().0, 224);
-    assert_eq!(rcm.get(&10).expect("ROI 10 not foud.").dim().0, 609);
-    assert_eq!(rcm.get(&11).expect("ROI 11 not foud.").dim().0, 359);
-    assert_eq!(rcm.get(&12).expect("ROI 12 not foud.").dim().0, 104);
-    assert_eq!(rcm.get(&13).expect("ROI 13 not foud.").dim().0, 85);
-    assert_eq!(rcm.get(&14).expect("ROI 14 not foud.").dim().0, 96);
-    assert_eq!(rcm.get(&15).expect("ROI 15 not foud.").dim().0, 215);
-    assert_eq!(rcm.get(&16).expect("ROI 16 not foud.").dim().0, 171);
-    assert_eq!(rcm.get(&17).expect("ROI 17 not foud.").dim().0, 451);
-    assert_eq!(rcm.get(&18).expect("ROI 18 not foud.").dim().0, 248);
-    assert_eq!(rcm.get(&19).expect("ROI 19 not foud.").dim().0, 203);
-    assert_eq!(rcm.get(&20).expect("ROI 20 not foud.").dim().0, 240);
+    let sd_cpu = StarDist2D::init_fluo(None, false)?;
+    let sd_gpu = StarDist2D::init_fluo(None, true)?;
+    let labels_cpu = sd_cpu.predict_fluo(&data, None, None, None, None)?;
+    let labels_gpu = sd_gpu.predict_fluo(&data, None, None, None, None)?;
+    let rcm_cpu = roi_cloud_map(&labels_cpu, None);
+    let rcm_gpu = roi_cloud_map(&labels_gpu, None);
+    assert_eq!(rcm_cpu, rcm_gpu);
+    assert_eq!(rcm_gpu.len(), 20);
+    assert_eq!(rcm_gpu.get(&1).expect("ROI 1 not foud.").dim().0, 244);
+    assert_eq!(rcm_gpu.get(&2).expect("ROI 2 not foud.").dim().0, 109);
+    assert_eq!(rcm_gpu.get(&3).expect("ROI 3 not foud.").dim().0, 359);
+    assert_eq!(rcm_gpu.get(&4).expect("ROI 4 not foud.").dim().0, 62);
+    assert_eq!(rcm_gpu.get(&5).expect("ROI 5 not foud.").dim().0, 79);
+    assert_eq!(rcm_gpu.get(&6).expect("ROI 6 not foud.").dim().0, 376);
+    assert_eq!(rcm_gpu.get(&7).expect("ROI 7 not foud.").dim().0, 141);
+    assert_eq!(rcm_gpu.get(&8).expect("ROI 8 not foud.").dim().0, 167);
+    assert_eq!(rcm_gpu.get(&9).expect("ROI 9 not foud.").dim().0, 224);
+    assert_eq!(rcm_gpu.get(&10).expect("ROI 10 not foud.").dim().0, 609);
+    assert_eq!(rcm_gpu.get(&11).expect("ROI 11 not foud.").dim().0, 359);
+    assert_eq!(rcm_gpu.get(&12).expect("ROI 12 not foud.").dim().0, 104);
+    assert_eq!(rcm_gpu.get(&13).expect("ROI 13 not foud.").dim().0, 85);
+    assert_eq!(rcm_gpu.get(&14).expect("ROI 14 not foud.").dim().0, 96);
+    assert_eq!(rcm_gpu.get(&15).expect("ROI 15 not foud.").dim().0, 215);
+    assert_eq!(rcm_gpu.get(&16).expect("ROI 16 not foud.").dim().0, 171);
+    assert_eq!(rcm_gpu.get(&17).expect("ROI 17 not foud.").dim().0, 451);
+    assert_eq!(rcm_gpu.get(&18).expect("ROI 18 not foud.").dim().0, 248);
+    assert_eq!(rcm_gpu.get(&19).expect("ROI 19 not foud.").dim().0, 203);
+    assert_eq!(rcm_gpu.get(&20).expect("ROI 20 not foud.").dim().0, 240);
     Ok(())
 }
 
@@ -108,18 +112,22 @@ fn stardist_3d_predict_fluo_expected_results() -> Result<(), CellcastError> {
         None,
     )?;
     let data = data.into_dimensionality::<Ix3>().unwrap();
-    let sd = StarDist3D::init_fluo(None, None, false)?;
-    let labels = sd.predict_fluo(&data, None, None, None, None, None)?;
-    let rcm = roi_cloud_map(&labels, None);
-    assert_eq!(rcm.len(), 9);
-    assert_eq!(rcm.get(&1).expect("ROI 1 not found.").dim().0, 1287);
-    assert_eq!(rcm.get(&2).expect("ROI 2 not found.").dim().0, 1528);
-    assert_eq!(rcm.get(&3).expect("ROI 3 not found.").dim().0, 2364);
-    assert_eq!(rcm.get(&4).expect("ROI 4 not found.").dim().0, 770);
-    assert_eq!(rcm.get(&5).expect("ROI 5 not found.").dim().0, 483);
-    assert_eq!(rcm.get(&6).expect("ROI 6 not found.").dim().0, 442);
-    assert_eq!(rcm.get(&7).expect("ROI 7 not found.").dim().0, 427);
-    assert_eq!(rcm.get(&8).expect("ROI 8 not found.").dim().0, 708);
-    assert_eq!(rcm.get(&9).expect("ROI 9 not found.").dim().0, 304);
+    let sd_cpu = StarDist3D::init_fluo(None, None, false)?;
+    let sd_gpu = StarDist3D::init_fluo(None, None, true)?;
+    let labels_cpu = sd_cpu.predict_fluo(&data, None, None, None, None, None)?;
+    let labels_gpu = sd_gpu.predict_fluo(&data, None, None, None, None, None)?;
+    let rcm_cpu = roi_cloud_map(&labels_cpu, None);
+    let rcm_gpu = roi_cloud_map(&labels_gpu, None);
+    assert_eq!(rcm_cpu, rcm_gpu);
+    assert_eq!(rcm_gpu.len(), 9);
+    assert_eq!(rcm_gpu.get(&1).expect("ROI 1 not found.").dim().0, 1287);
+    assert_eq!(rcm_gpu.get(&2).expect("ROI 2 not found.").dim().0, 1528);
+    assert_eq!(rcm_gpu.get(&3).expect("ROI 3 not found.").dim().0, 2364);
+    assert_eq!(rcm_gpu.get(&4).expect("ROI 4 not found.").dim().0, 770);
+    assert_eq!(rcm_gpu.get(&5).expect("ROI 5 not found.").dim().0, 483);
+    assert_eq!(rcm_gpu.get(&6).expect("ROI 6 not found.").dim().0, 442);
+    assert_eq!(rcm_gpu.get(&7).expect("ROI 7 not found.").dim().0, 427);
+    assert_eq!(rcm_gpu.get(&8).expect("ROI 8 not found.").dim().0, 708);
+    assert_eq!(rcm_gpu.get(&9).expect("ROI 9 not found.").dim().0, 304);
     Ok(())
 }
