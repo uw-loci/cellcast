@@ -14,6 +14,7 @@ use burn_store::ModuleSnapshot;
 use crate::config::weights::VERSATILE_FLUO_2D_URL;
 use crate::utils::fetch;
 
+/// A StarDist2D fluo model.
 #[derive(Module, Debug)]
 pub struct Model {
     conv2d1: Conv2d,
@@ -39,8 +40,19 @@ pub struct Model {
     conv2d17: Conv2d,
     conv2d18: Conv2d,
     conv2d19: Conv2d,
-    #[module(skip)]
-    device: Device,
+}
+
+/// A StarDist2D fluo model configuration.
+///
+/// Use this struct to construct new networks for model training.
+#[derive(Config, Debug)]
+pub struct StarDist2DFluoModelConfig {
+    #[config(default = "32")]
+    n_rays: usize,
+    #[config(default = "[3, 3]")]
+    kernel_size: [usize; 2],
+    #[config(default = "[2, 2]")]
+    pool_size: [usize; 2],
 }
 
 impl Default for Model {
@@ -96,201 +108,37 @@ impl Model {
     /// * `Self`: The initialized `Model` on `device`. Panics if the weights
     ///   download or load fails.
     pub fn from_file(file: &str, device: &Device) -> Self {
-        let mut model = Self::new(device);
+        let mut model = StarDist2DFluoModelConfig::new().init(device);
         let mut store = BurnpackStore::from_file(file);
         model
             .load_from(&mut store)
             .expect("Failed to load the StarDist2D Fluo model weights burnpack file.");
         model
     }
-}
 
-impl Model {
-    #[allow(unused_variables)]
-    pub fn new(device: &Device) -> Self {
-        let conv2d1 = Conv2dConfig::new([1, 32], [3, 3])
-            .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
-            .with_dilation([1, 1])
-            .with_groups(1)
-            .with_bias(true)
-            .init(device);
-        let conv2d2 = Conv2dConfig::new([32, 32], [3, 3])
-            .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
-            .with_dilation([1, 1])
-            .with_groups(1)
-            .with_bias(true)
-            .init(device);
-        let maxpool2d1 = MaxPool2dConfig::new([2, 2])
-            .with_strides([2, 2])
-            .with_padding(PaddingConfig2d::Valid)
-            .with_dilation([1, 1])
-            .init();
-        let conv2d3 = Conv2dConfig::new([32, 32], [3, 3])
-            .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
-            .with_dilation([1, 1])
-            .with_groups(1)
-            .with_bias(true)
-            .init(device);
-        let conv2d4 = Conv2dConfig::new([32, 32], [3, 3])
-            .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
-            .with_dilation([1, 1])
-            .with_groups(1)
-            .with_bias(true)
-            .init(device);
-        let maxpool2d2 = MaxPool2dConfig::new([2, 2])
-            .with_strides([2, 2])
-            .with_padding(PaddingConfig2d::Valid)
-            .with_dilation([1, 1])
-            .init();
-        let conv2d5 = Conv2dConfig::new([32, 64], [3, 3])
-            .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
-            .with_dilation([1, 1])
-            .with_groups(1)
-            .with_bias(true)
-            .init(device);
-        let conv2d6 = Conv2dConfig::new([64, 64], [3, 3])
-            .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
-            .with_dilation([1, 1])
-            .with_groups(1)
-            .with_bias(true)
-            .init(device);
-        let maxpool2d3 = MaxPool2dConfig::new([2, 2])
-            .with_strides([2, 2])
-            .with_padding(PaddingConfig2d::Valid)
-            .with_dilation([1, 1])
-            .init();
-        let conv2d7 = Conv2dConfig::new([64, 128], [3, 3])
-            .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
-            .with_dilation([1, 1])
-            .with_groups(1)
-            .with_bias(true)
-            .init(device);
-        let conv2d8 = Conv2dConfig::new([128, 128], [3, 3])
-            .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
-            .with_dilation([1, 1])
-            .with_groups(1)
-            .with_bias(true)
-            .init(device);
-        let maxpool2d4 = MaxPool2dConfig::new([2, 2])
-            .with_strides([2, 2])
-            .with_padding(PaddingConfig2d::Valid)
-            .with_dilation([1, 1])
-            .init();
-        let conv2d9 = Conv2dConfig::new([128, 256], [3, 3])
-            .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
-            .with_dilation([1, 1])
-            .with_groups(1)
-            .with_bias(true)
-            .init(device);
-        let conv2d10 = Conv2dConfig::new([256, 128], [3, 3])
-            .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
-            .with_dilation([1, 1])
-            .with_groups(1)
-            .with_bias(true)
-            .init(device);
-        let conv2d11 = Conv2dConfig::new([256, 128], [3, 3])
-            .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
-            .with_dilation([1, 1])
-            .with_groups(1)
-            .with_bias(true)
-            .init(device);
-        let conv2d12 = Conv2dConfig::new([128, 64], [3, 3])
-            .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
-            .with_dilation([1, 1])
-            .with_groups(1)
-            .with_bias(true)
-            .init(device);
-        let conv2d13 = Conv2dConfig::new([128, 64], [3, 3])
-            .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
-            .with_dilation([1, 1])
-            .with_groups(1)
-            .with_bias(true)
-            .init(device);
-        let conv2d14 = Conv2dConfig::new([64, 32], [3, 3])
-            .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
-            .with_dilation([1, 1])
-            .with_groups(1)
-            .with_bias(true)
-            .init(device);
-        let conv2d15 = Conv2dConfig::new([64, 32], [3, 3])
-            .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
-            .with_dilation([1, 1])
-            .with_groups(1)
-            .with_bias(true)
-            .init(device);
-        let conv2d16 = Conv2dConfig::new([32, 32], [3, 3])
-            .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
-            .with_dilation([1, 1])
-            .with_groups(1)
-            .with_bias(true)
-            .init(device);
-        let conv2d17 = Conv2dConfig::new([32, 128], [3, 3])
-            .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
-            .with_dilation([1, 1])
-            .with_groups(1)
-            .with_bias(true)
-            .init(device);
-        let conv2d18 = Conv2dConfig::new([128, 32], [1, 1])
-            .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Valid)
-            .with_dilation([1, 1])
-            .with_groups(1)
-            .with_bias(true)
-            .init(device);
-        let conv2d19 = Conv2dConfig::new([128, 1], [1, 1])
-            .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Valid)
-            .with_dilation([1, 1])
-            .with_groups(1)
-            .with_bias(true)
-            .init(device);
-        Self {
-            conv2d1,
-            conv2d2,
-            maxpool2d1,
-            conv2d3,
-            conv2d4,
-            maxpool2d2,
-            conv2d5,
-            conv2d6,
-            maxpool2d3,
-            conv2d7,
-            conv2d8,
-            maxpool2d4,
-            conv2d9,
-            conv2d10,
-            conv2d11,
-            conv2d12,
-            conv2d13,
-            conv2d14,
-            conv2d15,
-            conv2d16,
-            conv2d17,
-            conv2d18,
-            conv2d19,
-            device: device.clone(),
-        }
-    }
-
+    /// Perform a forward pass on the input tensor.
+    ///
+    /// # Description
+    ///
+    /// Performs forward propagation through the StarDist2D fluo model using the
+    /// input tensor.
+    ///
+    /// # Arguments
+    ///
+    /// * `input`: The input tensor.
+    /// * `shape`: The shape of the input tensor.
+    /// * `n_rays`: The number of rays.
+    ///
+    /// # Returns
+    ///
+    /// * `(Tensor<4>, Tensor<4>)`: The probability and distance output tensors.
     #[allow(clippy::let_and_return, clippy::approx_constant)]
-    pub fn forward(&self, input: Tensor<4>, shape: (i32, i32)) -> (Tensor<4>, Tensor<4>) {
+    pub fn forward(
+        &self,
+        input: Tensor<4>,
+        shape: (i32, i32),
+        n_rays: i32,
+    ) -> (Tensor<4>, Tensor<4>) {
         let relu4_out1 = {
             let conv2d1_out1 = self.conv2d1.forward(input);
             let relu1_out1 = burn::tensor::activation::relu(conv2d1_out1);
@@ -327,10 +175,10 @@ impl Model {
             let unsqueeze1_out1: Tensor<5> = relu10_out1.unsqueeze_dims(&[3]);
             let tile1_out1 = unsqueeze1_out1.repeat(&[1, 1, 1, 2, 1]);
             let transpose1_out1 = tile1_out1.permute([0, 2, 3, 4, 1]);
-            let reshape2_out1 = transpose1_out1.reshape([1, shape.0 / 8, shape.1 / 16, 128]);
+            let reshape2_out1 = transpose1_out1.reshape([1, shape.0 / 8, shape.1 / 16, n_rays * 4]);
             let unsqueeze2_out1: Tensor<5> = reshape2_out1.unsqueeze_dims(&[3]);
             let tile2_out1 = unsqueeze2_out1.repeat(&[1, 1, 1, 2, 1]);
-            let reshape3_out1 = tile2_out1.reshape([1, shape.0 / 8, shape.1 / 8, 128]);
+            let reshape3_out1 = tile2_out1.reshape([1, shape.0 / 8, shape.1 / 8, n_rays * 4]);
             let transpose2_out1 = reshape3_out1.permute([0, 3, 1, 2]);
             let concat1_out1 = burn::tensor::Tensor::cat([transpose2_out1, relu8_out1].into(), 1);
             let conv2d11_out1 = self.conv2d11.forward(concat1_out1);
@@ -342,10 +190,10 @@ impl Model {
             let unsqueeze3_out1: Tensor<5> = relu12_out1.unsqueeze_dims(&[3]);
             let tile3_out1 = unsqueeze3_out1.repeat(&[1, 1, 1, 2, 1]);
             let transpose3_out1 = tile3_out1.permute([0, 2, 3, 4, 1]);
-            let reshape4_out1 = transpose3_out1.reshape([1, shape.0 / 4, shape.1 / 8, 64]);
+            let reshape4_out1 = transpose3_out1.reshape([1, shape.0 / 4, shape.1 / 8, n_rays * 2]);
             let unsqueeze4_out1: Tensor<5> = reshape4_out1.unsqueeze_dims(&[3]);
             let tile4_out1 = unsqueeze4_out1.repeat(&[1, 1, 1, 2, 1]);
-            let reshape5_out1 = tile4_out1.reshape([1, shape.0 / 4, shape.1 / 4, 64]);
+            let reshape5_out1 = tile4_out1.reshape([1, shape.0 / 4, shape.1 / 4, n_rays * 2]);
             let transpose4_out1 = reshape5_out1.permute([0, 3, 1, 2]);
             let concat2_out1 = burn::tensor::Tensor::cat([transpose4_out1, relu6_out1].into(), 1);
             let conv2d13_out1 = self.conv2d13.forward(concat2_out1);
@@ -357,10 +205,10 @@ impl Model {
             let unsqueeze5_out1: Tensor<5> = relu14_out1.unsqueeze_dims(&[3]);
             let tile5_out1 = unsqueeze5_out1.repeat(&[1, 1, 1, 2, 1]);
             let transpose5_out1 = tile5_out1.permute([0, 2, 3, 4, 1]);
-            let reshape6_out1 = transpose5_out1.reshape([1, shape.0 / 2, shape.1 / 4, 32]);
+            let reshape6_out1 = transpose5_out1.reshape([1, shape.0 / 2, shape.1 / 4, n_rays]);
             let unsqueeze6_out1: Tensor<5> = reshape6_out1.unsqueeze_dims(&[3]);
             let tile6_out1 = unsqueeze6_out1.repeat(&[1, 1, 1, 2, 1]);
-            let reshape7_out1 = tile6_out1.reshape([1, shape.0 / 2, shape.1 / 2, 32]);
+            let reshape7_out1 = tile6_out1.reshape([1, shape.0 / 2, shape.1 / 2, n_rays]);
             let transpose6_out1 = reshape7_out1.permute([0, 3, 1, 2]);
             let concat3_out1 = burn::tensor::Tensor::cat([transpose6_out1, relu4_out1].into(), 1);
             let conv2d15_out1 = self.conv2d15.forward(concat3_out1);
@@ -376,5 +224,178 @@ impl Model {
         let sigmoid1_out1 = burn::tensor::activation::sigmoid(conv2d19_out1);
         let reshape8_out1 = sigmoid1_out1.reshape([1, shape.0 / 2, shape.1 / 2, 1]);
         (reshape8_out1, transpose7_out1)
+    }
+}
+
+impl StarDist2DFluoModelConfig {
+    /// Create a StarDist2D model with the given configuration.
+    ///
+    /// # Description
+    ///
+    /// Creates a configured StarDist2D model on the initialized CPU or GPU.
+    ///
+    /// # Arguments
+    ///
+    /// * `device`: The initialized CPU or GPU device.
+    ///
+    /// # Returns
+    ///
+    /// * `Model`: The model.
+    pub fn init(&self, device: &Device) -> Model {
+        Model {
+            conv2d1: Conv2dConfig::new([1, self.n_rays], self.kernel_size)
+                .with_stride([1, 1])
+                .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
+                .with_dilation([1, 1])
+                .with_groups(1)
+                .with_bias(true)
+                .init(device),
+            conv2d2: Conv2dConfig::new([self.n_rays, self.n_rays], self.kernel_size)
+                .with_stride([1, 1])
+                .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
+                .with_dilation([1, 1])
+                .with_groups(1)
+                .with_bias(true)
+                .init(device),
+            maxpool2d1: MaxPool2dConfig::new(self.pool_size)
+                .with_strides(self.pool_size)
+                .with_padding(PaddingConfig2d::Valid)
+                .with_dilation([1, 1])
+                .init(),
+            conv2d3: Conv2dConfig::new([self.n_rays, self.n_rays], self.kernel_size)
+                .with_stride([1, 1])
+                .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
+                .with_dilation([1, 1])
+                .with_groups(1)
+                .with_bias(true)
+                .init(device),
+            conv2d4: Conv2dConfig::new([self.n_rays, self.n_rays], self.kernel_size)
+                .with_stride([1, 1])
+                .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
+                .with_dilation([1, 1])
+                .with_groups(1)
+                .with_bias(true)
+                .init(device),
+            maxpool2d2: MaxPool2dConfig::new(self.pool_size)
+                .with_strides(self.pool_size)
+                .with_padding(PaddingConfig2d::Valid)
+                .with_dilation([1, 1])
+                .init(),
+            conv2d5: Conv2dConfig::new([self.n_rays, self.n_rays * 2], self.kernel_size)
+                .with_stride([1, 1])
+                .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
+                .with_dilation([1, 1])
+                .with_groups(1)
+                .with_bias(true)
+                .init(device),
+            conv2d6: Conv2dConfig::new([self.n_rays * 2, self.n_rays * 2], self.kernel_size)
+                .with_stride([1, 1])
+                .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
+                .with_dilation([1, 1])
+                .with_groups(1)
+                .with_bias(true)
+                .init(device),
+            maxpool2d3: MaxPool2dConfig::new(self.pool_size)
+                .with_strides(self.pool_size)
+                .with_padding(PaddingConfig2d::Valid)
+                .with_dilation([1, 1])
+                .init(),
+            conv2d7: Conv2dConfig::new([self.n_rays * 2, self.n_rays * 4], self.kernel_size)
+                .with_stride([1, 1])
+                .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
+                .with_dilation([1, 1])
+                .with_groups(1)
+                .with_bias(true)
+                .init(device),
+            conv2d8: Conv2dConfig::new([self.n_rays * 4, self.n_rays * 4], self.kernel_size)
+                .with_stride([1, 1])
+                .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
+                .with_dilation([1, 1])
+                .with_groups(1)
+                .with_bias(true)
+                .init(device),
+            maxpool2d4: MaxPool2dConfig::new(self.pool_size)
+                .with_strides(self.pool_size)
+                .with_padding(PaddingConfig2d::Valid)
+                .with_dilation([1, 1])
+                .init(),
+            conv2d9: Conv2dConfig::new([self.n_rays * 4, self.n_rays * 8], self.kernel_size)
+                .with_stride([1, 1])
+                .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
+                .with_dilation([1, 1])
+                .with_groups(1)
+                .with_bias(true)
+                .init(device),
+            conv2d10: Conv2dConfig::new([self.n_rays * 8, self.n_rays * 4], self.kernel_size)
+                .with_stride([1, 1])
+                .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
+                .with_dilation([1, 1])
+                .with_groups(1)
+                .with_bias(true)
+                .init(device),
+            conv2d11: Conv2dConfig::new([self.n_rays * 8, self.n_rays * 4], self.kernel_size)
+                .with_stride([1, 1])
+                .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
+                .with_dilation([1, 1])
+                .with_groups(1)
+                .with_bias(true)
+                .init(device),
+            conv2d12: Conv2dConfig::new([self.n_rays * 4, self.n_rays * 2], self.kernel_size)
+                .with_stride([1, 1])
+                .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
+                .with_dilation([1, 1])
+                .with_groups(1)
+                .with_bias(true)
+                .init(device),
+            conv2d13: Conv2dConfig::new([self.n_rays * 4, self.n_rays * 2], self.kernel_size)
+                .with_stride([1, 1])
+                .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
+                .with_dilation([1, 1])
+                .with_groups(1)
+                .with_bias(true)
+                .init(device),
+            conv2d14: Conv2dConfig::new([self.n_rays * 2, self.n_rays], self.kernel_size)
+                .with_stride([1, 1])
+                .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
+                .with_dilation([1, 1])
+                .with_groups(1)
+                .with_bias(true)
+                .init(device),
+            conv2d15: Conv2dConfig::new([self.n_rays * 2, self.n_rays], self.kernel_size)
+                .with_stride([1, 1])
+                .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
+                .with_dilation([1, 1])
+                .with_groups(1)
+                .with_bias(true)
+                .init(device),
+            conv2d16: Conv2dConfig::new([self.n_rays, self.n_rays], self.kernel_size)
+                .with_stride([1, 1])
+                .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
+                .with_dilation([1, 1])
+                .with_groups(1)
+                .with_bias(true)
+                .init(device),
+            conv2d17: Conv2dConfig::new([self.n_rays, self.n_rays * 4], self.kernel_size)
+                .with_stride([1, 1])
+                .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
+                .with_dilation([1, 1])
+                .with_groups(1)
+                .with_bias(true)
+                .init(device),
+            conv2d18: Conv2dConfig::new([self.n_rays * 4, self.n_rays], [1, 1])
+                .with_stride([1, 1])
+                .with_padding(PaddingConfig2d::Valid)
+                .with_dilation([1, 1])
+                .with_groups(1)
+                .with_bias(true)
+                .init(device),
+            conv2d19: Conv2dConfig::new([self.n_rays * 4, 1], [1, 1])
+                .with_stride([1, 1])
+                .with_padding(PaddingConfig2d::Valid)
+                .with_dilation([1, 1])
+                .with_groups(1)
+                .with_bias(true)
+                .init(device),
+        }
     }
 }

@@ -27,6 +27,7 @@ impl PyStarDist2D {
     ///     weights_path: The path to custom StarDist2D weights in burnpack (`.bpk`)
     ///         format. If `None` then the versatile fluo pre-trained weights are
     ///         used.
+    ///     n_rays: The number of rays the model was trained with (default = 32).
     ///     gpu: If `True`, the GPU backend is used. If `False` then the CPU backend
     ///         is used.
     ///
@@ -36,10 +37,14 @@ impl PyStarDist2D {
     /// Errors:
     ///     If the requested model can not be initialized.
     #[staticmethod]
-    #[pyo3(signature = (weights_path=None, gpu=None))]
-    pub fn init_fluo(weights_path: Option<&str>, gpu: Option<bool>) -> PyResult<Self> {
+    #[pyo3(signature = (weights_path=None, n_rays=None, gpu=None))]
+    pub fn init_fluo(
+        weights_path: Option<&str>,
+        n_rays: Option<i32>,
+        gpu: Option<bool>,
+    ) -> PyResult<Self> {
         Ok(Self(
-            StarDist2D::init_fluo(weights_path, gpu.unwrap_or(true))
+            StarDist2D::init_fluo(weights_path, n_rays, gpu.unwrap_or(true))
                 .map_err(cellcast_error_to_pyerr)?,
         ))
     }
@@ -54,6 +59,7 @@ impl PyStarDist2D {
     /// Args:
     ///     weights_path: The path to custom StarDist2D weights in burnpack (`.bpk`)
     ///         format. If `None` then the versatile HE pre-trained weights are used.
+    ///     n_rays: The number of rays the model was trained with (default = 32).
     ///     gpu: If `True`, the GPU backend is used. If `False` then the CPU backend
     ///         is used.
     ///
@@ -63,10 +69,14 @@ impl PyStarDist2D {
     /// Errors:
     ///     If the requested model can not be initialized.
     #[staticmethod]
-    #[pyo3(signature = (weights_path=None, gpu=None))]
-    pub fn init_he(weights_path: Option<&str>, gpu: Option<bool>) -> PyResult<Self> {
+    #[pyo3(signature = (weights_path=None, n_rays=None, gpu=None))]
+    pub fn init_he(
+        weights_path: Option<&str>,
+        n_rays: Option<i32>,
+        gpu: Option<bool>,
+    ) -> PyResult<Self> {
         Ok(Self(
-            StarDist2D::init_he(weights_path, gpu.unwrap_or(true))
+            StarDist2D::init_he(weights_path, n_rays, gpu.unwrap_or(true))
                 .map_err(cellcast_error_to_pyerr)?,
         ))
     }

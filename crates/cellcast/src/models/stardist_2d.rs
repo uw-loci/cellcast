@@ -43,6 +43,7 @@ enum StarDist2DModels {
 #[derive(Debug)]
 pub struct StarDist2D {
     model: StarDist2DModels,
+    n_rays: i32,
     gpu: bool,
 }
 
@@ -60,6 +61,7 @@ impl StarDist2D {
     ///
     /// * `weights_path`: The path to custom StarDist2D weights in burnpack (`.bpk`)
     ///   format. If `None` then the versatile fluo pre-trained weights are used.
+    /// * `n_rays`: The number of rays the model was trained with (default = 32).
     /// * `gpu`: If `true`, the GPU backend is used. If `false` then the CPU backend
     ///   is used.
     ///
@@ -67,7 +69,12 @@ impl StarDist2D {
     ///
     /// * `Ok(StarDist2D)`: An initialized StarDist2D fluo model.
     /// * `Err(CellcastError)`: If the requested model can not be initialized.
-    pub fn init_fluo(weights_path: Option<&str>, gpu: bool) -> Result<Self, CellcastError> {
+    pub fn init_fluo(
+        weights_path: Option<&str>,
+        n_rays: Option<i32>,
+        gpu: bool,
+    ) -> Result<Self, CellcastError> {
+        let n_rays = n_rays.unwrap_or(N_RAYS as i32);
         let weights_path = weights_path.map(PathBuf::from);
         if gpu {
             init_gpu();
@@ -77,6 +84,7 @@ impl StarDist2D {
                     device,
                     weights_path.clone(),
                 )),
+                n_rays,
                 gpu,
             };
             sd.warm_up_fluo()?;
@@ -89,6 +97,7 @@ impl StarDist2D {
                     device,
                     weights_path.clone(),
                 )),
+                n_rays,
                 gpu,
             };
             sd.warm_up_fluo()?;
@@ -109,6 +118,7 @@ impl StarDist2D {
     ///
     /// * `weights_path`: The path to custom StarDist2D weights in burnpack (`.bpk`)
     ///   format. If `None` then the versatile HE pre-trained weights are used.
+    /// * `n_rays`: The number of rays the model was trained with (default = 32).
     /// * `gpu`: If `true`, the GPU backend is used. If `false` then the CPU backend
     ///   is used.
     ///
@@ -116,13 +126,19 @@ impl StarDist2D {
     ///
     /// * `Ok(StarDist2D)`: An initialized StarDist2D HE model.
     /// * `Err(CellcastError)`: If the requested model can not be initialized.
-    pub fn init_he(weights_path: Option<&str>, gpu: bool) -> Result<Self, CellcastError> {
+    pub fn init_he(
+        weights_path: Option<&str>,
+        n_rays: Option<i32>,
+        gpu: bool,
+    ) -> Result<Self, CellcastError> {
+        let n_rays = n_rays.unwrap_or(N_RAYS as i32);
         let weights_path = weights_path.map(PathBuf::from);
         if gpu {
             init_gpu();
             let device = GPU_DEVICE.get().expect(GPU_INIT_FAIL_MSG);
             let sd = Self {
                 model: StarDist2DModels::HeGpu(he_2d::Model::init(device, weights_path.clone())),
+                n_rays,
                 gpu,
             };
             sd.warm_up_he()?;
@@ -132,6 +148,7 @@ impl StarDist2D {
             let device = CPU_DEVICE.get().expect(CPU_INIT_FAIL_MSG);
             let sd = Self {
                 model: StarDist2DModels::HeCpu(he_2d::Model::init(device, weights_path.clone())),
+                n_rays,
                 gpu,
             };
             sd.warm_up_he()?;
@@ -208,7 +225,11 @@ impl StarDist2D {
                 StarDist2DModels::FluoGpu(m) => {
                     let device = GPU_DEVICE.get().expect(GPU_INIT_FAIL_MSG);
                     let tensor = Tensor::<4>::from_data(td, device);
-                    let (p, d) = m.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
+                    let (p, d) = m.forward(
+                        tensor,
+                        (pad_shape[0] as i32, pad_shape[1] as i32),
+                        self.n_rays,
+                    );
                     prob = read_tensor(p);
                     dist = read_tensor(d);
                 }
@@ -223,7 +244,11 @@ impl StarDist2D {
                 StarDist2DModels::FluoCpu(m) => {
                     let device = CPU_DEVICE.get().expect("Failed to initialize the CPU.");
                     let tensor = Tensor::<4>::from_data(td, device);
-                    let (p, d) = m.forward(tensor, (pad_shape[0] as i32, pad_shape[1] as i32));
+                    let (p, d) = m.forward(
+                        tensor,
+                        (pad_shape[0] as i32, pad_shape[1] as i32),
+                        self.n_rays,
+                    );
                     prob = read_tensor(p);
                     dist = read_tensor(d);
                 }
@@ -386,7 +411,7 @@ impl StarDist2D {
                 StarDist2DModels::FluoGpu(m) => {
                     let device = GPU_DEVICE.get().expect(GPU_INIT_FAIL_MSG);
                     let tensor = Tensor::<4>::from_data(td, device);
-                    let (p, d) = m.forward(tensor, (128, 128));
+                    let (p, d) = m.forward(tensor, (128, 128), self.n_rays);
                     let _ = p.into_data();
                     let _ = d.into_data();
                     Ok(())
@@ -400,7 +425,7 @@ impl StarDist2D {
                 StarDist2DModels::FluoCpu(m) => {
                     let device = CPU_DEVICE.get().expect(CPU_INIT_FAIL_MSG);
                     let tensor = Tensor::<4>::from_data(td, device);
-                    let (p, d) = m.forward(tensor, (128, 128));
+                    let (p, d) = m.forward(tensor, (128, 128), self.n_rays);
                     let _ = p.into_data();
                     let _ = d.into_data();
                     Ok(())
